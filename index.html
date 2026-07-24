@@ -17,6 +17,9 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -30,21 +33,42 @@
             <h2 class="auth-title">श्रीरामजन्मभूमि दर्शन पास पोर्टल</h2>
             <div class="auth-subtitle"><i class="fa-brands fa-google" style="color: #ea4335;"></i> गूगल खाते से साइन इन करें</div>
             <p class="auth-desc">
-                फॉर्म खोलने और दर्शन पास आवेदन के लिए अपने गूगल अकाउंट (Google Account) का विवरण दर्ज करें।
+                फॉर्म खोलने और दर्शन पास आवेदन के लिए 1-क्लिक में अपने गूगल अकाउंट से साइन इन करें।
             </p>
 
             <div class="google-auth-box">
+                <!-- Official Google Sign-In Button -->
+                <div id="g_id_onload"
+                     data-client_id="482422747114-9ef3n0jjbm8mi9tphalupuc81r2h8lp7.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="true">
+                </div>
+                
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="280"
+                     style="margin-bottom: 0.6rem;">
+                </div>
+
                 <div class="google-manual-entry">
+                    <div class="auth-divider"><span>अथवा जानकारी भरें</span></div>
                     <div class="input-group" style="text-align: left;">
                         <label for="lockNameInput" class="input-label">Google Account Name / आपका नाम <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="text" id="lockNameInput" placeholder="उदा: Rahul Yadav" required>
+                            <input type="text" id="lockNameInput" placeholder="उदा: Rahul Yadav">
                         </div>
                     </div>
                     <div class="input-group" style="text-align: left; margin-top: 0.8rem;">
                         <label for="lockEmailInput" class="input-label">Google Email ID / गूगल ईमेल <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="email" id="lockEmailInput" placeholder="उदा: rahul@gmail.com" required>
+                            <input type="email" id="lockEmailInput" placeholder="उदा: rahul@gmail.com">
                         </div>
                     </div>
                     <button type="button" id="lock-login-btn" class="gov-btn-primary" style="margin-top: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 0.6rem;">

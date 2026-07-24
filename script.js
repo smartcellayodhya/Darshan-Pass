@@ -69,7 +69,44 @@ function getVal(id) {
     return el ? el.value.trim() : "";
 }
 
+// -------------------------------------------------------------
+// GLOBAL GOOGLE GIS CREDENTIAL CALLBACK
+// -------------------------------------------------------------
+window.handleCredentialResponse = function(response) {
+    if (response && response.credential) {
+        try {
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
 
+            const payload = JSON.parse(jsonPayload);
+            const name = payload.name || payload.given_name || "Google User";
+            const email = payload.email;
+
+            if (email) {
+                localStorage.setItem("darshan_submitter_name", name);
+                localStorage.setItem("darshan_submitter_email", email);
+                
+                const lockOverlay = document.getElementById("google-auth-lock");
+                if (lockOverlay) lockOverlay.classList.add("hidden");
+
+                const displayUserName = document.getElementById("display-user-name");
+                const displayUserEmail = document.getElementById("display-user-email");
+                const googleSignedIn = document.getElementById("google-signed-in");
+                const googleLoginPrompt = document.getElementById("google-login-prompt");
+
+                if (displayUserName) displayUserName.textContent = name;
+                if (displayUserEmail) displayUserEmail.textContent = email;
+                if (googleSignedIn) googleSignedIn.classList.remove("hidden");
+                if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+            }
+        } catch (e) {
+            console.error("JWT parse error:", e);
+        }
+    }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
