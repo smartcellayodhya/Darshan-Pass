@@ -17,6 +17,55 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Global Google Auth Handler Script (must load before GIS script) -->
+    <script>
+        function parseJwt(token) {
+            if (!token) return null;
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                    atob(base64)
+                        .split('')
+                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                        .join('')
+                );
+                return JSON.parse(jsonPayload);
+            } catch (err) {
+                try {
+                    const base64Url = token.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    return JSON.parse(atob(base64));
+                } catch (e2) {
+                    return null;
+                }
+            }
+        }
+
+        window.handleCredentialResponse = function(response) {
+            console.log("Google Credential Received:", response);
+            if (response && response.credential) {
+                const payload = parseJwt(response.credential);
+                const name = (payload && (payload.name || payload.given_name)) ? (payload.name || payload.given_name) : "Google User";
+                const email = (payload && payload.email) ? payload.email : "user@gmail.com";
+
+                localStorage.setItem("darshan_submitter_name", name);
+                localStorage.setItem("darshan_submitter_email", email);
+
+                // Hide lock modal instantly
+                const lockOverlay = document.getElementById("google-auth-lock");
+                if (lockOverlay) {
+                    lockOverlay.style.display = "none";
+                    lockOverlay.classList.add("hidden");
+                }
+
+                if (typeof window.updateGoogleAccountUI === "function") {
+                    window.updateGoogleAccountUI();
+                }
+            }
+        };
+    </script>
+    
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -58,6 +107,12 @@
             </div>
         </div>
     </div>
+    <script>
+        if (localStorage.getItem("darshan_submitter_name") && localStorage.getItem("darshan_submitter_email")) {
+            var lockEl = document.getElementById("google-auth-lock");
+            if (lockEl) lockEl.style.display = "none";
+        }
+    </script>
 
     <!-- Clean Solid Navy Blue Header -->
     <header class="gov-header">
