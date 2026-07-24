@@ -144,11 +144,17 @@ function doGet(e) {
 }
 
 function getTargetSpreadsheet() {
+  var ss = null;
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (ss && ss.getSheets().length > 0) return ss;
+    ss = SpreadsheetApp.getActiveSpreadsheet();
   } catch (err) {}
-  return SpreadsheetApp.openById("1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo");
+  if (ss) return ss;
+
+  try {
+    return SpreadsheetApp.openById("1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo");
+  } catch (err2) {
+    return null;
+  }
 }
 
 /**
@@ -173,42 +179,47 @@ function onOpen() {
  */
 function formatEntireSheet() {
   var ss = getTargetSpreadsheet();
+  if (!ss) return;
+
+  var activeSheet = ss.getActiveSheet();
   var sheets = ss.getSheets();
 
-  sheets.forEach(function(sheet) {
-    if (sheet.getName().includes("Dashboard")) return; // Skip dashboard tab
+  var targetSheets = [activeSheet];
+  sheets.forEach(function(s) {
+    if (s && targetSheets.indexOf(s) === -1 && !s.getName().includes("Dashboard")) {
+      targetSheets.push(s);
+    }
+  });
 
-    var lastRow = sheet.getLastRow();
-    var lastCol = Math.max(sheet.getLastColumn(), 13);
+  targetSheets.forEach(function(sheet) {
+    if (!sheet || sheet.getName().includes("Dashboard")) return;
 
-    if (lastRow < 1) return;
+    var maxR = Math.max(sheet.getLastRow(), 100);
+    var maxC = Math.max(sheet.getLastColumn(), 20);
 
-    // 1. Format Header (Row 1)
-    var headerRange = sheet.getRange(1, 1, 1, lastCol);
+    // Format all cells in grid (Center Horizontal & Middle Vertical & Wrap Text)
+    var fullRange = sheet.getRange(1, 1, maxR, maxC);
+    fullRange.setHorizontalAlignment("center");
+    fullRange.setVerticalAlignment("middle");
+    fullRange.setWrap(true);
+    fullRange.setFontFamily("Roboto");
+
+    // Header Styling (Row 1)
+    var headerRange = sheet.getRange(1, 1, 1, maxC);
     headerRange.setBackground("#1e3a8a"); // Navy Blue
     headerRange.setFontColor("#ffffff"); // White
     headerRange.setFontWeight("bold");
-    headerRange.setHorizontalAlignment("center");
-    headerRange.setVerticalAlignment("middle");
-    headerRange.setWrap(true);
-    headerRange.setFontFamily("Roboto");
     headerRange.setFontSize(11);
-    sheet.setRowHeight(1, 40);
+    sheet.setRowHeight(1, 45);
 
-    // 2. Format Data Rows (Row 2 to lastRow)
-    if (lastRow > 1) {
-      var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
-      dataRange.setHorizontalAlignment("center");
-      dataRange.setVerticalAlignment("middle");
-      dataRange.setWrap(true); // Line-by-line wrapping
-      dataRange.setFontFamily("Roboto");
+    // Data Rows Styling
+    if (maxR > 1) {
+      var dataRange = sheet.getRange(2, 1, maxR - 1, maxC);
       dataRange.setFontSize(10);
-      
-      // Set Timestamp Column Format
-      sheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
+      sheet.getRange(2, 1, maxR - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
 
-    // 3. Adjust Column Widths
+    // Set Column Widths
     sheet.setColumnWidth(1, 150); // Timestamp
     sheet.setColumnWidth(2, 220); // Visit Date & Time
     sheet.setColumnWidth(3, 160); // Name Age
