@@ -23,11 +23,22 @@ function doPost(e) {
 
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var rawData = e.postData.contents;
-    var data = JSON.parse(rawData);
+    var data = {};
 
-    // Formatted Gender Count String (e.g., "Male: 2, Female: 1 (Total: 3)")
-    var genderCountsStr = "Male: " + (data.maleCount || 0) + ", Female: " + (data.femaleCount || 0);
+    // Safely extract payload from JSON or Form Parameters
+    if (e && e.postData && e.postData.contents) {
+      try {
+        data = JSON.parse(e.postData.contents);
+      } catch (jsonErr) {
+        data = e.parameter || {};
+      }
+    } else if (e && e.parameter) {
+      data = e.parameter;
+    }
+
+    var mVal = parseInt(data.maleCount) || 0;
+    var fVal = parseInt(data.femaleCount) || 0;
+    var genderCountsStr = "Male: " + mVal + ", Female: " + fVal;
 
     // Append new row in exact column order
     sheet.appendRow([

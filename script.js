@@ -320,11 +320,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
+            // Send payload as stringified JSON with text/plain
             await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
+                    "Content-Type": "text/plain"
                 },
                 body: JSON.stringify(formData)
             });
