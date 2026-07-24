@@ -137,6 +137,21 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.action === 'format') {
+    try {
+      formatEntireSheet();
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "message": "Google Sheet Formatted & Center Aligned Successfully!"
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error",
+        "message": err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService.createTextOutput(JSON.stringify({
     "status": "online",
     "message": "Darshan Pass Apps Script API is active."
@@ -144,16 +159,14 @@ function doGet(e) {
 }
 
 function getTargetSpreadsheet() {
-  var ss = null;
-  try {
-    ss = SpreadsheetApp.getActiveSpreadsheet();
-  } catch (err) {}
-  if (ss) return ss;
-
   try {
     return SpreadsheetApp.openById("1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo");
-  } catch (err2) {
-    return null;
+  } catch (err) {
+    try {
+      return SpreadsheetApp.getActiveSpreadsheet();
+    } catch (err2) {
+      return null;
+    }
   }
 }
 
@@ -181,20 +194,12 @@ function formatEntireSheet() {
   var ss = getTargetSpreadsheet();
   if (!ss) return;
 
-  var activeSheet = ss.getActiveSheet();
   var sheets = ss.getSheets();
 
-  var targetSheets = [activeSheet];
-  sheets.forEach(function(s) {
-    if (s && targetSheets.indexOf(s) === -1 && !s.getName().includes("Dashboard")) {
-      targetSheets.push(s);
-    }
-  });
-
-  targetSheets.forEach(function(sheet) {
+  sheets.forEach(function(sheet) {
     if (!sheet || sheet.getName().includes("Dashboard")) return;
 
-    var maxR = Math.max(sheet.getLastRow(), 100);
+    var maxR = Math.max(sheet.getLastRow(), 200);
     var maxC = Math.max(sheet.getLastColumn(), 20);
 
     // Format all cells in grid (Center Horizontal & Middle Vertical & Wrap Text)
