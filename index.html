@@ -174,14 +174,15 @@
                             </div>
                         </div>
 
-                        <!-- Foreign City/Province Input -->
+                        <!-- Foreign City/Province Input (Mandatory for International) -->
                         <div class="input-group hidden" id="foreign-city-group">
                             <label for="foreignCity" class="input-label">
-                                <i class="fa-solid fa-building-columns"></i> City / State / Province
+                                <i class="fa-solid fa-building-columns"></i> City / State / Province <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <input type="text" id="foreignCity" name="foreignCity" placeholder="E.g. London, California, Kathmandu">
                             </div>
+                            <span class="error-msg" id="foreignCity-error">Please enter your city/state</span>
                         </div>
                     </div>
                 </div>
@@ -225,7 +226,7 @@
                             <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
                         </div>
 
-                        <!-- Mobile & Vehicle No -->
+                        <!-- Mobile & Vehicle No (Vehicle No is OPTIONAL, Mobile is MANDATORY) -->
                         <div class="grid-2">
                             <div class="input-group">
                                 <label for="mobile" class="input-label">
@@ -239,7 +240,7 @@
 
                             <div class="input-group">
                                 <label for="vehicleNo" class="input-label">
-                                    <i class="fa-solid fa-car"></i> गाडी नं0 (Vehicle No)
+                                    <i class="fa-solid fa-car"></i> गाडी नं0 (Vehicle No) <span style="font-weight: 400; color: #78350f; font-size: 0.8rem;">(ऐच्छिक / Optional)</span>
                                 </label>
                                 <div class="input-wrapper">
                                     <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP 42 AB 1234 (If any)">
@@ -293,14 +294,15 @@
                             <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें</span>
                         </div>
 
-                        <!-- Accompanying Members Details Area -->
+                        <!-- Accompanying Members Details Area (MANDATORY) -->
                         <div class="input-group">
                             <label for="accompanying" class="input-label">
-                                <i class="fa-solid fa-users-rectangle"></i> साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
+                                <i class="fa-solid fa-users-rectangle"></i> साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
-                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Amit Sharma (Age 30 Yrs)&#10;2. Supriya Sharma (Age 28 Yrs)"></textarea>
+                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Amit Sharma (Age 30 Yrs)&#10;2. Supriya Sharma (Age 28 Yrs)" required></textarea>
                             </div>
+                            <span class="error-msg" id="accompanying-error">कृपया साथ में आने वाले सभी सदस्यों के नाम एवं उम्र दर्ज करें</span>
                         </div>
                     </div>
                 </div>

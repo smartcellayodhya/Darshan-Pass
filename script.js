@@ -186,6 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
             stateSelect.required = true;
             districtSelect.required = true;
             countrySelect.required = false;
+            foreignCityInput.required = false;
 
             idLabelText.textContent = "आधार नं0 / पासपोर्ट नं0 (Aadhaar / Passport No)";
             idNumberInput.placeholder = "Enter 12-digit Aadhaar No. or Passport No.";
@@ -197,6 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
             stateSelect.required = false;
             districtSelect.required = false;
             countrySelect.required = true;
+            foreignCityInput.required = true;
 
             idLabelText.textContent = "पासपोर्ट नं0 (Passport Number Mandatory for International Devotees)";
             idNumberInput.placeholder = "Enter Passport Number (E.g. Z1234567)";
@@ -241,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nameAgeInput.addEventListener("input", () => markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2));
     idNumberInput.addEventListener("input", () => markGroup(idNumberInput, idNumberInput.value.trim().length >= 4));
     mobileInput.addEventListener("input", () => markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())));
+    accompanyingInput.addEventListener("input", () => markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2));
 
     // -------------------------------------------------------------
     // FORM SUBMIT HANDLER
@@ -250,11 +253,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const isIndia = nationalitySelect.value === "India";
 
+        // Mandatory Validations (EXCEPT vehicleNo which is OPTIONAL)
         const isDateValid = markGroup(visitDateInput, visitDateInput.value !== "");
         const isSlotValid = markGroup(visitSlotSelect, visitSlotSelect.value !== "");
         const isNameAgeValid = markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2);
         const isIdValid = markGroup(idNumberInput, idNumberInput.value.trim().length >= 4);
         const isMobileValid = markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim()));
+        const isAccompanyingValid = markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2);
 
         let isLocationValid = true;
         if (isIndia) {
@@ -263,7 +268,8 @@ document.addEventListener("DOMContentLoaded", () => {
             isLocationValid = isStateValid && isDistrictValid;
         } else {
             const isCountryValid = markGroup(countrySelect, countrySelect.value !== "");
-            isLocationValid = isCountryValid;
+            const isForeignCityValid = markGroup(foreignCityInput, foreignCityInput.value.trim().length >= 2);
+            isLocationValid = isCountryValid && isForeignCityValid;
         }
 
         const mVal = parseInt(maleCountInput.value) || 0;
@@ -277,8 +283,9 @@ document.addEventListener("DOMContentLoaded", () => {
             isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
         }
 
-        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
-            const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select");
+        // Check if ANY mandatory field failed validation
+        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
+            const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
             if (firstInvalid) firstInvalid.focus();
             return;
         }
@@ -314,13 +321,12 @@ document.addEventListener("DOMContentLoaded", () => {
             maleCount: mVal,
             femaleCount: fVal,
             mobile: mobileInput.value.trim(),
-            vehicleNo: vehicleNoInput.value.trim(),
+            vehicleNo: vehicleNoInput.value.trim(), // Optional field
             accompanying: accompanyingInput.value.trim(),
             referredBy: finalReferredBy
         };
 
         try {
-            // Send payload as stringified JSON with text/plain
             await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
