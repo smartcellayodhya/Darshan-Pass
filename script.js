@@ -1,5 +1,5 @@
 /**
- * DARSHAN PASS PUBLIC FORM - UNSTOPPABLE FRONTEND CONNECTOR
+ * DARSHAN PASS PUBLIC FORM - FRONTEND CONNECTOR
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  */
@@ -63,7 +63,7 @@ const worldCountries = [
     "Hungary", "Romania", "Israel", "Jordan", "Turkey", "Ukraine", "Kazakhstan", "Other"
 ];
 
-// SAFE ELEMENT GETTER HELPER (Prevents JS crashes if UI IDs are modified in future)
+// SAFE ELEMENT GETTER HELPER
 function getVal(id) {
     const el = document.getElementById(id);
     return el ? el.value.trim() : "";
@@ -71,27 +71,7 @@ function getVal(id) {
 
 document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
-    // LIVE CLOCK TICKER
-    // -------------------------------------------------------------
-    const liveClockEl = document.getElementById("live-clock");
-    function updateLiveClock() {
-        if (!liveClockEl) return;
-        const now = new Date();
-        const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        const month = monthNames[now.getMonth()];
-        const day = String(now.getDate()).padStart(2, '0');
-        const year = now.getFullYear();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        
-        liveClockEl.textContent = `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
-    }
-    updateLiveClock();
-    setInterval(updateLiveClock, 1000);
-
-    // -------------------------------------------------------------
-    // DOM ELEMENTS (SAFE INITIALIZATION)
+    // DOM ELEMENTS
     // -------------------------------------------------------------
     const form = document.getElementById("darshan-form");
     const visitDateInput = document.getElementById("visitDate");
@@ -108,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const idNumberInput = document.getElementById("idNumber");
 
     const nameAgeInput = document.getElementById("nameAge");
-    const emailInput = document.getElementById("email");
     const maleCountInput = document.getElementById("maleCount");
     const femaleCountInput = document.getElementById("femaleCount");
     const mobileInput = document.getElementById("mobile");
@@ -230,7 +209,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // VALIDATION HELPERS
     // -------------------------------------------------------------
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const mobileRegex = /^[0-9+\s-]{8,15}$/;
 
     function markGroup(input, isValid) {
@@ -249,13 +227,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // UNSTOPPABLE TRANSMISSION PIPELINE (FETCH + BEACON FALLBACK)
+    // UNSTOPPABLE TRANSMISSION PIPELINE
     // -------------------------------------------------------------
     async function sendDataUnstoppable(formData) {
         const payloadStr = JSON.stringify(formData);
 
         try {
-            // Method 1: Fetch API
             await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -265,7 +242,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (fetchErr) {
             console.warn("Fetch failed, initiating Navigator Beacon fallback...", fetchErr);
             try {
-                // Method 2: Navigator SendBeacon Fallback
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
                 }
@@ -289,7 +265,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
             const isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
             const isNameAgeValid = nameAgeInput ? markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2) : true;
-            const isEmailValid = emailInput ? markGroup(emailInput, emailRegex.test(emailInput.value.trim())) : true;
             const isIdValid = idNumberInput ? markGroup(idNumberInput, idNumberInput.value.trim().length >= 4) : true;
             const isMobileValid = mobileInput ? markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())) : true;
             const isAccompanyingValid = accompanyingInput ? markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2) : true;
@@ -315,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
             }
 
-            if (!isDateValid || !isSlotValid || !isNameAgeValid || !isEmailValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
+            if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
                 const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
                 if (firstInvalid) firstInvalid.focus();
                 return;
@@ -344,13 +319,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalReferredBy = "Other: " + getVal("otherRefName");
             }
 
-            // Construct Unstoppable Payload
+            // Construct Unstoppable 11-Column Payload
             const formData = {
                 visitDateTime: formattedVisitDateTime,
                 nameAge: getVal("nameAge"),
-                email: getVal("email"),
                 state: finalState,
-                district: finalDistrict,
+                district: getVal("districtSelect"),
                 idNumber: getVal("idNumber"),
                 maleCount: mVal,
                 femaleCount: fVal,

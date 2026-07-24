@@ -177,16 +177,16 @@
                             <span class="error-msg" id="nameAge-error">कृपया अपना नाम एवं उम्र दर्ज करें</span>
                         </div>
 
-                        <!-- Email Address & Mobile Number Grid -->
+                        <!-- Aadhaar / Passport No & Mobile Number Grid -->
                         <div class="grid-2">
                             <div class="input-group">
-                                <label for="email" class="input-label">
-                                    Email Address / ईमेल ID <span class="required">*</span>
+                                <label for="idNumber" class="input-label" id="idNumber-label">
+                                    <span id="id-label-text">Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0</span> <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper">
-                                    <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                                    <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." required>
                                 </div>
-                                <span class="error-msg" id="email-error">कृपया सही ईमेल ID दर्ज करें</span>
+                                <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
                             </div>
 
                             <div class="input-group">
@@ -198,17 +198,6 @@
                                 </div>
                                 <span class="error-msg" id="mobile-error">Please enter a valid mobile number</span>
                             </div>
-                        </div>
-
-                        <!-- Aadhaar / Passport No -->
-                        <div class="input-group">
-                            <label for="idNumber" class="input-label" id="idNumber-label">
-                                <span id="id-label-text">Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0</span> <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." required>
-                            </div>
-                            <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
                         </div>
 
                         <!-- Vehicle No (Optional) -->
