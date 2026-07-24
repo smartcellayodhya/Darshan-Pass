@@ -25,7 +25,7 @@ function doPost(e) {
 
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("Form Responses") || ss.getSheets()[0];
+    var sheet = ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0];
     var data = {};
 
     // 1. Extract payload from JSON or Form Parameters
@@ -76,8 +76,10 @@ function doPost(e) {
 
     // 4. AUTOMATIC CENTER ALIGNMENT & CLEAN FORMATTING FOR NEW ROW
     var lastRow = sheet.getLastRow();
+    var lastCol = Math.max(sheet.getLastColumn(), 13);
+    
     if (lastRow > 1) {
-      var newRowRange = sheet.getRange(lastRow, 1, 1, 13);
+      var newRowRange = sheet.getRange(lastRow, 1, 1, lastCol);
       
       // Vertical Middle & Horizontal Center Alignment
       newRowRange.setHorizontalAlignment("center");
@@ -89,6 +91,8 @@ function doPost(e) {
       // Format Timestamp Column
       sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
+
+    SpreadsheetApp.flush(); // Force immediate repaint on Google Sheets UI
 
     return ContentService.createTextOutput(JSON.stringify({
       "result": "success",
@@ -114,65 +118,88 @@ function doGet(e) {
 }
 
 /**
+ * AUTOMATIC CUSTOM MENU IN GOOGLE SHEETS
+ * Adds a "⚙️ VIP Tools" menu to Google Sheet top bar when opened.
+ */
+function onOpen() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('⚙️ VIP Tools')
+      .addItem('🎯 Auto-Align & Clean Sheet (डेटा सेंटर करें)', 'formatEntireSheet')
+      .addItem('📊 Generate VIP Dashboard (डैशबोर्ड बनाएं)', 'setupVipDashboard')
+      .addToUi();
+  } catch (err) {
+    console.warn("onOpen UI creation warning:", err);
+  }
+}
+
+/**
  * UTILITY 1: FORMAT ALL EXISTING ROWS IN GOOGLE SHEET
- * Run this function once from Apps Script editor to clean & center-align all past data.
+ * Run this function from Apps Script or from "⚙️ VIP Tools" menu to clean & center-align all sheets.
  */
 function formatEntireSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheets()[0];
-  var lastRow = sheet.getLastRow();
-  var lastCol = 13;
+  var sheets = ss.getSheets();
 
-  if (lastRow < 1) return;
+  sheets.forEach(function(sheet) {
+    if (sheet.getName().includes("Dashboard")) return; // Skip dashboard tab
 
-  // Format Header (Row 1)
-  var headerRange = sheet.getRange(1, 1, 1, lastCol);
-  headerRange.setBackground("#1e3a8a"); // Navy Blue
-  headerRange.setFontColor("#ffffff"); // White
-  headerRange.setFontWeight("bold");
-  headerRange.setHorizontalAlignment("center");
-  headerRange.setVerticalAlignment("middle");
-  headerRange.setWrap(true);
-  headerRange.setFontFamily("Roboto");
-  headerRange.setFontSize(11);
-  sheet.setRowHeight(1, 40);
+    var lastRow = sheet.getLastRow();
+    var lastCol = Math.max(sheet.getLastColumn(), 13);
 
-  // Format Data Rows (Row 2 to lastRow)
-  if (lastRow > 1) {
-    var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
-    dataRange.setHorizontalAlignment("center");
-    dataRange.setVerticalAlignment("middle");
-    dataRange.setWrap(true); // Line-by-line wrapping
-    dataRange.setFontFamily("Roboto");
-    dataRange.setFontSize(10);
-    
-    // Set Timestamp Column Format
-    sheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
-  }
+    if (lastRow < 1) return;
 
-  // Adjust Column Widths
-  sheet.setColumnWidth(1, 150); // Timestamp
-  sheet.setColumnWidth(2, 180); // Visit Date
-  sheet.setColumnWidth(3, 160); // Name Age
-  sheet.setColumnWidth(4, 130); // State
-  sheet.setColumnWidth(5, 130); // District
-  sheet.setColumnWidth(6, 160); // ID
-  sheet.setColumnWidth(7, 180); // Gender Count
-  sheet.setColumnWidth(8, 130); // Mobile
-  sheet.setColumnWidth(9, 130); // Vehicle
-  sheet.setColumnWidth(10, 220); // Accompanying
-  sheet.setColumnWidth(11, 160); // Referred By
-  sheet.setColumnWidth(12, 150); // Submitter Name
-  sheet.setColumnWidth(13, 200); // Submitter Email
+    // 1. Format Header (Row 1)
+    var headerRange = sheet.getRange(1, 1, 1, lastCol);
+    headerRange.setBackground("#1e3a8a"); // Navy Blue
+    headerRange.setFontColor("#ffffff"); // White
+    headerRange.setFontWeight("bold");
+    headerRange.setHorizontalAlignment("center");
+    headerRange.setVerticalAlignment("middle");
+    headerRange.setWrap(true);
+    headerRange.setFontFamily("Roboto");
+    headerRange.setFontSize(11);
+    sheet.setRowHeight(1, 40);
+
+    // 2. Format Data Rows (Row 2 to lastRow)
+    if (lastRow > 1) {
+      var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
+      dataRange.setHorizontalAlignment("center");
+      dataRange.setVerticalAlignment("middle");
+      dataRange.setWrap(true); // Line-by-line wrapping
+      dataRange.setFontFamily("Roboto");
+      dataRange.setFontSize(10);
+      
+      // Set Timestamp Column Format
+      sheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
+    }
+
+    // 3. Adjust Column Widths
+    sheet.setColumnWidth(1, 150); // Timestamp
+    sheet.setColumnWidth(2, 180); // Visit Date
+    sheet.setColumnWidth(3, 160); // Name Age
+    sheet.setColumnWidth(4, 130); // State
+    sheet.setColumnWidth(5, 130); // District
+    sheet.setColumnWidth(6, 160); // ID
+    sheet.setColumnWidth(7, 180); // Gender Count
+    sheet.setColumnWidth(8, 130); // Mobile
+    sheet.setColumnWidth(9, 130); // Vehicle
+    sheet.setColumnWidth(10, 240); // Accompanying
+    sheet.setColumnWidth(11, 160); // Referred By
+    sheet.setColumnWidth(12, 150); // Submitter Name
+    sheet.setColumnWidth(13, 200); // Submitter Email
+  });
+
+  SpreadsheetApp.flush(); // Instantly apply and repaint formatting on Google Sheets UI
 }
 
 /**
  * UTILITY 2: CREATE DASHBOARD TAB (📊 VIP Dashboard)
- * Run this function once from Apps Script editor to generate automatic Analytics Dashboard.
+ * Run this function from Apps Script or from "⚙️ VIP Tools" menu.
  */
 function setupVipDashboard() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheets()[0];
+  var dataSheet = ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0];
   var dashSheet = ss.getSheetByName("📊 VIP Dashboard");
 
   if (!dashSheet) {
@@ -222,4 +249,6 @@ function setupVipDashboard() {
     .setOption('height', 400);
     
   dashSheet.insertChart(chartBuilder.build());
+
+  SpreadsheetApp.flush();
 }
