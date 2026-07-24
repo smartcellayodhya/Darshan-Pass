@@ -236,8 +236,8 @@ function setupVipDashboard() {
   dashSheet.getRange("D5").setValue("रेफरेंस अधिकारी (Referred By)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
   dashSheet.getRange("E5").setValue("कुल आवेदन (Passes)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
-  dashSheet.getRange("D6").setFormula("=UNIQUE('" + dataSheet.getName() + "'!K2:K)");
-  dashSheet.getRange("E6:E25").setFormula("=IF(D6=\"\", \"\", COUNTIF('" + dataSheet.getName() + "'!K$2:K, D6))");
+  dashSheet.getRange("D6").setFormula("=IFERROR(UNIQUE(FILTER('" + dataSheet.getName() + "'!K2:K, '" + dataSheet.getName() + "'!K2:K <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("E6:E25").setFormula("=IF(OR(D6=\"\", D6=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF('" + dataSheet.getName() + "'!K$2:K, D6))");
 
   // Add Chart for Referred By Analytics
   var chartBuilder = dashSheet.newChart()
