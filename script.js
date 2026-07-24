@@ -69,6 +69,45 @@ function getVal(id) {
     return el ? el.value.trim() : "";
 }
 
+// -------------------------------------------------------------
+// GLOBAL GOOGLE GIS CREDENTIAL CALLBACK
+// -------------------------------------------------------------
+window.handleCredentialResponse = function(response) {
+    if (response && response.credential) {
+        try {
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const payload = JSON.parse(jsonPayload);
+            const name = payload.name || payload.given_name || "Google User";
+            const email = payload.email;
+
+            if (email) {
+                localStorage.setItem("darshan_submitter_name", name);
+                localStorage.setItem("darshan_submitter_email", email);
+                
+                const lockOverlay = document.getElementById("google-auth-lock");
+                if (lockOverlay) lockOverlay.classList.add("hidden");
+
+                const displayUserName = document.getElementById("display-user-name");
+                const displayUserEmail = document.getElementById("display-user-email");
+                const googleSignedIn = document.getElementById("google-signed-in");
+                const googleLoginPrompt = document.getElementById("google-login-prompt");
+
+                if (displayUserName) displayUserName.textContent = name;
+                if (displayUserEmail) displayUserEmail.textContent = email;
+                if (googleSignedIn) googleSignedIn.classList.remove("hidden");
+                if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+            }
+        } catch (e) {
+            console.error("JWT parse error:", e);
+        }
+    }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // DOM ELEMENTS
@@ -104,7 +143,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalCloseBtn = document.getElementById("modal-close-btn");
     const submitAnotherBtn = document.getElementById("submit-another-btn");
 
-    // GOOGLE ACCOUNT ELEMENTS
+    // GOOGLE ACCOUNT & LOCK OVERLAY ELEMENTS
+    const googleAuthLock = document.getElementById("google-auth-lock");
+    const lockNameInput = document.getElementById("lockNameInput");
+    const lockEmailInput = document.getElementById("lockEmailInput");
+    const lockLoginBtn = document.getElementById("lock-login-btn");
+
     const googleSignedIn = document.getElementById("google-signed-in");
     const googleLoginPrompt = document.getElementById("google-login-prompt");
     const displayUserName = document.getElementById("display-user-name");
@@ -113,6 +157,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const submitterEmailInput = document.getElementById("submitterEmailInput");
     const saveAccountBtn = document.getElementById("save-account-btn");
     const changeAccountBtn = document.getElementById("change-account-btn");
+
+    function checkAuthLock() {
+        const savedName = localStorage.getItem("darshan_submitter_name");
+        const savedEmail = localStorage.getItem("darshan_submitter_email");
+
+        if (savedName && savedEmail) {
+            if (googleAuthLock) googleAuthLock.classList.add("hidden");
+        } else {
+            if (googleAuthLock) googleAuthLock.classList.remove("hidden");
+        }
+    }
+
+    if (lockLoginBtn) {
+        lockLoginBtn.addEventListener("click", () => {
+            const nameVal = getVal("lockNameInput");
+            const emailVal = getVal("lockEmailInput");
+
+            const isNameValid = nameVal && nameVal.trim().length >= 2;
+            const isEmailValid = emailVal && emailVal.includes("@") && emailVal.includes(".");
+
+            markGroup(lockNameInput, isNameValid);
+            markGroup(lockEmailInput, isEmailValid);
+
+            if (isNameValid && isEmailValid) {
+                localStorage.setItem("darshan_submitter_name", nameVal.trim());
+                localStorage.setItem("darshan_submitter_email", emailVal.trim());
+
+                if (googleAuthLock) googleAuthLock.classList.add("hidden");
+                updateGoogleAccountUI();
+            }
+        });
+    }
 
     function updateGoogleAccountUI() {
         const savedName = localStorage.getItem("darshan_submitter_name");
@@ -123,9 +199,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (displayUserEmail) displayUserEmail.textContent = savedEmail;
             if (googleSignedIn) googleSignedIn.classList.remove("hidden");
             if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+            if (googleAuthLock) googleAuthLock.classList.add("hidden");
         } else {
             if (googleSignedIn) googleSignedIn.classList.add("hidden");
             if (googleLoginPrompt) googleLoginPrompt.classList.remove("hidden");
+            if (googleAuthLock) googleAuthLock.classList.remove("hidden");
         }
     }
 
@@ -152,12 +230,14 @@ document.addEventListener("DOMContentLoaded", () => {
         changeAccountBtn.addEventListener("click", () => {
             if (googleSignedIn) googleSignedIn.classList.add("hidden");
             if (googleLoginPrompt) googleLoginPrompt.classList.remove("hidden");
-            if (submitterNameInput) submitterNameInput.value = localStorage.getItem("darshan_submitter_name") || "";
-            if (submitterEmailInput) submitterEmailInput.value = localStorage.getItem("darshan_submitter_email") || "";
-            if (submitterNameInput) submitterNameInput.focus();
+            if (googleAuthLock) googleAuthLock.classList.remove("hidden");
+            if (lockNameInput) lockNameInput.value = localStorage.getItem("darshan_submitter_name") || "";
+            if (lockEmailInput) lockEmailInput.value = localStorage.getItem("darshan_submitter_email") || "";
+            if (lockNameInput) lockNameInput.focus();
         });
     }
 
+    checkAuthLock();
     updateGoogleAccountUI();
 
     if (visitDateInput) {

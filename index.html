@@ -17,10 +17,68 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="gov-minimal-theme">
+    <!-- MANDATORY GOOGLE SIGN-IN LOCK OVERLAY -->
+    <div id="google-auth-lock" class="auth-modal-overlay">
+        <div class="auth-modal-card">
+            <div class="auth-header-badge">
+                <img src="assets/up_police_logo.png" alt="UP Police Logo" class="auth-police-logo">
+            </div>
+            <h2 class="auth-title">श्रीरामजन्मभूमि दर्शन पास पोर्टल</h2>
+            <div class="auth-subtitle"><i class="fa-brands fa-google" style="color: #ea4335;"></i> गूगल खाते से साइन इन करें</div>
+            <p class="auth-desc">
+                फॉर्म खोलने और दर्शन पास आवेदन के लिए अपने गूगल अकाउंट (Google Account) से साइन इन करना अनिवार्य है।
+            </p>
+
+            <div class="google-auth-box">
+                <!-- Official Google Sign-In Button -->
+                <div id="g_id_onload"
+                     data-client_id="1000000000000-example.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     data-width="280">
+                </div>
+
+                <!-- Google Account Verification -->
+                <div class="google-manual-entry">
+                    <div class="auth-divider"><span>गूगल अकाउंट जानकारी दर्ज करें</span></div>
+                    <div class="input-group" style="text-align: left;">
+                        <label for="lockNameInput" class="input-label">Google Account Name / गूगल नाम <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="text" id="lockNameInput" placeholder="उदा: Rahul Yadav">
+                        </div>
+                    </div>
+                    <div class="input-group" style="text-align: left; margin-top: 0.6rem;">
+                        <label for="lockEmailInput" class="input-label">Google Email ID / गूगल ईमेल <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="email" id="lockEmailInput" placeholder="उदा: rahul@gmail.com">
+                        </div>
+                    </div>
+                    <button type="button" id="lock-login-btn" class="gov-btn-primary" style="margin-top: 1rem;">
+                        <i class="fa-brands fa-google"></i> साइन इन करें व फॉर्म खोलें (Sign In & Continue)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Clean Solid Navy Blue Header -->
     <header class="gov-header">
         <div class="gov-header-container">
