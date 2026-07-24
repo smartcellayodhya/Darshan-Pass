@@ -57,7 +57,9 @@ function doPost(e) {
     var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
     var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
 
-    // 3. Append row in exact 13 column order
+    var totalDevotees = mVal + fVal;
+
+    // 3. Append row in exact 16 column order (including numeric totals for Looker Studio SUM)
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp
       visitDateTime,                                 // 2. दर्शन हेतु आने का दिनाँक व समय
@@ -71,7 +73,10 @@ function doPost(e) {
       accompanying,                                  // 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
       referredBy,                                    // 11. Referred by
       submitterName,                                 // 12. आवेदनकर्ता गूगल नाम (Submitter Name)
-      submitterEmail                                 // 13. आवेदनकर्ता ईमेल ID (Submitter Email)
+      submitterEmail,                                // 13. आवेदनकर्ता ईमेल ID (Submitter Email)
+      totalDevotees,                                 // 14. कुल दर्शनार्थी संख्या (Total Devotees Numeric)
+      mVal,                                          // 15. पुरुष संख्या (Male Numeric)
+      fVal                                           // 16. महिला संख्या (Female Numeric)
     ]);
 
     // 4. AUTOMATIC CENTER ALIGNMENT & CLEAN FORMATTING FOR NEW ROW
