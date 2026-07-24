@@ -9,7 +9,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,25 +18,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="gov-minimal-theme">
-    <!-- Solid Clean Navy Blue Header -->
+    <!-- Clean Solid Navy Blue Header -->
     <header class="gov-header">
         <div class="gov-header-container">
-            <!-- Left Side: Only UP Police Logo -->
-            <div class="gov-header-left">
-                <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Logo" class="gov-police-logo">
-            </div>
-
-            <!-- Center Text: EXACTLY "श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन" -->
-            <div class="gov-header-center">
+            <div class="gov-header-brand">
+                <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
                 <h1 class="gov-header-title">श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन</h1>
-            </div>
-
-            <!-- Right Side: Digital Clock Box -->
-            <div class="gov-header-right">
-                <div class="gov-clock-box">
-                    <span class="clock-icon"><i class="fa-regular fa-clock"></i></span>
-                    <span id="live-clock" class="gov-clock-text">24 JUL 2026 20:05:00</span>
-                </div>
             </div>
         </div>
     </header>
@@ -318,7 +305,7 @@
                     </div>
                 </div>
 
-                <!-- Submit Button: Clean Blue Government Primary Button -->
+                <!-- Submit Button -->
                 <button type="submit" id="submit-btn" class="gov-btn-primary">
                     <span class="btn-text">सबमिट करें (Submit)</span>
                     <span class="btn-loader hidden">
