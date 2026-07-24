@@ -67,7 +67,7 @@ body.gov-minimal-theme {
     gap: 1.5rem;
 }
 
-/* Circular White Logo Badge */
+/* Circular White Logo Badge - Strict Overflow Hidden */
 .logo-circle-badge {
     width: 76px;
     height: 76px;
@@ -78,7 +78,8 @@ body.gov-minimal-theme {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5px;
+    padding: 4px;
+    overflow: hidden; /* GUARANTEES LOGO CAN NEVER SPILL OUTSIDE CIRCLE */
     flex-shrink: 0;
 }
 
@@ -86,6 +87,7 @@ body.gov-minimal-theme {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    border-radius: 50%;
 }
 
 /* Center Title Box */
