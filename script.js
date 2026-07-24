@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateLiveClock() {
         if (!liveClockEl) return;
         const now = new Date();
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         const month = monthNames[now.getMonth()];
         const day = String(now.getDate()).padStart(2, '0');
         const year = now.getFullYear();
@@ -102,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const idNumberInput = document.getElementById("idNumber");
 
     const nameAgeInput = document.getElementById("nameAge");
+    const emailInput = document.getElementById("email");
     const maleCountInput = document.getElementById("maleCount");
     const femaleCountInput = document.getElementById("femaleCount");
     const mobileInput = document.getElementById("mobile");
@@ -224,6 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // VALIDATION HELPERS
     // -------------------------------------------------------------
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const mobileRegex = /^[0-9+\s-]{8,15}$/;
 
     function markGroup(input, isValid) {
@@ -241,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     nameAgeInput.addEventListener("input", () => markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2));
+    emailInput.addEventListener("input", () => markGroup(emailInput, emailRegex.test(emailInput.value.trim())));
     idNumberInput.addEventListener("input", () => markGroup(idNumberInput, idNumberInput.value.trim().length >= 4));
     mobileInput.addEventListener("input", () => markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())));
     accompanyingInput.addEventListener("input", () => markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2));
@@ -257,6 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isDateValid = markGroup(visitDateInput, visitDateInput.value !== "");
         const isSlotValid = markGroup(visitSlotSelect, visitSlotSelect.value !== "");
         const isNameAgeValid = markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2);
+        const isEmailValid = markGroup(emailInput, emailRegex.test(emailInput.value.trim()));
         const isIdValid = markGroup(idNumberInput, idNumberInput.value.trim().length >= 4);
         const isMobileValid = markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim()));
         const isAccompanyingValid = markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2);
@@ -284,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Check if ANY mandatory field failed validation
-        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
+        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isEmailValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
             const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
             if (firstInvalid) firstInvalid.focus();
             return;
@@ -315,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = {
             visitDateTime: formattedVisitDateTime,
             nameAge: nameAgeInput.value.trim(),
+            email: emailInput.value.trim(),
             state: finalState,
             district: finalDistrict,
             idNumber: idNumberInput.value.trim(),

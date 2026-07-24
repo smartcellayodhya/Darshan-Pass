@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shri Ram Janmabhoomi Teerth Kshetra | Counter Management System</title>
-    <meta name="description" content="Official Ultra-Premium Darshan Pass Registration Portal - Shri Ram Janmabhoomi Teerth Kshetra Ayodhya.">
+    <title>दर्शन पास सुरक्षा पंजीकरण | Darshan Pass Security Registration</title>
+    <meta name="description" content="Shri Ram Janmabhoomi Teerth Kshetra & UP Police Official Secure Darshan Pass Registration Portal.">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,78 +17,74 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="ultra-spiritual-theme">
-    <!-- Header Banner -->
-    <header class="spiritual-header-banner">
-        <div class="banner-main-container">
-            <div class="banner-logo left-logo">
-                <img src="assets/shri_ram_sun_emblem.png" alt="Shri Ram Janmabhoomi Teerth Kshetra Sun Logo" class="sun-emblem-img">
+<body class="police-spiritual-theme">
+    <!-- Hybrid Spiritual & Police Header Banner -->
+    <header class="police-spiritual-header">
+        <div class="header-container">
+            <!-- Left Side: UP Police Logo + Shri Ram Sun Emblem -->
+            <div class="header-logos-left">
+                <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Logo" class="police-logo-img">
+                <div class="logo-separator"></div>
+                <img src="assets/shri_ram_sun_emblem.png" alt="Shri Ram Janmabhoomi Teerth Kshetra Logo" class="sun-emblem-img">
             </div>
 
-            <div class="banner-titles">
-                <h1 class="trust-title-en">Shri Ram Janmabhoomi Teerth Kshetra</h1>
-                <h2 class="sloka-title-hi">रामो विग्रहवान् धर्मः</h2>
-                <h3 class="system-subtitle">Counter Management System</h3>
+            <!-- Center Titles -->
+            <div class="header-title-center">
+                <h1 class="main-title-hi">दर्शन पास सुरक्षा पंजीकरण</h1>
+                <h2 class="main-title-en">Darshan Pass Security Registration</h2>
+                <span class="sub-agency-tag"><i class="fa-solid fa-shield-halved"></i> Shri Ram Janmabhoomi Teerth Kshetra & UP Police Security Portal</span>
             </div>
 
-            <div class="banner-logo right-logo">
-                <img src="assets/shri_ram_bow_illustration.png" alt="Bhagwan Shri Ram Illustration" class="ram-illustration-img">
-            </div>
-        </div>
-
-        <!-- Sub-Header Info Bar -->
-        <div class="banner-status-bar">
-            <div class="status-item live-time">
-                <i class="fa-solid fa-house"></i>
-                <span id="live-clock">Jul 24, 2026 15:14:17</span>
+            <!-- Right Side: Digital Live Clock Display -->
+            <div class="header-clock-right">
+                <div class="digital-clock-card">
+                    <div class="clock-label"><i class="fa-solid fa-house"></i> OFFICIAL TIMING</div>
+                    <div id="live-clock" class="digital-clock-time">JUL 24, 2026 19:30:45</div>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Application Container -->
-    <main class="spiritual-app-container">
-        <!-- Configuration Notice -->
+    <main class="app-main-container">
+        <!-- Configuration Alert Notice -->
         <div id="config-alert" class="config-banner hidden">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span><strong>Setup Required:</strong> Please replace <code>GOOGLE_APPS_SCRIPT_URL</code> in <code>script.js</code> with your deployed Apps Script URL.</span>
         </div>
 
-        <!-- Multi-Layered Ivory Marble Form Card -->
-        <section class="form-card ivory-marble-card">
-            <!-- Ornate Header & Gold Halo OM -->
-            <div class="card-ornate-header">
-                <div class="om-halo-wrapper">
-                    <span class="om-symbol-gold">ॐ</span>
+        <!-- Elevated Ivory Form Card with Gold & Navy Accent Border -->
+        <section class="form-card police-gold-card">
+            <!-- Top Center Gilded OM Symbol -->
+            <div class="card-ornate-top">
+                <div class="gilded-om-halo">
+                    <span class="gilded-om">ॐ</span>
                 </div>
-                <div class="badge spiritual-badge">
-                    <i class="fa-solid fa-om"></i> ऑनलाइन दर्शन पास पंजीकरण
+                <div class="security-badge">
+                    <i class="fa-solid fa-shield-cat"></i> आधिकारिक सुरक्षा पास काउंटर
                 </div>
-                <h2 class="form-title spiritual-title">दर्शन हेतु ऑनलाइन पास आवेदन पत्र</h2>
-                <p class="form-subtitle">कृपया अपनी व साथी श्रद्धालुओं की सत्य व पूर्ण जानकारी अंकित करें।</p>
-                <div class="gilded-header-divider"></div>
+                <h2 class="form-card-title">श्री राम जन्मभूमि दर्शन पास आवेदन पत्र</h2>
+                <p class="form-card-subtitle">कृपया सुरक्षा जांच हेतु अपनी सत्य एवं पूर्ण जानकारी अंकित करें।</p>
+                <div class="gold-navy-line"></div>
             </div>
 
             <form id="darshan-form" novalidate>
-                <!-- ========================================================= -->
-                <!-- SUB-SECTION 1: VISIT DETAILS (दर्शन विवरण) -->
-                <!-- ========================================================= -->
-                <div class="form-subsection">
-                    <div class="subsection-header">
-                        <div class="terracotta-icon-wrap">
-                            <i class="fa-solid fa-calendar-days"></i>
-                        </div>
-                        <div class="subsection-title-wrap">
-                            <h3 class="subsection-title">1. VISIT DETAILS (दर्शन तिथि व स्थान विवरण)</h3>
-                            <span class="subsection-subtitle">दर्शन की तिथि, समय स्लॉट एवं निवास स्थान का चयन करें</span>
+                <!-- SUB-SECTION 1: VISIT DETAILS -->
+                <div class="form-section-block">
+                    <div class="section-badge-header">
+                        <i class="fa-solid fa-calendar-check section-badge-icon"></i>
+                        <div class="section-title-box">
+                            <h3>1. VISIT DETAILS (दर्शन तिथि व स्थान विवरण)</h3>
+                            <span>दर्शन हेतु आने की दिनांक, समय स्लॉट एवं निवास स्थान</span>
                         </div>
                     </div>
 
-                    <div class="subsection-body">
+                    <div class="section-body">
                         <!-- Date & Time Slot Grid -->
                         <div class="grid-2">
                             <div class="input-group">
                                 <label for="visitDate" class="input-label">
-                                    <i class="fa-regular fa-calendar-check"></i> दर्शन हेतु आने की तिथि (Visit Date) <span class="required">*</span>
+                                    <i class="fa-regular fa-calendar-days"></i> दर्शन तिथि (Visit Date) <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper">
                                     <input type="date" id="visitDate" name="visitDate" required>
@@ -117,7 +113,7 @@
                             </div>
                         </div>
 
-                        <!-- Country Selection -->
+                        <!-- Devotee Country -->
                         <div class="input-group">
                             <label for="nationality" class="input-label">
                                 <i class="fa-solid fa-earth-americas"></i> Devotee Country / श्रद्धालु का देश <span class="required">*</span>
@@ -145,7 +141,7 @@
                             <span class="error-msg" id="country-error">Please select your country</span>
                         </div>
 
-                        <!-- State & District Dropdowns (For India) -->
+                        <!-- State & District (For India) -->
                         <div class="grid-2" id="india-location-grid">
                             <div class="input-group">
                                 <label for="stateSelect" class="input-label">
@@ -174,7 +170,7 @@
                             </div>
                         </div>
 
-                        <!-- Foreign City/Province Input (Mandatory for International) -->
+                        <!-- Foreign City/Province Input -->
                         <div class="input-group hidden" id="foreign-city-group">
                             <label for="foreignCity" class="input-label">
                                 <i class="fa-solid fa-building-columns"></i> City / State / Province <span class="required">*</span>
@@ -187,25 +183,21 @@
                     </div>
                 </div>
 
-                <!-- ========================================================= -->
-                <!-- SUB-SECTION 2: LEAD DEVOTEE INFO (मुख्य दर्शनार्थी विवरण) -->
-                <!-- ========================================================= -->
-                <div class="form-subsection">
-                    <div class="subsection-header">
-                        <div class="terracotta-icon-wrap">
-                            <i class="fa-solid fa-user-shield"></i>
-                        </div>
-                        <div class="subsection-title-wrap">
-                            <h3 class="subsection-title">2. LEAD DEVOTEE INFO (मुख्य दर्शनार्थी विवरण)</h3>
-                            <span class="subsection-subtitle">मुख्य दर्शनार्थी की व्यक्तिगत व पहचान संख्या विवरण</span>
+                <!-- SUB-SECTION 2: PRIMARY DEVOTEE INFO -->
+                <div class="form-section-block">
+                    <div class="section-badge-header">
+                        <i class="fa-solid fa-user-shield section-badge-icon"></i>
+                        <div class="section-title-box">
+                            <h3>2. PRIMARY DEVOTEE INFO (मुख्य दर्शनार्थी विवरण)</h3>
+                            <span>मुख्य दर्शनार्थी की व्यक्तिगत एवं ईमेल/पहचान संख्या जानकारी</span>
                         </div>
                     </div>
 
-                    <div class="subsection-body">
-                        <!-- Full Name & Age -->
+                    <div class="section-body">
+                        <!-- Primary Devotee Name & Age -->
                         <div class="input-group">
                             <label for="nameAge" class="input-label">
-                                <i class="fa-regular fa-user"></i> मुख्य दर्शनार्थी का नाम व उम्र (Name & Age) <span class="required">*</span>
+                                <i class="fa-solid fa-user-check"></i> मुख्य दर्शनार्थी का नाम व उम्र (Name & Age) <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <input type="text" id="nameAge" name="nameAge" placeholder="उदा: Rahul Sharma, 35 Yrs" required>
@@ -214,10 +206,34 @@
                             <span class="error-msg" id="nameAge-error">कृपया अपना नाम एवं उम्र दर्ज करें</span>
                         </div>
 
-                        <!-- Aadhaar / Passport No -->
+                        <!-- Email Address & Mobile Number Grid -->
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label for="email" class="input-label">
+                                    <i class="fa-regular fa-envelope"></i> ईमेल ID (Email Address) <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                                    <i class="fa-solid fa-circle-check valid-icon"></i>
+                                </div>
+                                <span class="error-msg" id="email-error">कृपया सही ईमेल ID दर्ज करें</span>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="mobile" class="input-label">
+                                    <i class="fa-solid fa-mobile-screen-button"></i> मो0नं0 (Mobile No) <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="tel" id="mobile" name="mobile" placeholder="Mobile Number with Country Code" required>
+                                </div>
+                                <span class="error-msg" id="mobile-error">Please enter a valid mobile number</span>
+                            </div>
+                        </div>
+
+                        <!-- Aadhaar / Passport No with Shield Icon -->
                         <div class="input-group">
                             <label for="idNumber" class="input-label" id="idNumber-label">
-                                <i class="fa-solid fa-id-card"></i> <span id="id-label-text">आधार नं0 / पासपोर्ट नं0 (Aadhaar / Passport No)</span> <span class="required">*</span>
+                                <i class="fa-solid fa-shield-halved"></i> <span id="id-label-text">आधार नं0 / पासपोर्ट नं0 (Aadhaar / Passport No)</span> <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." required>
@@ -226,49 +242,33 @@
                             <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
                         </div>
 
-                        <!-- Mobile & Vehicle No (Vehicle No is OPTIONAL, Mobile is MANDATORY) -->
-                        <div class="grid-2">
-                            <div class="input-group">
-                                <label for="mobile" class="input-label">
-                                    <i class="fa-solid fa-phone"></i> मो0नं0 (Mobile No) <span class="required">*</span>
-                                </label>
-                                <div class="input-wrapper">
-                                    <input type="tel" id="mobile" name="mobile" placeholder="Mobile Number with Country Code" required>
-                                </div>
-                                <span class="error-msg" id="mobile-error">Please enter a valid mobile number</span>
-                            </div>
-
-                            <div class="input-group">
-                                <label for="vehicleNo" class="input-label">
-                                    <i class="fa-solid fa-car"></i> गाडी नं0 (Vehicle No) <span style="font-weight: 400; color: #78350f; font-size: 0.8rem;">(ऐच्छिक / Optional)</span>
-                                </label>
-                                <div class="input-wrapper">
-                                    <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP 42 AB 1234 (If any)">
-                                </div>
+                        <!-- Vehicle No (Optional) -->
+                        <div class="input-group">
+                            <label for="vehicleNo" class="input-label">
+                                <i class="fa-solid fa-car"></i> गाडी नं0 (Vehicle No) <span class="optional-tag">(ऐच्छिक / Optional)</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP 42 AB 1234 (If any)">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ========================================================= -->
-                <!-- SUB-SECTION 3: FAMILY / GROUP DETAILS (साथी दर्शनार्थी व सदस्य संख्या) -->
-                <!-- ========================================================= -->
-                <div class="form-subsection">
-                    <div class="subsection-header">
-                        <div class="terracotta-icon-wrap">
-                            <i class="fa-solid fa-users-rays"></i>
-                        </div>
-                        <div class="subsection-title-wrap">
-                            <h3 class="subsection-title">3. FAMILY & GROUP DETAILS (साथी दर्शनार्थी विवरण)</h3>
-                            <span class="subsection-subtitle">साथ आने वाले पुरुषों व महिलाओं की संख्या व विवरण</span>
+                <!-- SUB-SECTION 3: FAMILY / GROUP DETAILS -->
+                <div class="form-section-block">
+                    <div class="section-badge-header">
+                        <i class="fa-solid fa-users-gear section-badge-icon"></i>
+                        <div class="section-title-box">
+                            <h3>3. FAMILY / GROUP DETAILS (साथी दर्शनार्थी विवरण)</h3>
+                            <span>साथ आने वाले सदस्यों की कुल संख्या एवं विवरण</span>
                         </div>
                     </div>
 
-                    <div class="subsection-body">
+                    <div class="section-body">
                         <!-- Visitor Counts (Groups) -->
                         <div class="input-group">
                             <label class="input-label">
-                                <i class="fa-solid fa-users"></i> दर्शन हेतु पुरुषों (M) व महिलाओं (F) की संख्या <span class="required">*</span>
+                                <i class="fa-solid fa-users-between-lines"></i> दर्शन हेतु पुरुषों (M) व महिलाओं (F) की संख्या <span class="required">*</span>
                             </label>
                             <div class="gender-segmented-grid">
                                 <div class="gender-card male-card">
@@ -294,10 +294,10 @@
                             <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें</span>
                         </div>
 
-                        <!-- Accompanying Members Details Area (MANDATORY) -->
+                        <!-- Accompanying Members Details Area -->
                         <div class="input-group">
                             <label for="accompanying" class="input-label">
-                                <i class="fa-solid fa-users-rectangle"></i> साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र <span class="required">*</span>
+                                <i class="fa-solid fa-list-check"></i> साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
                                 <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Amit Sharma (Age 30 Yrs)&#10;2. Supriya Sharma (Age 28 Yrs)" required></textarea>
@@ -307,25 +307,21 @@
                     </div>
                 </div>
 
-                <!-- ========================================================= -->
-                <!-- SUB-SECTION 4: REFERENCE (संदर्भ / रेफरेंस) -->
-                <!-- ========================================================= -->
-                <div class="form-subsection">
-                    <div class="subsection-header">
-                        <div class="terracotta-icon-wrap">
-                            <i class="fa-solid fa-award"></i>
-                        </div>
-                        <div class="subsection-title-wrap">
-                            <h3 class="subsection-title">4. REFERENCE (संदर्भ / रेफरेंस)</h3>
-                            <span class="subsection-subtitle">रेफरेंस अधिकारी या संस्था का चयन करें</span>
+                <!-- SUB-SECTION 4: REFERENCE -->
+                <div class="form-section-block">
+                    <div class="section-badge-header">
+                        <i class="fa-solid fa-award section-badge-icon"></i>
+                        <div class="section-title-box">
+                            <h3>4. REFERENCE (संदर्भ / रेफरेंस)</h3>
+                            <span>अनुमोदनकर्ता वरिष्ठ पुलिस अधिकारी या विभाग का चयन करें</span>
                         </div>
                     </div>
 
-                    <div class="subsection-body">
+                    <div class="section-body">
                         <!-- Referred By Dropdown -->
                         <div class="input-group">
                             <label for="referredBySelect" class="input-label">
-                                <i class="fa-solid fa-user-tag"></i> Referred by (किसके संदर्भ से) <span class="required">*</span>
+                                <i class="fa-solid fa-user-tie"></i> Referred by (किसके संदर्भ से) <span class="required">*</span>
                             </label>
                             <div class="input-wrapper select-wrapper">
                                 <select id="referredBySelect" name="referredBySelect" required>
@@ -357,7 +353,7 @@
                         </div>
 
                         <!-- Dynamic Text Field for "Other" Selection -->
-                        <div class="input-group hidden" id="other-ref-group" style="margin-top: 0.8rem;">
+                        <div class="input-group hidden" id="other-ref-group">
                             <label for="otherRefName" class="input-label">
                                 <i class="fa-solid fa-user-pen"></i> Senior Officer Name / विवरण (Officer Name) <span class="required">*</span>
                             </label>
@@ -369,14 +365,14 @@
                     </div>
                 </div>
 
-                <!-- Ultra Large Terracotta-Gold Gradient Submit Pass Button -->
-                <button type="submit" id="submit-btn" class="submit-btn ultra-submit-btn">
+                <!-- Submit Pass Button: Terracotta to Deep Orange Saffron Gradient with Glowing Shadow -->
+                <button type="submit" id="submit-btn" class="submit-btn generate-pass-btn">
                     <span class="btn-text">
-                        <i class="fa-solid fa-gopuram spire-icon"></i>
-                        <span>दर्शन पास हेतु सबमिट करें (Submit Darshan Pass)</span>
+                        <i class="fa-solid fa-shield-halved btn-shield-icon"></i>
+                        <span>सुरक्षित पास जनरेट करें (Generate Secure Pass)</span>
                     </span>
                     <span class="btn-loader hidden">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Submitting Pass Request...
+                        <i class="fa-solid fa-spinner fa-spin"></i> Generating Secure Pass...
                     </span>
                 </button>
             </form>
@@ -384,21 +380,19 @@
 
         <!-- Success Modal Popup -->
         <div id="success-modal" class="modal-overlay hidden">
-            <div class="modal-content spiritual-modal">
-                <div class="success-icon-wrap spiritual-success-icon">
-                    <i class="fa-solid fa-om"></i>
+            <div class="modal-content secure-modal">
+                <div class="success-icon-wrap secure-success-icon">
+                    <i class="fa-solid fa-shield-check"></i>
                 </div>
-                <h2>जय श्री राम! पंजीकरण सफल रहा</h2>
-                <p>आपकी दर्शन पास की जानकारी Google Sheet में सफलतापूर्वक दर्ज हो गई है।</p>
-                <button id="modal-close-btn" class="modal-btn spiritual-modal-btn">ठीक है (Done)</button>
+                <h2>जय श्री राम! सुरक्षित पास जनरेट हो गया</h2>
+                <p>आपकी सुरक्षा एवं दर्शन पास की जानकारी Google Sheet में सफलतापूर्वक दर्ज हो गई है।</p>
+                <button id="modal-close-btn" class="modal-btn secure-modal-btn">ठीक है (Done)</button>
             </div>
         </div>
 
-        <!-- Sophisticated Dark Bronze Footer -->
-        <footer class="app-footer bronze-footer">
-            <div class="footer-content">
-                <p><strong>श्री राम जन्मभूमि तीर्थ क्षेत्र</strong> • आधिकारिक Counter Management System Portal</p>
-            </div>
+        <!-- Official Police & Spiritual Footer -->
+        <footer class="app-footer police-footer">
+            <p><strong>उत्तर प्रदेश पुलिस एवं श्री राम जन्मभूमि तीर्थ क्षेत्र</strong> • आधिकारिक सुरक्षा पास पोर्टल</p>
         </footer>
     </main>
 

@@ -1,20 +1,21 @@
 /**
- * DARSHAN PASS PUBLIC FORM - GOOGLE APPS SCRIPT
+ * DARSHAN PASS & SECURITY REGISTRATION - GOOGLE APPS SCRIPT
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  * 
- * Column Mapping (Row 1 Headers):
+ * Column Mapping:
  * 1. Timestamp
  * 2. दर्शन हेतु आने का दिनाँक व समय
  * 3. नाम व उम्र
- * 4. राज्य
- * 5. जिला
- * 6. आधार नं0/पासपोर्ट नं0
- * 7. दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या
- * 8. मो0नं0
- * 9. गाडी नं0
- * 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
- * 11. Referred by
+ * 4. ईमेल (Email Address)
+ * 5. राज्य
+ * 6. जिला
+ * 7. आधार नं0/पासपोर्ट नं0
+ * 8. दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या
+ * 9. मो0नं0
+ * 10. गाडी नं0
+ * 11. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
+ * 12. Referred by
  */
 
 function doPost(e) {
@@ -45,19 +46,20 @@ function doPost(e) {
       new Date(),                                    // 1. Timestamp
       data.visitDateTime || '',                      // 2. दर्शन हेतु आने का दिनाँक व समय
       data.nameAge || '',                            // 3. नाम व उम्र
-      data.state || '',                              // 4. राज्य
-      data.district || '',                           // 5. जिला
-      data.idNumber || '',                           // 6. आधार नं0/पासपोर्ट नं0
-      genderCountsStr,                               // 7. दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या
-      data.mobile || '',                             // 8. मो0नं0
-      data.vehicleNo || '',                          // 9. गाडी नं0
-      data.accompanying || '',                       // 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
-      data.referredBy || ''                          // 11. Referred by
+      data.email || '',                              // 4. ईमेल ID
+      data.state || '',                              // 5. राज्य
+      data.district || '',                           // 6. जिला
+      data.idNumber || '',                           // 7. आधार नं0/पासपोर्ट नं0
+      genderCountsStr,                               // 8. दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या
+      data.mobile || '',                             // 9. मो0नं0
+      data.vehicleNo || '',                          // 10. गाडी नं0
+      data.accompanying || '',                       // 11. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
+      data.referredBy || ''                          // 12. Referred by
     ]);
 
     return ContentService.createTextOutput(JSON.stringify({
       "result": "success",
-      "message": "Darshan Pass entry saved successfully!"
+      "message": "Darshan Pass Security Entry saved successfully!"
     }))
     .setMimeType(ContentService.MimeType.JSON);
 
@@ -76,7 +78,7 @@ function doPost(e) {
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     "status": "online",
-    "message": "Darshan Pass Apps Script API is running."
+    "message": "Darshan Pass Security Apps Script API is running."
   }))
   .setMimeType(ContentService.MimeType.JSON);
 }
