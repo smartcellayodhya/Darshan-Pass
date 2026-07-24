@@ -331,10 +331,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // VALIDATION HELPERS
+    // VALIDATION HELPERS & LIVE INPUT SANITIZERS
     // -------------------------------------------------------------
-    const mobileRegex = /^[0-9+\s-]{8,15}$/;
-
     function markGroup(input, isValid) {
         if (!input) return isValid;
         const group = input.closest(".input-group");
@@ -348,6 +346,45 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
         return isValid;
+    }
+
+    // 1. Mobile Number: Strictly 10 Digits
+    if (mobileInput) {
+        const cleanMobile = () => {
+            mobileInput.value = mobileInput.value.replace(/\D/g, '').slice(0, 10);
+        };
+        mobileInput.addEventListener("input", cleanMobile);
+        mobileInput.addEventListener("paste", () => setTimeout(cleanMobile, 10));
+    }
+
+    // 2. Vehicle Number: No symbols at all, Automatic Uppercase
+    if (vehicleNoInput) {
+        const cleanVehicle = () => {
+            vehicleNoInput.value = vehicleNoInput.value.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
+        };
+        vehicleNoInput.addEventListener("input", cleanVehicle);
+        vehicleNoInput.addEventListener("paste", () => setTimeout(cleanVehicle, 10));
+    }
+
+    // 3. Name, Accompanying & Other Ref Name: NO SYMBOLS EXCEPT DOT (.)
+    const dotOnlyInputs = [nameAgeInput, accompanyingInput, otherRefNameInput];
+    dotOnlyInputs.forEach(inputEl => {
+        if (!inputEl) return;
+        const cleanDotOnly = () => {
+            inputEl.value = inputEl.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.\r\n]/g, '');
+        };
+        inputEl.addEventListener("input", cleanDotOnly);
+        inputEl.addEventListener("paste", () => setTimeout(cleanDotOnly, 10));
+    });
+
+    // 4. ID Number (Aadhaar / Passport): Alphanumeric Uppercase, Max 12 chars
+    if (idNumberInput) {
+        const cleanId = () => {
+            let val = idNumberInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            idNumberInput.value = val.slice(0, 12);
+        };
+        idNumberInput.addEventListener("input", cleanId);
+        idNumberInput.addEventListener("paste", () => setTimeout(cleanId, 10));
     }
 
     // -------------------------------------------------------------
@@ -405,9 +442,56 @@ document.addEventListener("DOMContentLoaded", () => {
             const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
             const isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
             const isNameAgeValid = nameAgeInput ? markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2) : true;
-            const isIdValid = idNumberInput ? markGroup(idNumberInput, idNumberInput.value.trim().length >= 4) : true;
-            const isMobileValid = mobileInput ? markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())) : true;
+            
+            // ID Number validation (12 digits Aadhaar OR valid Passport number)
+            let isIdValid = false;
+            if (idNumberInput) {
+                const idVal = idNumberInput.value.trim().toUpperCase();
+                const idErrorEl = document.getElementById("idNumber-error");
+
+                if (isIndia) {
+                    if (/^\d+$/.test(idVal)) {
+                        // Pure numeric: MUST BE STRICTLY 12 DIGITS FOR AADHAAR
+                        isIdValid = idVal.length === 12;
+                        if (idErrorEl && !isIdValid) {
+                            idErrorEl.textContent = "आधार नंबर strictly 12 अंकों का होना अनिवार्य है";
+                        }
+                    } else if (idVal.length >= 6 && idVal.length <= 12) {
+                        // Passport number (Alphanumeric)
+                        isIdValid = /^[A-Z0-9]{6,12}$/.test(idVal);
+                        if (idErrorEl && !isIdValid) {
+                            idErrorEl.textContent = "मान्य 12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें";
+                        }
+                    } else {
+                        isIdValid = false;
+                        if (idErrorEl) {
+                            idErrorEl.textContent = "आधार नंबर 12 अंकों का या मान्य पासपोर्ट नंबर दर्ज करें";
+                        }
+                    }
+                } else {
+                    // International Passport
+                    isIdValid = /^[A-Z0-9]{6,12}$/.test(idVal);
+                    if (idErrorEl && !isIdValid) {
+                        idErrorEl.textContent = "Please enter a valid Passport Number (6-12 alphanumeric)";
+                    }
+                }
+                markGroup(idNumberInput, isIdValid);
+            } else {
+                isIdValid = true;
+            }
+
+            // Mobile validation: Must be strictly 10 digits
+            const mobVal = mobileInput ? mobileInput.value.trim() : "";
+            const isMobileValid = mobileInput ? markGroup(mobileInput, /^\d{10}$/.test(mobVal)) : true;
+
+            // Accompanying validation
             const isAccompanyingValid = accompanyingInput ? markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2) : true;
+
+            // Vehicle No validation (Optional, but no symbols allowed)
+            let isVehicleValid = true;
+            if (vehicleNoInput && vehicleNoInput.value.trim()) {
+                isVehicleValid = markGroup(vehicleNoInput, /^[A-Z0-9\s]+$/.test(vehicleNoInput.value.trim()));
+            }
 
             let isLocationValid = true;
             if (isIndia) {
@@ -443,7 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
+            if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isVehicleValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
                 const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
                 if (firstInvalid) firstInvalid.focus();
                 return;
@@ -589,6 +673,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         targetInput.value = speechResult;
                     }
+                    targetInput.dispatchEvent(new Event("input"));
                     btn.classList.remove("listening");
                     btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
                 };

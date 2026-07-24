@@ -272,12 +272,12 @@
                                     <span id="id-label-text">Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0</span> <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." required>
+                                    <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." maxlength="12" required>
                                     <button type="button" class="voice-mic-btn" data-target="idNumber" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
                                 </div>
-                                <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
+                                <span class="error-msg" id="idNumber-error">आधार नंबर strictly 12 अंकों का या मान्य पासपोर्ट नंबर होना आवश्यक है</span>
                             </div>
 
                             <div class="input-group">
@@ -285,12 +285,12 @@
                                     Mobile No / मो0नं0 <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="tel" id="mobile" name="mobile" placeholder="Mobile Number" required>
+                                    <input type="tel" id="mobile" name="mobile" placeholder="Enter 10-digit Mobile Number" maxlength="10" inputmode="numeric" required>
                                     <button type="button" class="voice-mic-btn" data-target="mobile" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
                                 </div>
-                                <span class="error-msg" id="mobile-error">Please enter a valid mobile number</span>
+                                <span class="error-msg" id="mobile-error">मोबाइल नंबर strictly 10 अंकों का ही होना आवश्यक है</span>
                             </div>
                         </div>
 
@@ -300,7 +300,7 @@
                                 Vehicle No / गाडी नं0 <span class="optional-tag">(Optional / ऐच्छिक)</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP 42 AB 1234 (If any)">
+                                <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP42AB1234 (बिना किसी सिंबल के)">
                                 <button type="button" class="voice-mic-btn" data-target="vehicleNo" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
