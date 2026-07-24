@@ -82,8 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const indiaLocationGrid = document.getElementById("india-location-grid");
     const stateSelect = document.getElementById("stateSelect");
     const districtSelect = document.getElementById("districtSelect");
-    const foreignCityGroup = document.getElementById("foreign-city-group");
-    const foreignCityInput = document.getElementById("foreignCity");
     const idLabelText = document.getElementById("id-label-text");
     const idNumberInput = document.getElementById("idNumber");
 
@@ -165,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isIndia) {
                 if (indiaLocationGrid) indiaLocationGrid.classList.remove("hidden");
                 if (countryGroup) countryGroup.classList.add("hidden");
-                if (foreignCityGroup) foreignCityGroup.classList.add("hidden");
                 
                 if (stateSelect) stateSelect.required = true;
                 if (districtSelect) districtSelect.required = true;
@@ -176,7 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 if (indiaLocationGrid) indiaLocationGrid.classList.add("hidden");
                 if (countryGroup) countryGroup.classList.remove("hidden");
-                if (foreignCityGroup) foreignCityGroup.classList.remove("hidden");
 
                 if (stateSelect) stateSelect.required = false;
                 if (districtSelect) districtSelect.required = false;
@@ -276,8 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 isLocationValid = isStateValid && isDistrictValid;
             } else {
                 const isCountryValid = countrySelect ? markGroup(countrySelect, countrySelect.value !== "") : true;
-                const isForeignCityValid = foreignCityInput ? markGroup(foreignCityInput, foreignCityInput.value.trim().length >= 2) : true;
-                isLocationValid = isCountryValid && isForeignCityValid;
+                isLocationValid = isCountryValid;
             }
 
             const mVal = parseInt(getVal("maleCount")) || 0;
@@ -310,8 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalState = getVal("stateSelect");
                 finalDistrict = getVal("districtSelect");
             } else {
-                finalState = (getVal("countrySelect") || "International") + " (International)";
-                finalDistrict = getVal("foreignCity") || "International Devotee";
+                finalState = (getVal("countrySelect") || "International");
+                finalDistrict = "International";
             }
 
             let finalReferredBy = getVal("referredBySelect");
@@ -324,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 visitDateTime: formattedVisitDateTime,
                 nameAge: getVal("nameAge"),
                 state: finalState,
-                district: getVal("districtSelect"),
+                district: finalDistrict,
                 idNumber: getVal("idNumber"),
                 maleCount: mVal,
                 femaleCount: fVal,
