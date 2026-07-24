@@ -3,24 +3,26 @@
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  * 
- * Column Mapping (Clean 17-Column Order):
+ * Original 13 Columns Structure (100% Preserved - No Overwriting):
  * 1. Timestamp (dd/mm/yyyy hh:mm:ss)
- * 2. दर्शन तिथि (Visit Date - DD/MM/YYYY)
- * 3. दर्शन समय स्लॉट (Visit Time Slot - 07:00 AM - 09:00 AM)
- * 4. नाम व उम्र (Name & Age)
- * 5. राज्य (State)
- * 6. जिला (District)
- * 7. आधार नं0/पासपोर्ट नं0 (ID Number)
- * 8. पुरूषो व महिलाओं की संख्या (Gender Count Text)
- * 9. मो0नं0 (Mobile Number)
- * 10. गाडी नं0 (Vehicle Number)
- * 11. साथ में आने वाले सदस्यों के नाम व उम्र (Accompanying Devotees)
- * 12. Referred by (Reference Officer)
- * 13. आवेदनकर्ता गूगल नाम (Submitter Name)
- * 14. आवेदनकर्ता ईमेल ID (Submitter Email)
- * 15. कुल दर्शनार्थी संख्या (Total Devotees Numeric SUM)
- * 16. पुरुष संख्या (Male Count Numeric)
- * 17. महिला संख्या (Female Count Numeric)
+ * 2. दर्शन हेतु आने का दिनाँक व समय (25/07/2026 (07:00 AM - 09:00 AM))
+ * 3. नाम व उम्र (Name & Age)
+ * 4. राज्य (State)
+ * 5. जिला (District)
+ * 6. आधार नं0/पासपोर्ट नं0 (ID Number)
+ * 7. दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या (Gender Counts)
+ * 8. मो0नं0 (Mobile Number)
+ * 9. गाडी नं0 (Vehicle Number)
+ * 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र (Accompanying Devotees)
+ * 11. Referred by (Reference Officer)
+ * 12. आवेदनकर्ता गूगल नाम (Submitter Name)
+ * 13. आवेदनकर्ता ईमेल ID (Submitter Email)
+ * 
+ * Helper Analytics Columns (Appended at end - Columns 14 to 17):
+ * 14. कुल दर्शनार्थी संख्या (Total Devotees Numeric SUM)
+ * 15. पुरुष संख्या (Male Count Numeric)
+ * 16. महिला संख्या (Female Count Numeric)
+ * 17. समय स्लॉट (Time Slot Pure Text for Looker Studio)
  */
 
 function doPost(e) {
@@ -48,20 +50,16 @@ function doPost(e) {
     var visitSlot = data.visitSlot || data.visit_slot || '';
     var visitDateTime = data.visitDateTime || data.visitdate || data.visit_date || '';
 
-    // If visitDate is missing or YYYY-MM-DD, clean and format to DD/MM/YYYY
-    if (!visitDate && visitDateTime) {
-      var match = visitDateTime.match(/^(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\s*\((.*)\)$/);
-      if (match) {
-        visitDate = match[1];
-        visitSlot = match[2];
-      }
-    }
-
+    // If visitDate is in YYYY-MM-DD, format to DD/MM/YYYY
     if (visitDate && visitDate.includes("-")) {
       var parts = visitDate.split("-");
       if (parts.length === 3) {
-        visitDate = parts[2] + "/" + parts[1] + "/" + parts[0]; // DD/MM/YYYY
+        visitDate = parts[2] + "/" + parts[1] + "/" + parts[0];
       }
+    }
+
+    if (!visitDateTime) {
+      visitDateTime = (visitDate ? visitDate : '') + (visitSlot ? ' (' + visitSlot + ')' : '');
     }
 
     var nameAge = data.nameAge || data.name_age || data.name || '';
@@ -81,30 +79,30 @@ function doPost(e) {
     var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
     var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
 
-    // 3. Append row in exact 17-column order (Separated Date & Time Slot)
+    // 3. Append row preserving exact original 13 columns + adding helper columns at end
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp
-      visitDate,                                     // 2. दर्शन तिथि (Visit Date - DD/MM/YYYY)
-      visitSlot,                                     // 3. दर्शन समय स्लॉट (Visit Time Slot)
-      nameAge,                                       // 4. नाम व उम्र
-      state,                                         // 5. राज्य
-      district,                                      // 6. जिला
-      idNumber,                                      // 7. आधार नं0/पासपोर्ट नं0
-      genderCountsStr,                               // 8. पुरूषो व महिलाओं की संख्या
-      mobile,                                        // 9. मो0नं0
-      vehicleNo,                                     // 10. गाडी नं0
-      accompanying,                                  // 11. साथ में आने वाले सदस्यों के नाम व उम्र
-      referredBy,                                    // 12. Referred by
-      submitterName,                                 // 13. Submitter Name
-      submitterEmail,                                // 14. Submitter Email
-      totalDevotees,                                 // 15. कुल दर्शनार्थी संख्या (Numeric SUM)
-      mVal,                                          // 16. पुरुष संख्या (Numeric)
-      fVal                                           // 17. महिला संख्या (Numeric)
+      visitDateTime,                                 // 2. दर्शन हेतु आने का दिनाँक व समय
+      nameAge,                                       // 3. नाम व उम्र (Preserved Position)
+      state,                                         // 4. राज्य
+      district,                                      // 5. जिला
+      idNumber,                                      // 6. आधार नं0/पासपोर्ट नं0
+      genderCountsStr,                               // 7. दर्शन हेतु पुरूषो व महिलाओं की संख्या
+      mobile,                                        // 8. मो0नं0
+      vehicleNo,                                     // 9. गाडी नं0
+      accompanying,                                  // 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
+      referredBy,                                    // 11. Referred by
+      submitterName,                                 // 12. Submitter Name
+      submitterEmail,                                // 13. Submitter Email
+      totalDevotees,                                 // 14. कुल दर्शनार्थी संख्या (Numeric SUM)
+      mVal,                                          // 15. पुरुष संख्या (Numeric)
+      fVal,                                          // 16. महिला संख्या (Numeric)
+      visitSlot                                      // 17. समय स्लॉट (Time Slot Pure Text)
     ]);
 
     // 4. AUTOMATIC CENTER ALIGNMENT & CLEAN FORMATTING FOR NEW ROW
     var lastRow = sheet.getLastRow();
-    var lastCol = Math.max(sheet.getLastColumn(), 17);
+    var lastCol = Math.max(sheet.getLastColumn(), 13);
     
     if (lastRow > 1) {
       var newRowRange = sheet.getRange(lastRow, 1, 1, lastCol);
@@ -162,8 +160,8 @@ function onOpen() {
 }
 
 /**
- * UTILITY 1: FORMAT & FIX ALL EXISTING ROWS IN GOOGLE SHEET
- * Run this function from Apps Script or from "⚙️ VIP Tools" menu to clean, split dates & center-align all sheets.
+ * UTILITY 1: FORMAT ALL EXISTING ROWS IN GOOGLE SHEET
+ * Safely formats center-alignment, vertical middle, wrap text, and column widths WITHOUT changing/overwriting any cell values!
  */
 function formatEntireSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -173,32 +171,11 @@ function formatEntireSheet() {
     if (sheet.getName().includes("Dashboard")) return; // Skip dashboard tab
 
     var lastRow = sheet.getLastRow();
-    var lastCol = Math.max(sheet.getLastColumn(), 17);
+    var lastCol = Math.max(sheet.getLastColumn(), 13);
 
     if (lastRow < 1) return;
 
-    // 1. Clean and Fix Past Combined Date Rows (e.g. "2026-07-25 (07:00 AM - 09:00 AM)")
-    if (lastRow > 1) {
-      var col2Values = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
-      for (var r = 0; r < col2Values.length; r++) {
-        var val = String(col2Values[r][0] || '');
-        if (val.includes("(")) {
-          var match = val.match(/^(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\s*\((.*)\)$/);
-          if (match) {
-            var rawDate = match[1];
-            var slotStr = match[2];
-            if (rawDate.includes("-")) {
-              var p = rawDate.split("-");
-              rawDate = p[2] + "/" + p[1] + "/" + p[0];
-            }
-            sheet.getRange(r + 2, 2).setValue(rawDate); // Column 2 = DD/MM/YYYY Date
-            sheet.getRange(r + 2, 3).setValue(slotStr); // Column 3 = Time Slot
-          }
-        }
-      }
-    }
-
-    // 2. Format Header (Row 1)
+    // 1. Format Header (Row 1)
     var headerRange = sheet.getRange(1, 1, 1, lastCol);
     headerRange.setBackground("#1e3a8a"); // Navy Blue
     headerRange.setFontColor("#ffffff"); // White
@@ -210,7 +187,7 @@ function formatEntireSheet() {
     headerRange.setFontSize(11);
     sheet.setRowHeight(1, 40);
 
-    // 3. Format Data Rows (Row 2 to lastRow)
+    // 2. Format Data Rows (Row 2 to lastRow)
     if (lastRow > 1) {
       var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
       dataRange.setHorizontalAlignment("center");
@@ -223,24 +200,20 @@ function formatEntireSheet() {
       sheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
 
-    // 4. Adjust Column Widths
+    // 3. Adjust Column Widths
     sheet.setColumnWidth(1, 150); // Timestamp
-    sheet.setColumnWidth(2, 130); // Visit Date (DD/MM/YYYY)
-    sheet.setColumnWidth(3, 170); // Visit Time Slot
-    sheet.setColumnWidth(4, 160); // Name Age
-    sheet.setColumnWidth(5, 130); // State
-    sheet.setColumnWidth(6, 130); // District
-    sheet.setColumnWidth(7, 160); // ID
-    sheet.setColumnWidth(8, 180); // Gender Count
-    sheet.setColumnWidth(9, 130); // Mobile
-    sheet.setColumnWidth(10, 130); // Vehicle
-    sheet.setColumnWidth(11, 240); // Accompanying
-    sheet.setColumnWidth(12, 160); // Referred By
-    sheet.setColumnWidth(13, 150); // Submitter Name
-    sheet.setColumnWidth(14, 200); // Submitter Email
-    sheet.setColumnWidth(15, 130); // Total Devotees
-    sheet.setColumnWidth(16, 110); // Male Count
-    sheet.setColumnWidth(17, 110); // Female Count
+    sheet.setColumnWidth(2, 220); // Visit Date & Time
+    sheet.setColumnWidth(3, 160); // Name Age
+    sheet.setColumnWidth(4, 130); // State
+    sheet.setColumnWidth(5, 130); // District
+    sheet.setColumnWidth(6, 160); // ID
+    sheet.setColumnWidth(7, 180); // Gender Count
+    sheet.setColumnWidth(8, 130); // Mobile
+    sheet.setColumnWidth(9, 130); // Vehicle
+    sheet.setColumnWidth(10, 240); // Accompanying
+    sheet.setColumnWidth(11, 160); // Referred By
+    sheet.setColumnWidth(12, 150); // Submitter Name
+    sheet.setColumnWidth(13, 200); // Submitter Email
   });
 
   SpreadsheetApp.flush(); // Instantly apply and repaint formatting on Google Sheets UI
@@ -289,8 +262,8 @@ function setupVipDashboard() {
   dashSheet.getRange("D5").setValue("रेफरेंस अधिकारी (Referred By)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
   dashSheet.getRange("E5").setValue("कुल आवेदन (Passes)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
-  dashSheet.getRange("D6").setFormula("=IFERROR(UNIQUE(FILTER('" + dataSheet.getName() + "'!L2:L, '" + dataSheet.getName() + "'!L2:L <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("E6:E25").setFormula("=IF(OR(D6=\"\", D6=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF('" + dataSheet.getName() + "'!L$2:L, D6))");
+  dashSheet.getRange("D6").setFormula("=IFERROR(UNIQUE(FILTER('" + dataSheet.getName() + "'!K2:K, '" + dataSheet.getName() + "'!K2:K <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("E6:E25").setFormula("=IF(OR(D6=\"\", D6=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF('" + dataSheet.getName() + "'!K$2:K, D6))");
 
   // Add Chart for Referred By Analytics
   var chartBuilder = dashSheet.newChart()
