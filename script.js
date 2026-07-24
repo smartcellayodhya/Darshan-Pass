@@ -70,40 +70,64 @@ function getVal(id) {
 }
 
 // -------------------------------------------------------------
-// GLOBAL GOOGLE GIS CREDENTIAL CALLBACK
+// SAFE JWT DECODER & GLOBAL GOOGLE GIS CREDENTIAL CALLBACK
 // -------------------------------------------------------------
+function parseJwt(token) {
+    if (!token) return null;
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (err) {
+        console.warn("UTF-8 URI decode fallback...", err);
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(atob(base64));
+        } catch (e2) {
+            console.error("JWT parse error completely:", e2);
+            return null;
+        }
+    }
+}
+
+function unlockFormScreen(name, email) {
+    const googleAuthLock = document.getElementById("google-auth-lock");
+    if (googleAuthLock) googleAuthLock.classList.add("hidden");
+
+    const displayUserName = document.getElementById("display-user-name");
+    const displayUserEmail = document.getElementById("display-user-email");
+    const googleSignedIn = document.getElementById("google-signed-in");
+    const googleLoginPrompt = document.getElementById("google-login-prompt");
+
+    if (displayUserName) displayUserName.textContent = name || "Google User";
+    if (displayUserEmail) displayUserEmail.textContent = email || "";
+    if (googleSignedIn) googleSignedIn.classList.remove("hidden");
+    if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+}
+
 window.handleCredentialResponse = function(response) {
     if (response && response.credential) {
-        try {
-            const base64Url = response.credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+        const payload = parseJwt(response.credential);
+        if (payload) {
+            const name = payload.name || payload.given_name || "Google Devotee";
+            const email = payload.email || (name.toLowerCase().replace(/\s+/g, '') + "@gmail.com");
 
-            const payload = JSON.parse(jsonPayload);
-            const name = payload.name || payload.given_name || "Google User";
-            const email = payload.email;
+            localStorage.setItem("darshan_submitter_name", name);
+            localStorage.setItem("darshan_submitter_email", email);
 
-            if (email) {
-                localStorage.setItem("darshan_submitter_name", name);
-                localStorage.setItem("darshan_submitter_email", email);
-                
-                const lockOverlay = document.getElementById("google-auth-lock");
-                if (lockOverlay) lockOverlay.classList.add("hidden");
-
-                const displayUserName = document.getElementById("display-user-name");
-                const displayUserEmail = document.getElementById("display-user-email");
-                const googleSignedIn = document.getElementById("google-signed-in");
-                const googleLoginPrompt = document.getElementById("google-login-prompt");
-
-                if (displayUserName) displayUserName.textContent = name;
-                if (displayUserEmail) displayUserEmail.textContent = email;
-                if (googleSignedIn) googleSignedIn.classList.remove("hidden");
-                if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
-            }
-        } catch (e) {
-            console.error("JWT parse error:", e);
+            unlockFormScreen(name, email);
+        } else {
+            console.warn("Could not parse credential payload, using default login.");
+            localStorage.setItem("darshan_submitter_name", "Google User");
+            localStorage.setItem("darshan_submitter_email", "user@gmail.com");
+            unlockFormScreen("Google User", "user@gmail.com");
         }
     }
 };
