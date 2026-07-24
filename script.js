@@ -441,7 +441,27 @@ document.addEventListener("DOMContentLoaded", () => {
             // Safe validation checks
             const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
             const isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
-            const isNameAgeValid = nameAgeInput ? markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2) : true;
+            
+            // Primary Devotee Name & Age validation (Must contain at least 1 number/digit for Age)
+            let isNameAgeValid = false;
+            if (nameAgeInput) {
+                const nVal = nameAgeInput.value.trim();
+                const hasAgeDigit = /\d/.test(nVal);
+                const nameErrorEl = document.getElementById("nameAge-error");
+
+                if (nVal.length < 2) {
+                    isNameAgeValid = false;
+                    if (nameErrorEl) nameErrorEl.textContent = "कृपया अपना नाम एवं उम्र दर्ज करें (उदा: Rahul 35 Yrs)";
+                } else if (!hasAgeDigit) {
+                    isNameAgeValid = false;
+                    if (nameErrorEl) nameErrorEl.textContent = "कृपया नाम के साथ उम्र (संख्या) भी लिखें (उदा: Rahul 35 Yrs)";
+                } else {
+                    isNameAgeValid = true;
+                }
+                markGroup(nameAgeInput, isNameAgeValid);
+            } else {
+                isNameAgeValid = true;
+            }
             
             // ID Number validation (12 digits Aadhaar OR valid Passport number)
             let isIdValid = false;
@@ -484,8 +504,26 @@ document.addEventListener("DOMContentLoaded", () => {
             const mobVal = mobileInput ? mobileInput.value.trim() : "";
             const isMobileValid = mobileInput ? markGroup(mobileInput, /^\d{10}$/.test(mobVal)) : true;
 
-            // Accompanying validation
-            const isAccompanyingValid = accompanyingInput ? markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2) : true;
+            // Accompanying devotees validation (Must contain at least 1 number/digit for Age)
+            let isAccompanyingValid = false;
+            if (accompanyingInput) {
+                const accVal = accompanyingInput.value.trim();
+                const hasAccAgeDigit = /\d/.test(accVal);
+                const accErrorEl = document.getElementById("accompanying-error");
+
+                if (accVal.length < 2) {
+                    isAccompanyingValid = false;
+                    if (accErrorEl) accErrorEl.textContent = "कृपया साथ में आने वाले सदस्यों के नाम एवं उम्र दर्ज करें";
+                } else if (!hasAccAgeDigit) {
+                    isAccompanyingValid = false;
+                    if (accErrorEl) accErrorEl.textContent = "कृपया सभी सदस्यों की उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)";
+                } else {
+                    isAccompanyingValid = true;
+                }
+                markGroup(accompanyingInput, isAccompanyingValid);
+            } else {
+                isAccompanyingValid = true;
+            }
 
             // Vehicle No validation (Optional, but no symbols allowed)
             let isVehicleValid = true;
@@ -535,10 +573,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setSubmittingState(true);
 
-            // Format Visit DateTime string
+            // Format Visit DateTime string (DD/MM/YYYY format)
             const dateVal = getVal("visitDate");
+            let formattedDateStr = dateVal;
+            if (dateVal && dateVal.includes("-")) {
+                const parts = dateVal.split("-");
+                if (parts.length === 3) {
+                    formattedDateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
             const slotVal = getVal("visitSlot");
-            const formattedVisitDateTime = `${dateVal} (${slotVal})`;
+            const formattedVisitDateTime = `${formattedDateStr} (${slotVal})`;
 
             let finalState = "";
             let finalDistrict = "";
