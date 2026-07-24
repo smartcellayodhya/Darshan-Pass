@@ -430,7 +430,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const mVal = parseInt(getVal("maleCount")) || 0;
             const fVal = parseInt(getVal("femaleCount")) || 0;
-            const isCountValid = (mVal + fVal) > 0;
+            const totalCount = mVal + fVal;
+            const isCountValid = totalCount > 0 && totalCount <= 8;
+            if (maleCountInput) markGroup(maleCountInput, isCountValid);
 
             const isRefValid = referredBySelect ? markGroup(referredBySelect, referredBySelect.value !== "") : true;
             let isOtherRefValid = true;
@@ -581,4 +583,94 @@ document.addEventListener("DOMContentLoaded", () => {
     if (reopenFormBtn) {
         reopenFormBtn.addEventListener("click", openNewForm);
     }
+
+    // -------------------------------------------------------------
+    // VOICE TYPING (SPEECH TO TEXT) HANDLER
+    // -------------------------------------------------------------
+    function setupVoiceTyping() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn("Speech Recognition API not supported in this browser.");
+            return;
+        }
+
+        document.querySelectorAll(".voice-mic-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const targetId = btn.getAttribute("data-target");
+                const targetInput = document.getElementById(targetId);
+                if (!targetInput) return;
+
+                const recognition = new SpeechRecognition();
+                recognition.lang = "hi-IN"; // Set Hindi speech recognition
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                btn.classList.add("listening");
+                btn.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat" style="color: #ef4444;"></i>';
+
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    const speechResult = event.results[0][0].transcript;
+                    if (targetInput.tagName === "TEXTAREA") {
+                        targetInput.value += (targetInput.value ? "\n" : "") + speechResult;
+                    } else {
+                        targetInput.value = speechResult;
+                    }
+                    btn.classList.remove("listening");
+                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error:", event.error);
+                    btn.classList.remove("listening");
+                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                };
+
+                recognition.onend = () => {
+                    btn.classList.remove("listening");
+                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                };
+            });
+        });
+    }
+
+    // -------------------------------------------------------------
+    // DROPDOWN SEARCH FILTER HANDLER
+    // -------------------------------------------------------------
+    function setupSelectSearch() {
+        document.querySelectorAll(".select-search-box").forEach(searchInput => {
+            searchInput.addEventListener("input", () => {
+                const selectId = searchInput.getAttribute("data-select");
+                const selectEl = document.getElementById(selectId);
+                if (!selectEl) return;
+
+                const query = searchInput.value.toLowerCase().trim();
+                let matchedIndex = -1;
+
+                Array.from(selectEl.options).forEach((opt, idx) => {
+                    if (idx === 0) return; // Skip placeholder
+                    const text = opt.textContent.toLowerCase();
+                    if (query === "" || text.includes(query)) {
+                        opt.style.display = "";
+                        if (matchedIndex === -1 && query !== "") {
+                            matchedIndex = idx;
+                        }
+                    } else {
+                        opt.style.display = "none";
+                    }
+                });
+
+                if (matchedIndex !== -1) {
+                    selectEl.selectedIndex = matchedIndex;
+                    selectEl.dispatchEvent(new Event("change"));
+                }
+            });
+        });
+    }
+
+    // Initialize Voice Typing and Select Search
+    setupVoiceTyping();
+    setupSelectSearch();
 });
