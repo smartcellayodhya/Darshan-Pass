@@ -415,6 +415,22 @@
             </form>
         </section>
 
+        <!-- Form Closed Screen (Shown when "बंद करें" is clicked) -->
+        <section id="form-closed-card" class="gov-form-card hidden" style="text-align: center; padding: 3.2rem 2rem;">
+            <div class="gov-closed-icon" style="color: #64748b; font-size: 3.6rem; margin-bottom: 1rem;">
+                <i class="fa-solid fa-folder-closed"></i>
+            </div>
+            <h2 style="font-family: 'Tiro Devanagari Hindi', serif; font-size: 1.8rem; color: var(--navy-dark); margin-bottom: 0.5rem;">
+                आवेदन सत्र समाप्त (Application Closed)
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 0.98rem; max-width: 480px; margin: 0 auto 1.8rem auto; line-height: 1.5;">
+                आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।
+            </p>
+            <button type="button" id="reopen-form-btn" class="gov-btn-primary" style="max-width: 320px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 0.6rem;">
+                <i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)
+            </button>
+        </section>
+
         <!-- Success Modal Popup -->
         <div id="success-modal" class="modal-overlay hidden">
             <div class="modal-content gov-modal">

@@ -539,27 +539,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Modal Close Handler
-    if (modalCloseBtn && successModal) {
-        modalCloseBtn.addEventListener("click", () => {
-            successModal.classList.add("hidden");
-            resetFormState();
-        });
+    const govFormCard = document.querySelector(".gov-form-card");
+    const formClosedCard = document.getElementById("form-closed-card");
+    const reopenFormBtn = document.getElementById("reopen-form-btn");
+
+    function openNewForm() {
+        if (successModal) successModal.classList.add("hidden");
+        if (formClosedCard) formClosedCard.classList.add("hidden");
+        if (govFormCard) govFormCard.classList.remove("hidden");
+        resetFormState();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (visitDateInput) visitDateInput.focus();
+    }
+
+    function closeFormSession() {
+        if (successModal) successModal.classList.add("hidden");
+        if (govFormCard) govFormCard.classList.add("hidden");
+        if (formClosedCard) formClosedCard.classList.remove("hidden");
+        resetFormState();
+    }
+
+    // Modal Close Handler ("बंद करें")
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener("click", closeFormSession);
+    }
+
+    if (successModal) {
         successModal.addEventListener("click", (e) => {
             if (e.target === successModal) {
-                successModal.classList.add("hidden");
-                resetFormState();
+                closeFormSession();
             }
         });
     }
 
     // Submit Another Form Handler
-    if (submitAnotherBtn && successModal) {
-        submitAnotherBtn.addEventListener("click", () => {
-            successModal.classList.add("hidden");
-            resetFormState();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            if (visitDateInput) visitDateInput.focus();
-        });
+    if (submitAnotherBtn) {
+        submitAnotherBtn.addEventListener("click", openNewForm);
+    }
+
+    // Reopen Form Handler from Closed Screen
+    if (reopenFormBtn) {
+        reopenFormBtn.addEventListener("click", openNewForm);
     }
 });
