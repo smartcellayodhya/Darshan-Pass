@@ -604,6 +604,136 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Initialize Voice Typing
+    // -------------------------------------------------------------
+    // CUSTOM SEARCHABLE DROPDOWN MENU HANDLER
+    // -------------------------------------------------------------
+    function initCustomSearchableSelects() {
+        const searchableIds = ["stateSelect", "districtSelect", "referredBySelect", "countrySelect"];
+
+        searchableIds.forEach(id => {
+            const selectEl = document.getElementById(id);
+            if (!selectEl) return;
+
+            // Hide native select element
+            selectEl.style.display = "none";
+
+            const parentWrapper = selectEl.parentElement;
+            if (parentWrapper && parentWrapper.classList.contains("select-wrapper")) {
+                const arrow = parentWrapper.querySelector(".select-arrow");
+                if (arrow) arrow.style.display = "none";
+            }
+
+            // Create custom container
+            let customContainer = parentWrapper.querySelector(`.custom-select-container[data-target="${id}"]`);
+            if (!customContainer) {
+                customContainer = document.createElement("div");
+                customContainer.className = "custom-select-container" + (selectEl.disabled ? " disabled" : "");
+                customContainer.setAttribute("data-target", id);
+
+                const defaultText = selectEl.options[selectEl.selectedIndex] ? selectEl.options[selectEl.selectedIndex].textContent : "-- Select --";
+
+                customContainer.innerHTML = `
+                    <div class="custom-select-trigger" tabindex="0">
+                        <span class="trigger-text">${defaultText}</span>
+                        <i class="fa-solid fa-chevron-down trigger-arrow"></i>
+                    </div>
+                    <div class="custom-select-dropdown hidden">
+                        <div class="custom-search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" class="custom-search-input" placeholder="🔍 टाइप करके खोजें (Search)..." autocomplete="off">
+                        </div>
+                        <div class="custom-options-list"></div>
+                    </div>
+                `;
+
+                parentWrapper.appendChild(customContainer);
+            }
+
+            const trigger = customContainer.querySelector(".custom-select-trigger");
+            const dropdown = customContainer.querySelector(".custom-select-dropdown");
+            const searchInput = customContainer.querySelector(".custom-search-input");
+            const optionsList = customContainer.querySelector(".custom-options-list");
+            const triggerText = customContainer.querySelector(".trigger-text");
+
+            function populateOptions(filterText = "") {
+                optionsList.innerHTML = "";
+                const query = filterText.toLowerCase().trim();
+                let matchCount = 0;
+
+                Array.from(selectEl.options).forEach((opt) => {
+                    const text = opt.textContent;
+                    if (query === "" || text.toLowerCase().includes(query)) {
+                        matchCount++;
+                        const item = document.createElement("div");
+                        item.className = "custom-option-item" + (opt.value === selectEl.value && opt.value !== "" ? " selected" : "");
+                        item.textContent = text;
+
+                        item.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            selectEl.value = opt.value;
+                            triggerText.textContent = text;
+                            selectEl.dispatchEvent(new Event("change"));
+                            if (typeof markGroup === "function") markGroup(selectEl, opt.value !== "");
+                            closeAllDropdowns();
+                        });
+
+                        optionsList.appendChild(item);
+                    }
+                });
+
+                if (matchCount === 0) {
+                    const noResult = document.createElement("div");
+                    noResult.className = "custom-option-empty";
+                    noResult.textContent = "कोई परिणाम नहीं मिला (No match found)";
+                    optionsList.appendChild(noResult);
+                }
+            }
+
+            selectEl.addEventListener("change", () => {
+                const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                triggerText.textContent = selectedOpt ? selectedOpt.textContent : "-- Select --";
+                if (selectEl.disabled) {
+                    customContainer.classList.add("disabled");
+                } else {
+                    customContainer.classList.remove("disabled");
+                }
+            });
+
+            trigger.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (selectEl.disabled) return;
+
+                const isOpen = !dropdown.classList.contains("hidden");
+                closeAllDropdowns();
+
+                if (!isOpen) {
+                    dropdown.classList.remove("hidden");
+                    trigger.classList.add("active");
+                    searchInput.value = "";
+                    populateOptions("");
+                    setTimeout(() => searchInput.focus(), 60);
+                }
+            });
+
+            searchInput.addEventListener("input", (e) => {
+                e.stopPropagation();
+                populateOptions(searchInput.value);
+            });
+
+            dropdown.addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+        });
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll(".custom-select-dropdown").forEach(dd => dd.classList.add("hidden"));
+        document.querySelectorAll(".custom-select-trigger").forEach(tr => tr.classList.remove("active"));
+    }
+
+    document.addEventListener("click", closeAllDropdowns);
+
+    // Initialize Voice Typing & Searchable Dropdowns
     setupVoiceTyping();
+    initCustomSearchableSelects();
 });
