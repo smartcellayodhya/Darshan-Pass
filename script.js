@@ -627,25 +627,104 @@ document.addEventListener("DOMContentLoaded", () => {
                 Array.from(selectEl.options).forEach((opt, idx) => {
                     if (idx === 0) return; // Skip placeholder
                     const text = opt.textContent.toLowerCase();
-                    if (query === "" || text.includes(query)) {
-                        opt.style.display = "";
-                        if (matchedIndex === -1 && query !== "") {
-                            matchedIndex = idx;
-                        }
-                    } else {
-                        opt.style.display = "none";
-                    }
+    // -------------------------------------------------------------
+    // SEARCHABLE DROPDOWN POPUP MODAL HANDLER
+    // -------------------------------------------------------------
+    function setupSelectSearchModal() {
+        const searchModal = document.getElementById("search-select-modal");
+        const searchTitle = document.getElementById("search-modal-title");
+        const searchInput = document.getElementById("search-modal-input");
+        const optionsList = document.getElementById("search-modal-options-list");
+        const closeBtn = document.getElementById("close-search-modal-btn");
+
+        if (!searchModal || !searchInput || !optionsList) return;
+
+        let activeSelect = null;
+
+        function closeSearchModal() {
+            searchModal.classList.add("hidden");
+            searchInput.value = "";
+            activeSelect = null;
+        }
+
+        if (closeBtn) closeBtn.addEventListener("click", closeSearchModal);
+        searchModal.addEventListener("click", (e) => {
+            if (e.target === searchModal) closeSearchModal();
+        });
+
+        const searchableIds = ["stateSelect", "districtSelect", "referredBySelect", "countrySelect"];
+
+        searchableIds.forEach(id => {
+            const selectEl = document.getElementById(id);
+            if (!selectEl) return;
+
+            const wrapper = selectEl.closest(".searchable-select-wrapper") || selectEl.parentElement;
+
+            function openSearchModalForSelect(e) {
+                if (selectEl.disabled) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                activeSelect = selectEl;
+                const label = selectEl.closest(".input-group") ? selectEl.closest(".input-group").querySelector(".input-label") : null;
+                const labelText = label ? label.textContent.split("/")[0].replace("*", "").trim() : "चयन करें";
+                searchTitle.textContent = labelText + " (सर्च करें)";
+
+                searchInput.value = "";
+                renderOptions("");
+                searchModal.classList.remove("hidden");
+                setTimeout(() => searchInput.focus(), 100);
+            }
+
+            selectEl.addEventListener("mousedown", openSearchModalForSelect);
+            if (wrapper) {
+                wrapper.addEventListener("click", openSearchModalForSelect);
+            }
+        });
+
+        function renderOptions(filterText) {
+            if (!activeSelect || !optionsList) return;
+            optionsList.innerHTML = "";
+
+            const query = filterText.toLowerCase().trim();
+            const options = Array.from(activeSelect.options);
+
+            options.forEach(opt => {
+                const val = opt.value;
+                const text = opt.textContent;
+
+                if (query !== "" && !text.toLowerCase().includes(query)) return;
+
+                const item = document.createElement("div");
+                item.className = "search-option-item" + (val === activeSelect.value && val !== "" ? " selected" : "");
+                item.textContent = text;
+
+                item.addEventListener("click", () => {
+                    activeSelect.value = val;
+                    activeSelect.dispatchEvent(new Event("change"));
+                    markGroup(activeSelect, val !== "");
+                    closeSearchModal();
                 });
 
-                if (matchedIndex !== -1) {
-                    selectEl.selectedIndex = matchedIndex;
-                    selectEl.dispatchEvent(new Event("change"));
-                }
+                optionsList.appendChild(item);
             });
+
+            if (optionsList.children.length === 0) {
+                const emptyItem = document.createElement("div");
+                emptyItem.className = "search-option-item";
+                emptyItem.style.color = "#94a3b8";
+                emptyItem.style.cursor = "default";
+                emptyItem.textContent = "कोई विकल्प नहीं मिला (No match found)";
+                optionsList.appendChild(emptyItem);
+            }
+        }
+
+        searchInput.addEventListener("input", () => {
+            renderOptions(searchInput.value);
         });
     }
 
-    // Initialize Voice Typing and Select Search
+    // Initialize Voice Typing and Searchable Select Modal
     setupVoiceTyping();
-    setupSelectSearch();
+    setupSelectSearchModal();
 });

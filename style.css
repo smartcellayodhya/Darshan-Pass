@@ -711,21 +711,93 @@ body.gov-minimal-theme {
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-.select-search-box {
-    width: 100%;
-    margin-bottom: 0.4rem;
-    padding: 0.5rem 0.8rem;
-    font-size: 0.86rem;
-    border: 1px solid #cbd5e1;
-    border-radius: var(--radius-sm);
-    background: #f8fafc;
-    outline: none;
-    transition: border-color 0.2s ease;
+/* Searchable Select Popup Modal */
+.search-modal-content {
+    max-width: 480px;
+    padding: 1.5rem 1.2rem;
+    text-align: left;
 }
 
-.select-search-box:focus {
-    border-color: var(--primary-blue);
+.search-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1.5px solid var(--border-light);
+}
+
+.search-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--navy-dark);
+}
+
+.close-search-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+}
+
+.close-search-btn:hover {
+    color: #ef4444;
+}
+
+.search-modal-input-wrapper {
+    position: relative;
+    margin-bottom: 0.9rem;
+}
+
+.search-modal-icon {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+#search-modal-input {
+    width: 100%;
+    padding: 0.75rem 0.9rem 0.75rem 2.4rem;
+    border: 1.5px solid var(--primary-blue);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    outline: none;
+    background: #f8fafc;
+}
+
+#search-modal-input:focus {
     background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+.search-modal-options-list {
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.search-option-item {
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.search-option-item:hover,
+.search-option-item.selected {
+    background: #eff6ff;
+    color: var(--primary-blue);
+    font-weight: 600;
 }
 
 /* -------------------------------------------------------------

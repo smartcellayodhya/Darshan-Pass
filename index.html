@@ -200,8 +200,7 @@
                             <label for="countrySelect" class="input-label">
                                 Select Country / देश का नाम <span class="required">*</span>
                             </label>
-                            <input type="text" class="select-search-box" data-select="countrySelect" placeholder="🔍 देश खोजें (Search Country)...">
-                            <div class="input-wrapper select-wrapper">
+                            <div class="input-wrapper select-wrapper searchable-select-wrapper">
                                 <select id="countrySelect" name="countrySelect">
                                     <option value="">-- Select Country --</option>
                                 </select>
@@ -216,8 +215,7 @@
                                 <label for="stateSelect" class="input-label">
                                     Select State / राज्य <span class="required">*</span>
                                 </label>
-                                <input type="text" class="select-search-box" data-select="stateSelect" placeholder="🔍 राज्य खोजें (Search State)...">
-                                <div class="input-wrapper select-wrapper">
+                                <div class="input-wrapper select-wrapper searchable-select-wrapper">
                                     <select id="stateSelect" name="stateSelect" required>
                                         <option value="">-- Select State --</option>
                                     </select>
@@ -230,8 +228,7 @@
                                 <label for="districtSelect" class="input-label">
                                     Select District / जिला <span class="required">*</span>
                                 </label>
-                                <input type="text" class="select-search-box" data-select="districtSelect" placeholder="🔍 जिला खोजें (Search District)...">
-                                <div class="input-wrapper select-wrapper">
+                                <div class="input-wrapper select-wrapper searchable-select-wrapper">
                                     <select id="districtSelect" name="districtSelect" required disabled>
                                         <option value="">-- Select State First --</option>
                                     </select>
@@ -361,8 +358,7 @@
                             <label for="referredBySelect" class="input-label">
                                 Referred By / किसके संदर्भ से <span class="required">*</span>
                             </label>
-                            <input type="text" class="select-search-box" data-select="referredBySelect" placeholder="🔍 रेफरेंस खोजें (Search Reference Officer)...">
-                            <div class="input-wrapper select-wrapper">
+                            <div class="input-wrapper select-wrapper searchable-select-wrapper">
                                 <select id="referredBySelect" name="referredBySelect" required>
                                     <option value="">-- Select Reference Officer / रेफरेंस चुनें --</option>
                                     <option value="Ref by SSP sir">Ref by SSP sir</option>
@@ -448,6 +444,25 @@
                     <button id="modal-close-btn" class="modal-btn gov-btn-secondary">
                         <i class="fa-solid fa-xmark"></i> बंद करें (Close)
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCHABLE DROPDOWN OVERLAY MODAL (Opens when clicking dropdown) -->
+        <div id="search-select-modal" class="modal-overlay hidden">
+            <div class="modal-content gov-modal search-modal-content">
+                <div class="search-modal-header">
+                    <h3 id="search-modal-title">चयन करें (Select Option)</h3>
+                    <button type="button" id="close-search-modal-btn" class="close-search-btn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="search-modal-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-modal-icon"></i>
+                    <input type="text" id="search-modal-input" placeholder="🔍 टाइप करके सर्च करें (Type to Search)..." autocomplete="off">
+                </div>
+                <div id="search-modal-options-list" class="search-modal-options-list">
+                    <!-- Options populated dynamically -->
                 </div>
             </div>
         </div>
