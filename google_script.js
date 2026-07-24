@@ -51,8 +51,10 @@ function doPost(e) {
     var vehicleNo = data.vehicleNo || data.vehicle_no || '';
     var accompanying = data.accompanying || data.members || '';
     var referredBy = data.referredBy || data.referred_by || '';
+    var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
+    var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
 
-    // 3. Append row in exact 11 column order
+    // 3. Append row in exact 13 column order
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp
       visitDateTime,                                 // 2. दर्शन हेतु आने का दिनाँक व समय
@@ -64,7 +66,9 @@ function doPost(e) {
       mobile,                                        // 8. मो0नं0
       vehicleNo,                                     // 9. गाडी नं0
       accompanying,                                  // 10. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
-      referredBy                                     // 11. Referred by
+      referredBy,                                    // 11. Referred by
+      submitterName,                                 // 12. आवेदनकर्ता गूगल नाम (Submitter Name)
+      submitterEmail                                 // 13. आवेदनकर्ता ईमेल ID (Submitter Email)
     ]);
 
     return ContentService.createTextOutput(JSON.stringify({

@@ -436,6 +436,115 @@ body.gov-minimal-theme {
 }
 
 /* -------------------------------------------------------------
+ * GOOGLE SUBMITTER IDENTITY CARD STYLES
+ * ------------------------------------------------------------- */
+.gov-account-card {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.8rem;
+    overflow: hidden;
+}
+
+.account-card-header {
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.6rem 1rem;
+}
+
+.google-badge-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--navy-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.google-icon {
+    color: #ea4335;
+    font-size: 1.05rem;
+}
+
+.account-card-body {
+    padding: 1rem 1.2rem;
+}
+
+.signed-in-box {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-sm);
+}
+
+.user-avatar-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.user-info-text {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name-str {
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: #0f172a;
+}
+
+.user-email-str {
+    font-size: 0.86rem;
+    color: #475569;
+}
+
+.change-account-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 0.45rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.change-account-btn:hover {
+    background: #eff6ff;
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.login-prompt-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.login-desc {
+    font-size: 0.88rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.account-save-btn {
+    margin-top: 0.4rem;
+}
+
+/* -------------------------------------------------------------
  * 6. FOOTER
  * ------------------------------------------------------------- */
 .gov-footer {

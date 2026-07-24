@@ -104,6 +104,62 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalCloseBtn = document.getElementById("modal-close-btn");
     const submitAnotherBtn = document.getElementById("submit-another-btn");
 
+    // GOOGLE ACCOUNT ELEMENTS
+    const googleSignedIn = document.getElementById("google-signed-in");
+    const googleLoginPrompt = document.getElementById("google-login-prompt");
+    const displayUserName = document.getElementById("display-user-name");
+    const displayUserEmail = document.getElementById("display-user-email");
+    const submitterNameInput = document.getElementById("submitterNameInput");
+    const submitterEmailInput = document.getElementById("submitterEmailInput");
+    const saveAccountBtn = document.getElementById("save-account-btn");
+    const changeAccountBtn = document.getElementById("change-account-btn");
+
+    function updateGoogleAccountUI() {
+        const savedName = localStorage.getItem("darshan_submitter_name");
+        const savedEmail = localStorage.getItem("darshan_submitter_email");
+
+        if (savedName && savedEmail) {
+            if (displayUserName) displayUserName.textContent = savedName;
+            if (displayUserEmail) displayUserEmail.textContent = savedEmail;
+            if (googleSignedIn) googleSignedIn.classList.remove("hidden");
+            if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+        } else {
+            if (googleSignedIn) googleSignedIn.classList.add("hidden");
+            if (googleLoginPrompt) googleLoginPrompt.classList.remove("hidden");
+        }
+    }
+
+    if (saveAccountBtn) {
+        saveAccountBtn.addEventListener("click", () => {
+            const nameVal = getVal("submitterNameInput");
+            const emailVal = getVal("submitterEmailInput");
+
+            const isNameValid = nameVal && nameVal.trim().length >= 2;
+            const isEmailValid = emailVal && emailVal.includes("@") && emailVal.includes(".");
+
+            markGroup(submitterNameInput, isNameValid);
+            markGroup(submitterEmailInput, isEmailValid);
+
+            if (isNameValid && isEmailValid) {
+                localStorage.setItem("darshan_submitter_name", nameVal.trim());
+                localStorage.setItem("darshan_submitter_email", emailVal.trim());
+                updateGoogleAccountUI();
+            }
+        });
+    }
+
+    if (changeAccountBtn) {
+        changeAccountBtn.addEventListener("click", () => {
+            if (googleSignedIn) googleSignedIn.classList.add("hidden");
+            if (googleLoginPrompt) googleLoginPrompt.classList.remove("hidden");
+            if (submitterNameInput) submitterNameInput.value = localStorage.getItem("darshan_submitter_name") || "";
+            if (submitterEmailInput) submitterEmailInput.value = localStorage.getItem("darshan_submitter_email") || "";
+            if (submitterNameInput) submitterNameInput.focus();
+        });
+    }
+
+    updateGoogleAccountUI();
+
     if (visitDateInput) {
         const todayStr = new Date().toISOString().split("T")[0];
         visitDateInput.setAttribute("min", todayStr);
@@ -302,6 +358,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
             }
 
+            // Validate and extract Submitter Account
+            let subName = localStorage.getItem("darshan_submitter_name") || "";
+            let subEmail = localStorage.getItem("darshan_submitter_email") || "";
+
+            if (!subName || !subEmail) {
+                const inputName = getVal("submitterNameInput");
+                const inputEmail = getVal("submitterEmailInput");
+
+                const isNameValid = inputName && inputName.length >= 2;
+                const isEmailValid = inputEmail && inputEmail.includes("@") && inputEmail.includes(".");
+
+                if (!isNameValid || !isEmailValid) {
+                    if (googleLoginPrompt) googleLoginPrompt.classList.remove("hidden");
+                    if (googleSignedIn) googleSignedIn.classList.add("hidden");
+
+                    if (!isNameValid && submitterNameInput) {
+                        markGroup(submitterNameInput, false);
+                        submitterNameInput.focus();
+                    } else if (!isEmailValid && submitterEmailInput) {
+                        markGroup(submitterEmailInput, false);
+                        submitterEmailInput.focus();
+                    }
+                    return;
+                }
+
+                subName = inputName;
+                subEmail = inputEmail;
+                localStorage.setItem("darshan_submitter_name", subName);
+                localStorage.setItem("darshan_submitter_email", subEmail);
+                updateGoogleAccountUI();
+            }
+
             if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
                 const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
                 if (firstInvalid) firstInvalid.focus();
@@ -331,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalReferredBy = "Other: " + getVal("otherRefName");
             }
 
-            // Construct Unstoppable 11-Column Payload
+            // Construct Unstoppable 13-Column Payload
             const formData = {
                 visitDateTime: formattedVisitDateTime,
                 nameAge: getVal("nameAge"),
@@ -343,7 +431,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 mobile: getVal("mobile"),
                 vehicleNo: getVal("vehicleNo"),
                 accompanying: getVal("accompanying"),
-                referredBy: finalReferredBy
+                referredBy: finalReferredBy,
+                submitterName: subName,
+                submitterEmail: subEmail
             };
 
             // Transmit Data via Unstoppable Pipeline
