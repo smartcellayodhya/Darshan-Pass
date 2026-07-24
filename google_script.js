@@ -143,6 +143,14 @@ function doGet(e) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
+function getTargetSpreadsheet() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss && ss.getSheets().length > 0) return ss;
+  } catch (err) {}
+  return SpreadsheetApp.openById("1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo");
+}
+
 /**
  * AUTOMATIC CUSTOM MENU IN GOOGLE SHEETS
  * Adds a "⚙️ VIP Tools" menu to Google Sheet top bar when opened.
@@ -164,7 +172,7 @@ function onOpen() {
  * Safely formats center-alignment, vertical middle, wrap text, and column widths WITHOUT changing/overwriting any cell values!
  */
 function formatEntireSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getTargetSpreadsheet();
   var sheets = ss.getSheets();
 
   sheets.forEach(function(sheet) {
