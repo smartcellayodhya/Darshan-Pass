@@ -278,6 +278,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 districtSelect.disabled = true;
                 districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
             }
+
+            // Dispatch change event to update custom searchable dropdown
+            districtSelect.dispatchEvent(new Event("change"));
         });
     }
 
@@ -701,7 +704,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             trigger.addEventListener("click", (e) => {
                 e.stopPropagation();
-                if (selectEl.disabled) return;
+                if (selectEl.disabled) {
+                    customContainer.classList.add("disabled");
+                    return;
+                } else {
+                    customContainer.classList.remove("disabled");
+                }
 
                 const isOpen = !dropdown.classList.contains("hidden");
                 closeAllDropdowns();
