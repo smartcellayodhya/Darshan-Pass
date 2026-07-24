@@ -102,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const successModal = document.getElementById("success-modal");
     const modalCloseBtn = document.getElementById("modal-close-btn");
+    const submitAnotherBtn = document.getElementById("submit-another-btn");
 
     if (visitDateInput) {
         const todayStr = new Date().toISOString().split("T")[0];
@@ -247,6 +248,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function resetFormState() {
+        if (form) form.reset();
+        if (districtSelect) {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
+        }
+        if (nationalitySelect) {
+            nationalitySelect.value = "India";
+            nationalitySelect.dispatchEvent(new Event("change"));
+        }
+        if (referredBySelect) {
+            referredBySelect.dispatchEvent(new Event("change"));
+        }
+        document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
+    }
+
     // -------------------------------------------------------------
     // FORM SUBMIT HANDLER
     // -------------------------------------------------------------
@@ -335,21 +352,6 @@ document.addEventListener("DOMContentLoaded", () => {
             // Display Success Modal
             if (successModal) successModal.classList.remove("hidden");
 
-            // Reset form safely
-            form.reset();
-            if (districtSelect) {
-                districtSelect.disabled = true;
-                districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
-            }
-            if (nationalitySelect) {
-                nationalitySelect.value = "India";
-                nationalitySelect.dispatchEvent(new Event("change"));
-            }
-            if (referredBySelect) {
-                referredBySelect.dispatchEvent(new Event("change"));
-            }
-
-            document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
             setSubmittingState(false);
         });
     }
@@ -367,10 +369,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Modal Close Handler
     if (modalCloseBtn && successModal) {
-        modalCloseBtn.addEventListener("click", () => successModal.classList.add("hidden"));
+        modalCloseBtn.addEventListener("click", () => {
+            successModal.classList.add("hidden");
+            resetFormState();
+        });
         successModal.addEventListener("click", (e) => {
-            if (e.target === successModal) successModal.classList.add("hidden");
+            if (e.target === successModal) {
+                successModal.classList.add("hidden");
+                resetFormState();
+            }
+        });
+    }
+
+    // Submit Another Form Handler
+    if (submitAnotherBtn && successModal) {
+        submitAnotherBtn.addEventListener("click", () => {
+            successModal.classList.add("hidden");
+            resetFormState();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (visitDateInput) visitDateInput.focus();
         });
     }
 });
