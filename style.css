@@ -79,7 +79,7 @@ body.gov-minimal-theme {
     align-items: center;
     justify-content: center;
     padding: 4px;
-    overflow: hidden; /* GUARANTEES LOGO CAN NEVER SPILL OUTSIDE CIRCLE */
+    overflow: hidden;
     flex-shrink: 0;
 }
 
@@ -400,16 +400,31 @@ body.gov-minimal-theme {
 }
 
 /* -------------------------------------------------------------
- * 6. FOOTER
+ * 6. FOOTER (2-Line Customized Copyright & Credits)
  * ------------------------------------------------------------- */
 .gov-footer {
     width: 100%;
     background-color: var(--navy-header);
-    padding: 1.2rem 1rem;
+    padding: 1.4rem 1rem;
     text-align: center;
-    color: #94a3b8;
-    font-size: 0.88rem;
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border-top: 1px solid #1e293b;
+}
+
+.footer-line-1 {
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.footer-line-2 {
+    color: #38bdf8;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 /* Responsive */
