@@ -107,7 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const mobileInput = document.getElementById("mobile");
     const vehicleNoInput = document.getElementById("vehicleNo");
     const accompanyingInput = document.getElementById("accompanying");
-    const referredByInput = document.getElementById("referredBy");
+
+    const referredBySelect = document.getElementById("referredBySelect");
+    const otherRefGroup = document.getElementById("other-ref-group");
+    const otherRefNameInput = document.getElementById("otherRefName");
 
     const submitBtn = document.getElementById("submit-btn");
     const btnText = submitBtn.querySelector(".btn-text");
@@ -201,6 +204,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // -------------------------------------------------------------
+    // REFERRED BY DROPDOWN TOGGLE (Other Officer Name Text Field)
+    // -------------------------------------------------------------
+    referredBySelect.addEventListener("change", () => {
+        if (referredBySelect.value === "Other") {
+            otherRefGroup.classList.remove("hidden");
+            otherRefNameInput.required = true;
+            otherRefNameInput.focus();
+        } else {
+            otherRefGroup.classList.add("hidden");
+            otherRefNameInput.required = false;
+            otherRefNameInput.value = "";
+            markGroup(otherRefNameInput, true);
+        }
+    });
+
+    // -------------------------------------------------------------
     // VALIDATION HELPERS
     // -------------------------------------------------------------
     const mobileRegex = /^[0-9+\s-]{8,15}$/;
@@ -251,7 +270,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const fVal = parseInt(femaleCountInput.value) || 0;
         const isCountValid = markGroup(maleCountInput, (mVal + fVal) > 0);
 
-        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isLocationValid || !isCountValid) {
+        // Validate Referred By
+        const isRefValid = markGroup(referredBySelect, referredBySelect.value !== "");
+        let isOtherRefValid = true;
+        if (referredBySelect.value === "Other") {
+            isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
+        }
+
+        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
             const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select");
             if (firstInvalid) firstInvalid.focus();
             return;
@@ -259,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setSubmittingState(true);
 
-        // Combine Date and Slot into single string for Column 2: "2026-07-25 (09:00 AM - 11:00 AM)"
+        // Format DateTime string: "2026-07-25 (09:00 AM - 11:00 AM)"
         const formattedVisitDateTime = `${visitDateInput.value} (${visitSlotSelect.value})`;
 
         let finalState = "";
@@ -273,6 +299,12 @@ document.addEventListener("DOMContentLoaded", () => {
             finalDistrict = foreignCityInput.value.trim() || "International Devotee";
         }
 
+        // Determine Referred By text for Google Sheet
+        let finalReferredBy = referredBySelect.value;
+        if (referredBySelect.value === "Other" && otherRefNameInput.value.trim()) {
+            finalReferredBy = "Other: " + otherRefNameInput.value.trim();
+        }
+
         const formData = {
             visitDateTime: formattedVisitDateTime,
             nameAge: nameAgeInput.value.trim(),
@@ -284,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mobile: mobileInput.value.trim(),
             vehicleNo: vehicleNoInput.value.trim(),
             accompanying: accompanyingInput.value.trim(),
-            referredBy: referredByInput.value.trim()
+            referredBy: finalReferredBy
         };
 
         try {
@@ -306,6 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
             districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
             nationalitySelect.value = "India";
             nationalitySelect.dispatchEvent(new Event("change"));
+            referredBySelect.dispatchEvent(new Event("change"));
 
             document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
 

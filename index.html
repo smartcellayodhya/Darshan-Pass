@@ -47,7 +47,7 @@
 
     <!-- Main Application Container -->
     <main class="spiritual-app-container">
-        <!-- Configuration Alert Notice -->
+        <!-- Configuration Notice -->
         <div id="config-alert" class="config-banner hidden">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span><strong>Setup Required:</strong> Please replace <code>GOOGLE_APPS_SCRIPT_URL</code> in <code>script.js</code> with your deployed Apps Script URL.</span>
@@ -264,7 +264,7 @@
                     </div>
 
                     <div class="subsection-body">
-                        <!-- Visitor Counts (Groups) with Segmented Buttons -->
+                        <!-- Visitor Counts (Groups) -->
                         <div class="input-group">
                             <label class="input-label">
                                 <i class="fa-solid fa-users"></i> दर्शन हेतु पुरुषों (M) व महिलाओं (F) की संख्या <span class="required">*</span>
@@ -315,18 +315,54 @@
                         </div>
                         <div class="subsection-title-wrap">
                             <h3 class="subsection-title">4. REFERENCE (संदर्भ / रेफरेंस)</h3>
-                            <span class="subsection-subtitle">रेफरेंस अधिकारी, महानुभाव या संस्था का नाम</span>
+                            <span class="subsection-subtitle">रेफरेंस अधिकारी या संस्था का चयन करें</span>
                         </div>
                     </div>
 
                     <div class="subsection-body">
+                        <!-- Referred By Dropdown -->
                         <div class="input-group">
-                            <label for="referredBy" class="input-label">
-                                <i class="fa-solid fa-user-tag"></i> Referred by (किसके संदर्भ से)
+                            <label for="referredBySelect" class="input-label">
+                                <i class="fa-solid fa-user-tag"></i> Referred by (किसके संदर्भ से) <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper select-wrapper">
+                                <select id="referredBySelect" name="referredBySelect" required>
+                                    <option value="">-- Select Reference Officer / रेफरेंस चुनें --</option>
+                                    <option value="Ref by SSP sir">Ref by SSP sir</option>
+                                    <option value="ADG Zone sir/ADG Zone Pro">ADG Zone sir/ADG Zone Pro</option>
+                                    <option value="SP City Ayo">SP City Ayo</option>
+                                    <option value="SPRA Ayo">SPRA Ayo</option>
+                                    <option value="SP Protocol Ayo">SP Protocol Ayo</option>
+                                    <option value="CO Ayodhya Ayo">CO Ayodhya Ayo</option>
+                                    <option value="CO City Ayo">CO City Ayo</option>
+                                    <option value="CO Bikapur Ayo">CO Bikapur Ayo</option>
+                                    <option value="CO Sadar Ayo">CO Sadar Ayo</option>
+                                    <option value="CO Milkipur Ayo">CO Milkipur Ayo</option>
+                                    <option value="CO Rudauli Ayo">CO Rudauli Ayo</option>
+                                    <option value="CO Vigilance">CO Vigilance</option>
+                                    <option value="CO LIU Ayo">CO LIU Ayo</option>
+                                    <option value="PRO SSP AYO">PRO SSP AYO</option>
+                                    <option value="STENO SSP Ayo">STENO SSP Ayo</option>
+                                    <option value="ZO Intelligence">ZO Intelligence</option>
+                                    <option value="DCIO IB Ayo">DCIO IB Ayo</option>
+                                    <option value="STF Incharge Ayo">STF Incharge Ayo</option>
+                                    <option value="Darshan Cell">Darshan Cell</option>
+                                    <option value="Other">Other (अन्य अधिकारी)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down select-arrow"></i>
+                            </div>
+                            <span class="error-msg" id="referredBy-error">कृपया रेफरेंस का चयन करें</span>
+                        </div>
+
+                        <!-- Dynamic Text Field for "Other" Selection -->
+                        <div class="input-group hidden" id="other-ref-group" style="margin-top: 0.8rem;">
+                            <label for="otherRefName" class="input-label">
+                                <i class="fa-solid fa-user-pen"></i> Senior Officer Name / विवरण (Officer Name) <span class="required">*</span>
                             </label>
                             <div class="input-wrapper">
-                                <input type="text" id="referredBy" name="referredBy" placeholder="Reference Person / VIP / Org Name">
+                                <input type="text" id="otherRefName" name="otherRefName" placeholder="Enter Senior Officer Name / Designation">
                             </div>
+                            <span class="error-msg" id="otherRefName-error">कृपया अधिकारी का नाम दर्ज करें</span>
                         </div>
                     </div>
                 </div>
