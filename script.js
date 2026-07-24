@@ -228,9 +228,23 @@ document.addEventListener("DOMContentLoaded", () => {
     checkAuthLock();
     updateGoogleAccountUI();
 
+    // Calculate local today YYYY-MM-DD date string
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
     if (visitDateInput) {
-        const todayStr = new Date().toISOString().split("T")[0];
         visitDateInput.setAttribute("min", todayStr);
+        visitDateInput.value = todayStr; // Pre-select today's date by default
+
+        // Dynamically block past date selection
+        visitDateInput.addEventListener("change", () => {
+            if (visitDateInput.value < todayStr) {
+                visitDateInput.value = todayStr; // Auto-reset to today
+            }
+        });
     }
 
     // -------------------------------------------------------------
@@ -414,6 +428,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function resetFormState() {
         if (form) form.reset();
+        if (visitDateInput) {
+            visitDateInput.setAttribute("min", todayStr);
+            visitDateInput.value = todayStr;
+        }
         if (districtSelect) {
             districtSelect.disabled = true;
             districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
