@@ -733,7 +733,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("click", closeAllDropdowns);
 
-    // Initialize Voice Typing & Searchable Dropdowns
+    // -------------------------------------------------------------
+    // REAL-TIME DEVOTEE COUNT MAX 8 CLAMP HANDLER
+    // -------------------------------------------------------------
+    function enforceDevoteeCountLimit() {
+        if (!maleCountInput || !femaleCountInput) return;
+
+        function handleMaleInput() {
+            let mVal = parseInt(maleCountInput.value) || 0;
+            let fVal = parseInt(femaleCountInput.value) || 0;
+
+            if (mVal < 0) {
+                mVal = 0;
+                maleCountInput.value = 0;
+            }
+
+            if (mVal + fVal > 8) {
+                mVal = Math.max(0, 8 - fVal);
+                maleCountInput.value = mVal;
+            }
+
+            const isCountValid = (mVal + fVal) > 0 && (mVal + fVal) <= 8;
+            markGroup(maleCountInput, isCountValid);
+        }
+
+        function handleFemaleInput() {
+            let mVal = parseInt(maleCountInput.value) || 0;
+            let fVal = parseInt(femaleCountInput.value) || 0;
+
+            if (fVal < 0) {
+                fVal = 0;
+                femaleCountInput.value = 0;
+            }
+
+            if (mVal + fVal > 8) {
+                fVal = Math.max(0, 8 - mVal);
+                femaleCountInput.value = fVal;
+            }
+
+            const isCountValid = (mVal + fVal) > 0 && (mVal + fVal) <= 8;
+            markGroup(maleCountInput, isCountValid);
+        }
+
+        maleCountInput.addEventListener("input", handleMaleInput);
+        maleCountInput.addEventListener("change", handleMaleInput);
+        femaleCountInput.addEventListener("input", handleFemaleInput);
+        femaleCountInput.addEventListener("change", handleFemaleInput);
+    }
+
+    // Initialize Voice Typing, Devotee Count Limit & Searchable Dropdowns
     setupVoiceTyping();
+    enforceDevoteeCountLimit();
     initCustomSearchableSelects();
 });
