@@ -1,5 +1,5 @@
 /**
- * DARSHAN PASS PUBLIC FORM - FRONTEND CONNECTOR
+ * DARSHAN PASS PUBLIC FORM - UNSTOPPABLE FRONTEND CONNECTOR
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  */
@@ -7,7 +7,7 @@
 const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCRSyNuq_QvPcURMaaXVhqFIcxX5Bdxrf-nDvjhVLGw7wyuB1D-oM6lSVdeG-g7ZiCBQ/exec";
 
 // -------------------------------------------------------------
-// 1. DATA DICTIONARY: INDIAN STATES & DISTRICTS (IN ENGLISH)
+// 1. DATA DICTIONARY: INDIAN STATES & DISTRICTS
 // -------------------------------------------------------------
 const indiaLocationData = {
     "Uttar Pradesh": ["Ayodhya", "Mathura", "Varanasi", "Lucknow", "Kanpur Nagar", "Agra", "Prayagraj", "Gorakhpur", "Ghaziabad", "Gautam Buddha Nagar (Noida)", "Aligarh", "Jhansi", "Meerut", "Bareilly", "Moradabad", "Saharanpur", "Muzaffarnagar", "Bijnor", "Rampur", "Shahjahanpur", "Firozabad", "Mainpuri", "Etah", "Hathras", "Kasganj", "Bulandshahr", "Sambhal", "Amroha", "Budaun", "Pilibhit", "Lakhimpur Kheri", "Sitapur", "Hardoi", "Unnao", "Rae Bareli", "Amethi", "Sultanpur", "Pratapgarh", "Fatehpur", "Kaushambi", "Chitrakoot", "Banda", "Hamirpur", "Mahoba", "Jalaun", "Lalitpur", "Farrukhabad", "Kannauj", "Etawah", "Auraiya", "Kanpur Dehat", "Barabanki", "Ambedkar Nagar", "Gonda", "Bahraich", "Shravasti", "Balrampur", "Basti", "Sant Kabir Nagar", "Siddharthnagar", "Maharajganj", "Deoria", "Kushinagar", "Azamgarh", "Mau", "Ballia", "Jaunpur", "Ghazipur", "Chandauli", "Bhadohi", "Mirzapur", "Sonbhadra"],
@@ -49,7 +49,7 @@ const indiaLocationData = {
 };
 
 // -------------------------------------------------------------
-// 2. WORLD COUNTRIES LIST (IN ENGLISH)
+// 2. WORLD COUNTRIES LIST
 // -------------------------------------------------------------
 const worldCountries = [
     "Nepal", "United States", "United Kingdom", "Canada", "Australia", "Mauritius", 
@@ -62,6 +62,12 @@ const worldCountries = [
     "Austria", "Belgium", "Greece", "Ireland", "Portugal", "Poland", "Czech Republic", 
     "Hungary", "Romania", "Israel", "Jordan", "Turkey", "Ukraine", "Kazakhstan", "Other"
 ];
+
+// SAFE ELEMENT GETTER HELPER (Prevents JS crashes if UI IDs are modified in future)
+function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
@@ -79,13 +85,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
         
-        liveClockEl.textContent = `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`;
+        liveClockEl.textContent = `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
     }
     updateLiveClock();
     setInterval(updateLiveClock, 1000);
 
     // -------------------------------------------------------------
-    // DOM ELEMENTS
+    // DOM ELEMENTS (SAFE INITIALIZATION)
     // -------------------------------------------------------------
     const form = document.getElementById("darshan-form");
     const visitDateInput = document.getElementById("visitDate");
@@ -114,113 +120,112 @@ document.addEventListener("DOMContentLoaded", () => {
     const otherRefNameInput = document.getElementById("otherRefName");
 
     const submitBtn = document.getElementById("submit-btn");
-    const btnText = submitBtn.querySelector(".btn-text");
-    const btnLoader = submitBtn.querySelector(".btn-loader");
+    const btnText = submitBtn ? submitBtn.querySelector(".btn-text") : null;
+    const btnLoader = submitBtn ? submitBtn.querySelector(".btn-loader") : null;
 
     const successModal = document.getElementById("success-modal");
     const modalCloseBtn = document.getElementById("modal-close-btn");
-    const configAlert = document.getElementById("config-alert");
 
-    if (GOOGLE_APPS_SCRIPT_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-        configAlert.classList.remove("hidden");
+    if (visitDateInput) {
+        const todayStr = new Date().toISOString().split("T")[0];
+        visitDateInput.setAttribute("min", todayStr);
     }
-
-    // Set Min Date Picker to Today YYYY-MM-DD
-    const todayStr = new Date().toISOString().split("T")[0];
-    visitDateInput.setAttribute("min", todayStr);
 
     // -------------------------------------------------------------
     // POPULATE INITIAL DROPDOWNS
     // -------------------------------------------------------------
-    // 1. Populate Indian States
-    Object.keys(indiaLocationData).sort().forEach(state => {
-        const option = document.createElement("option");
-        option.value = state;
-        option.textContent = state;
-        stateSelect.appendChild(option);
-    });
+    if (stateSelect) {
+        Object.keys(indiaLocationData).sort().forEach(state => {
+            const option = document.createElement("option");
+            option.value = state;
+            option.textContent = state;
+            stateSelect.appendChild(option);
+        });
+    }
 
-    // 2. Populate World Countries
-    worldCountries.forEach(country => {
-        const option = document.createElement("option");
-        option.value = country;
-        option.textContent = country;
-        countrySelect.appendChild(option);
-    });
-
-    // -------------------------------------------------------------
-    // STATE CHANGE -> POPULATE DISTRICTS
-    // -------------------------------------------------------------
-    stateSelect.addEventListener("change", () => {
-        const selectedState = stateSelect.value;
-        districtSelect.innerHTML = '<option value="">-- Select District --</option>';
-
-        if (selectedState && indiaLocationData[selectedState]) {
-            districtSelect.disabled = false;
-            indiaLocationData[selectedState].sort().forEach(district => {
-                const opt = document.createElement("option");
-                opt.value = district;
-                opt.textContent = district;
-                districtSelect.appendChild(opt);
-            });
-            const otherOpt = document.createElement("option");
-            otherOpt.value = "Other District";
-            otherOpt.textContent = "Other / Not Listed";
-            districtSelect.appendChild(otherOpt);
-        } else {
-            districtSelect.disabled = true;
-            districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
-        }
-    });
+    if (countrySelect) {
+        worldCountries.forEach(country => {
+            const option = document.createElement("option");
+            option.value = country;
+            option.textContent = country;
+            countrySelect.appendChild(option);
+        });
+    }
 
     // -------------------------------------------------------------
-    // DEVOTEE NATIONALITY TOGGLE (India vs Other Country)
+    // DYNAMIC LOCATION LISTENERS
     // -------------------------------------------------------------
-    nationalitySelect.addEventListener("change", () => {
-        const isIndia = nationalitySelect.value === "India";
+    if (stateSelect && districtSelect) {
+        stateSelect.addEventListener("change", () => {
+            const selectedState = stateSelect.value;
+            districtSelect.innerHTML = '<option value="">-- Select District --</option>';
 
-        if (isIndia) {
-            indiaLocationGrid.classList.remove("hidden");
-            countryGroup.classList.add("hidden");
-            foreignCityGroup.classList.add("hidden");
-            
-            stateSelect.required = true;
-            districtSelect.required = true;
-            countrySelect.required = false;
-            foreignCityInput.required = false;
+            if (selectedState && indiaLocationData[selectedState]) {
+                districtSelect.disabled = false;
+                indiaLocationData[selectedState].sort().forEach(district => {
+                    const opt = document.createElement("option");
+                    opt.value = district;
+                    opt.textContent = district;
+                    districtSelect.appendChild(opt);
+                });
+                const otherOpt = document.createElement("option");
+                otherOpt.value = "Other District";
+                otherOpt.textContent = "Other / Not Listed";
+                districtSelect.appendChild(otherOpt);
+            } else {
+                districtSelect.disabled = true;
+                districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
+            }
+        });
+    }
 
-            idLabelText.textContent = "आधार नं0 / पासपोर्ट नं0 (Aadhaar / Passport No)";
-            idNumberInput.placeholder = "Enter 12-digit Aadhaar No. or Passport No.";
-        } else {
-            indiaLocationGrid.classList.add("hidden");
-            countryGroup.classList.remove("hidden");
-            foreignCityGroup.classList.remove("hidden");
+    if (nationalitySelect) {
+        nationalitySelect.addEventListener("change", () => {
+            const isIndia = nationalitySelect.value === "India";
 
-            stateSelect.required = false;
-            districtSelect.required = false;
-            countrySelect.required = true;
-            foreignCityInput.required = true;
+            if (isIndia) {
+                if (indiaLocationGrid) indiaLocationGrid.classList.remove("hidden");
+                if (countryGroup) countryGroup.classList.add("hidden");
+                if (foreignCityGroup) foreignCityGroup.classList.add("hidden");
+                
+                if (stateSelect) stateSelect.required = true;
+                if (districtSelect) districtSelect.required = true;
+                if (countrySelect) countrySelect.required = false;
 
-            idLabelText.textContent = "पासपोर्ट नं0 (Passport Number Mandatory for International Devotees)";
-            idNumberInput.placeholder = "Enter Passport Number (E.g. Z1234567)";
-        }
-    });
+                if (idLabelText) idLabelText.textContent = "Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0";
+                if (idNumberInput) idNumberInput.placeholder = "Enter 12-digit Aadhaar No. or Passport No.";
+            } else {
+                if (indiaLocationGrid) indiaLocationGrid.classList.add("hidden");
+                if (countryGroup) countryGroup.classList.remove("hidden");
+                if (foreignCityGroup) foreignCityGroup.classList.remove("hidden");
 
-    // -------------------------------------------------------------
-    // REFERRED BY DROPDOWN TOGGLE (Other Officer Name Text Field)
-    // -------------------------------------------------------------
-    referredBySelect.addEventListener("change", () => {
-        if (referredBySelect.value === "Other") {
-            otherRefGroup.classList.remove("hidden");
-            otherRefNameInput.required = true;
-            otherRefNameInput.focus();
-        } else {
-            otherRefGroup.classList.add("hidden");
-            otherRefNameInput.required = false;
-            otherRefNameInput.value = "";
-            markGroup(otherRefNameInput, true);
-        }
-    });
+                if (stateSelect) stateSelect.required = false;
+                if (districtSelect) districtSelect.required = false;
+                if (countrySelect) countrySelect.required = true;
+
+                if (idLabelText) idLabelText.textContent = "Passport Number (Mandatory for International)";
+                if (idNumberInput) idNumberInput.placeholder = "Enter Passport Number (E.g. Z1234567)";
+            }
+        });
+    }
+
+    if (referredBySelect && otherRefGroup) {
+        referredBySelect.addEventListener("change", () => {
+            if (referredBySelect.value === "Other") {
+                otherRefGroup.classList.remove("hidden");
+                if (otherRefNameInput) {
+                    otherRefNameInput.required = true;
+                    otherRefNameInput.focus();
+                }
+            } else {
+                otherRefGroup.classList.add("hidden");
+                if (otherRefNameInput) {
+                    otherRefNameInput.required = false;
+                    otherRefNameInput.value = "";
+                }
+            }
+        });
+    }
 
     // -------------------------------------------------------------
     // VALIDATION HELPERS
@@ -229,6 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const mobileRegex = /^[0-9+\s-]{8,15}$/;
 
     function markGroup(input, isValid) {
+        if (!input) return isValid;
         const group = input.closest(".input-group");
         if (group) {
             if (isValid) {
@@ -242,140 +248,160 @@ document.addEventListener("DOMContentLoaded", () => {
         return isValid;
     }
 
-    nameAgeInput.addEventListener("input", () => markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2));
-    emailInput.addEventListener("input", () => markGroup(emailInput, emailRegex.test(emailInput.value.trim())));
-    idNumberInput.addEventListener("input", () => markGroup(idNumberInput, idNumberInput.value.trim().length >= 4));
-    mobileInput.addEventListener("input", () => markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())));
-    accompanyingInput.addEventListener("input", () => markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2));
+    // -------------------------------------------------------------
+    // UNSTOPPABLE TRANSMISSION PIPELINE (FETCH + BEACON FALLBACK)
+    // -------------------------------------------------------------
+    async function sendDataUnstoppable(formData) {
+        const payloadStr = JSON.stringify(formData);
+
+        try {
+            // Method 1: Fetch API
+            await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: payloadStr
+            });
+        } catch (fetchErr) {
+            console.warn("Fetch failed, initiating Navigator Beacon fallback...", fetchErr);
+            try {
+                // Method 2: Navigator SendBeacon Fallback
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
+                }
+            } catch (beaconErr) {
+                console.error("Beacon fallback also failed:", beaconErr);
+            }
+        }
+    }
 
     // -------------------------------------------------------------
     // FORM SUBMIT HANDLER
     // -------------------------------------------------------------
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        const isIndia = nationalitySelect.value === "India";
+            const natVal = getVal("nationality") || "India";
+            const isIndia = natVal === "India";
 
-        // Mandatory Validations (EXCEPT vehicleNo which is OPTIONAL)
-        const isDateValid = markGroup(visitDateInput, visitDateInput.value !== "");
-        const isSlotValid = markGroup(visitSlotSelect, visitSlotSelect.value !== "");
-        const isNameAgeValid = markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2);
-        const isEmailValid = markGroup(emailInput, emailRegex.test(emailInput.value.trim()));
-        const isIdValid = markGroup(idNumberInput, idNumberInput.value.trim().length >= 4);
-        const isMobileValid = markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim()));
-        const isAccompanyingValid = markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2);
+            // Safe validation checks
+            const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
+            const isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
+            const isNameAgeValid = nameAgeInput ? markGroup(nameAgeInput, nameAgeInput.value.trim().length >= 2) : true;
+            const isEmailValid = emailInput ? markGroup(emailInput, emailRegex.test(emailInput.value.trim())) : true;
+            const isIdValid = idNumberInput ? markGroup(idNumberInput, idNumberInput.value.trim().length >= 4) : true;
+            const isMobileValid = mobileInput ? markGroup(mobileInput, mobileRegex.test(mobileInput.value.trim())) : true;
+            const isAccompanyingValid = accompanyingInput ? markGroup(accompanyingInput, accompanyingInput.value.trim().length >= 2) : true;
 
-        let isLocationValid = true;
-        if (isIndia) {
-            const isStateValid = markGroup(stateSelect, stateSelect.value !== "");
-            const isDistrictValid = markGroup(districtSelect, districtSelect.value !== "");
-            isLocationValid = isStateValid && isDistrictValid;
-        } else {
-            const isCountryValid = markGroup(countrySelect, countrySelect.value !== "");
-            const isForeignCityValid = markGroup(foreignCityInput, foreignCityInput.value.trim().length >= 2);
-            isLocationValid = isCountryValid && isForeignCityValid;
-        }
+            let isLocationValid = true;
+            if (isIndia) {
+                const isStateValid = stateSelect ? markGroup(stateSelect, stateSelect.value !== "") : true;
+                const isDistrictValid = districtSelect ? markGroup(districtSelect, districtSelect.value !== "") : true;
+                isLocationValid = isStateValid && isDistrictValid;
+            } else {
+                const isCountryValid = countrySelect ? markGroup(countrySelect, countrySelect.value !== "") : true;
+                const isForeignCityValid = foreignCityInput ? markGroup(foreignCityInput, foreignCityInput.value.trim().length >= 2) : true;
+                isLocationValid = isCountryValid && isForeignCityValid;
+            }
 
-        const mVal = parseInt(maleCountInput.value) || 0;
-        const fVal = parseInt(femaleCountInput.value) || 0;
-        const isCountValid = markGroup(maleCountInput, (mVal + fVal) > 0);
+            const mVal = parseInt(getVal("maleCount")) || 0;
+            const fVal = parseInt(getVal("femaleCount")) || 0;
+            const isCountValid = (mVal + fVal) > 0;
 
-        // Validate Referred By
-        const isRefValid = markGroup(referredBySelect, referredBySelect.value !== "");
-        let isOtherRefValid = true;
-        if (referredBySelect.value === "Other") {
-            isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
-        }
+            const isRefValid = referredBySelect ? markGroup(referredBySelect, referredBySelect.value !== "") : true;
+            let isOtherRefValid = true;
+            if (referredBySelect && referredBySelect.value === "Other" && otherRefNameInput) {
+                isOtherRefValid = markGroup(otherRefNameInput, otherRefNameInput.value.trim().length >= 2);
+            }
 
-        // Check if ANY mandatory field failed validation
-        if (!isDateValid || !isSlotValid || !isNameAgeValid || !isEmailValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
-            const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
-            if (firstInvalid) firstInvalid.focus();
-            return;
-        }
+            if (!isDateValid || !isSlotValid || !isNameAgeValid || !isEmailValid || !isIdValid || !isMobileValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
+                const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
+                if (firstInvalid) firstInvalid.focus();
+                return;
+            }
 
-        setSubmittingState(true);
+            setSubmittingState(true);
 
-        // Format DateTime string: "2026-07-25 (09:00 AM - 11:00 AM)"
-        const formattedVisitDateTime = `${visitDateInput.value} (${visitSlotSelect.value})`;
+            // Format Visit DateTime string
+            const dateVal = getVal("visitDate");
+            const slotVal = getVal("visitSlot");
+            const formattedVisitDateTime = `${dateVal} (${slotVal})`;
 
-        let finalState = "";
-        let finalDistrict = "";
+            let finalState = "";
+            let finalDistrict = "";
 
-        if (isIndia) {
-            finalState = stateSelect.value;
-            finalDistrict = districtSelect.value;
-        } else {
-            finalState = countrySelect.value + " (International)";
-            finalDistrict = foreignCityInput.value.trim() || "International Devotee";
-        }
+            if (isIndia) {
+                finalState = getVal("stateSelect");
+                finalDistrict = getVal("districtSelect");
+            } else {
+                finalState = (getVal("countrySelect") || "International") + " (International)";
+                finalDistrict = getVal("foreignCity") || "International Devotee";
+            }
 
-        // Determine Referred By text for Google Sheet
-        let finalReferredBy = referredBySelect.value;
-        if (referredBySelect.value === "Other" && otherRefNameInput.value.trim()) {
-            finalReferredBy = "Other: " + otherRefNameInput.value.trim();
-        }
+            let finalReferredBy = getVal("referredBySelect");
+            if (finalReferredBy === "Other" && getVal("otherRefName")) {
+                finalReferredBy = "Other: " + getVal("otherRefName");
+            }
 
-        const formData = {
-            visitDateTime: formattedVisitDateTime,
-            nameAge: nameAgeInput.value.trim(),
-            email: emailInput.value.trim(),
-            state: finalState,
-            district: finalDistrict,
-            idNumber: idNumberInput.value.trim(),
-            maleCount: mVal,
-            femaleCount: fVal,
-            mobile: mobileInput.value.trim(),
-            vehicleNo: vehicleNoInput.value.trim(), // Optional field
-            accompanying: accompanyingInput.value.trim(),
-            referredBy: finalReferredBy
-        };
+            // Construct Unstoppable Payload
+            const formData = {
+                visitDateTime: formattedVisitDateTime,
+                nameAge: getVal("nameAge"),
+                email: getVal("email"),
+                state: finalState,
+                district: finalDistrict,
+                idNumber: getVal("idNumber"),
+                maleCount: mVal,
+                femaleCount: fVal,
+                mobile: getVal("mobile"),
+                vehicleNo: getVal("vehicleNo"),
+                accompanying: getVal("accompanying"),
+                referredBy: finalReferredBy
+            };
 
-        try {
-            await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: JSON.stringify(formData)
-            });
+            // Transmit Data via Unstoppable Pipeline
+            await sendDataUnstoppable(formData);
 
-            // Show Success Modal
-            successModal.classList.remove("hidden");
+            // Display Success Modal
+            if (successModal) successModal.classList.remove("hidden");
 
-            // Reset form
+            // Reset form safely
             form.reset();
-            districtSelect.disabled = true;
-            districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
-            nationalitySelect.value = "India";
-            nationalitySelect.dispatchEvent(new Event("change"));
-            referredBySelect.dispatchEvent(new Event("change"));
+            if (districtSelect) {
+                districtSelect.disabled = true;
+                districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
+            }
+            if (nationalitySelect) {
+                nationalitySelect.value = "India";
+                nationalitySelect.dispatchEvent(new Event("change"));
+            }
+            if (referredBySelect) {
+                referredBySelect.dispatchEvent(new Event("change"));
+            }
 
             document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
-
-        } catch (error) {
-            console.error("Submission Error:", error);
-            alert("❌ Submitting error occurred. Please check your internet connection.");
-        } finally {
             setSubmittingState(false);
-        }
-    });
+        });
+    }
 
     function setSubmittingState(isSubmitting) {
+        if (!submitBtn) return;
         if (isSubmitting) {
             submitBtn.disabled = true;
-            btnText.classList.add("hidden");
-            btnLoader.classList.remove("hidden");
+            if (btnText) btnText.classList.add("hidden");
+            if (btnLoader) btnLoader.classList.remove("hidden");
         } else {
             submitBtn.disabled = false;
-            btnText.classList.remove("hidden");
-            btnLoader.classList.add("hidden");
+            if (btnText) btnText.classList.remove("hidden");
+            if (btnLoader) btnLoader.classList.add("hidden");
         }
     }
 
-    modalCloseBtn.addEventListener("click", () => successModal.classList.add("hidden"));
-    successModal.addEventListener("click", (e) => {
-        if (e.target === successModal) successModal.classList.add("hidden");
-    });
+    if (modalCloseBtn && successModal) {
+        modalCloseBtn.addEventListener("click", () => successModal.classList.add("hidden"));
+        successModal.addEventListener("click", (e) => {
+            if (e.target === successModal) successModal.classList.add("hidden");
+        });
+    }
 });
