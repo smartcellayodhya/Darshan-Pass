@@ -145,10 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // GOOGLE ACCOUNT & LOCK OVERLAY ELEMENTS
     const googleAuthLock = document.getElementById("google-auth-lock");
-    const lockNameInput = document.getElementById("lockNameInput");
-    const lockEmailInput = document.getElementById("lockEmailInput");
-    const lockLoginBtn = document.getElementById("lock-login-btn");
-
     const googleSignedIn = document.getElementById("google-signed-in");
     const googleLoginPrompt = document.getElementById("google-login-prompt");
     const displayUserName = document.getElementById("display-user-name");
@@ -167,27 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             if (googleAuthLock) googleAuthLock.classList.remove("hidden");
         }
-    }
-
-    if (lockLoginBtn) {
-        lockLoginBtn.addEventListener("click", () => {
-            const nameVal = getVal("lockNameInput");
-            const emailVal = getVal("lockEmailInput");
-
-            const isNameValid = nameVal && nameVal.trim().length >= 2;
-            const isEmailValid = emailVal && emailVal.includes("@") && emailVal.includes(".");
-
-            markGroup(lockNameInput, isNameValid);
-            markGroup(lockEmailInput, isEmailValid);
-
-            if (isNameValid && isEmailValid) {
-                localStorage.setItem("darshan_submitter_name", nameVal.trim());
-                localStorage.setItem("darshan_submitter_email", emailVal.trim());
-
-                if (googleAuthLock) googleAuthLock.classList.add("hidden");
-                updateGoogleAccountUI();
-            }
-        });
     }
 
     function updateGoogleAccountUI() {
