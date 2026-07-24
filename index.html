@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shri Ram Janmabhoomi Teerth Kshetra | Darshan Booking</title>
+    <meta name="description" content="Shri Ram Janmabhoomi Teerth Kshetra - Darshan Booking & Pass Counter Management System.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="spiritual-theme">
+    <!-- Top Spiritual Banner -->
+    <header class="spiritual-header-banner">
+        <div class="banner-main-container">
+            <div class="banner-logo left-logo">
+                <img src="assets/shri_ram_sun_emblem.png" alt="Shri Ram Janmabhoomi Teerth Kshetra Sun Logo" class="sun-emblem-img">
+            </div>
+
+            <div class="banner-titles">
+                <h1 class="trust-title-en">Shri Ram Janmabhoomi Teerth Kshetra</h1>
+                <h2 class="sloka-title-hi">रामो विग्रहवान् धर्मः</h2>
+                <h3 class="system-subtitle">Counter Management System</h3>
+            </div>
+
+            <div class="banner-logo right-logo">
+                <img src="assets/shri_ram_bow_illustration.png" alt="Bhagwan Shri Ram Illustration" class="ram-illustration-img">
+            </div>
+        </div>
+
+        <!-- Sub-Header Info Bar (Clean Live Clock) -->
+        <div class="banner-status-bar">
+            <div class="status-item live-time">
+                <i class="fa-solid fa-house"></i>
+                <span id="live-clock">Jul 24, 2026 15:14:17</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Spiritual App Container -->
+    <main class="spiritual-app-container">
+        <!-- Configuration Notice -->
+        <div id="config-alert" class="config-banner hidden">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span><strong>Setup Required:</strong> Please replace <code>GOOGLE_APPS_SCRIPT_URL</code> in <code>script.js</code> with your deployed Apps Script URL.</span>
+        </div>
+
+        <section class="form-card spiritual-card">
+            <div class="card-ornate-header">
+                <span class="om-symbol">ॐ</span>
+                <div class="badge spiritual-badge">
+                    <i class="fa-solid fa-om"></i> दर्शन पास पंजीकरण
+                </div>
+                <h2 class="form-title spiritual-title">दर्शन हेतु ऑनलाइन पंजीकरण फॉर्म</h2>
+                <p class="form-subtitle">कृपया अपनी व साथ आने वाले सभी दर्शनार्थियों की सही जानकारी भरें।</p>
+                <div class="golden-divider"></div>
+            </div>
+
+            <form id="darshan-form" novalidate>
+                <!-- 1. दर्शन हेतु आने का दिनाँक (Date Only) & 2. समय स्लॉट (Time Slot Dropdown) -->
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label for="visitDate" class="input-label">
+                            <i class="fa-regular fa-calendar-days"></i> दर्शन हेतु आने का दिनाँक (Visit Date) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="date" id="visitDate" name="visitDate" required>
+                        </div>
+                        <span class="error-msg" id="visitDate-error">कृपया दर्शन की दिनांक चुनें</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="visitSlot" class="input-label">
+                            <i class="fa-regular fa-clock"></i> दर्शन समय स्लॉट (Time Slot) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper select-wrapper">
+                            <select id="visitSlot" name="visitSlot" required>
+                                <option value="">-- Select Time Slot / समय स्लॉट चुनें --</option>
+                                <option value="07:00 AM - 09:00 AM">1. 07:00 AM - 09:00 AM</option>
+                                <option value="09:00 AM - 11:00 AM">2. 09:00 AM - 11:00 AM</option>
+                                <option value="11:00 AM - 12:00 PM">3. 11:00 AM - 12:00 PM</option>
+                                <option value="01:00 PM - 03:00 PM">4. 01:00 PM - 03:00 PM</option>
+                                <option value="03:00 PM - 05:00 PM">5. 03:00 PM - 05:00 PM</option>
+                                <option value="05:00 PM - 07:00 PM">6. 05:00 PM - 07:00 PM</option>
+                                <option value="07:00 PM - 09:00 PM">7. 07:00 PM - 09:00 PM</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                        <span class="error-msg" id="visitSlot-error">कृपया समय स्लॉट चुनें</span>
+                    </div>
+                </div>
+
+                <!-- 3. नाम व उम्र -->
+                <div class="input-group">
+                    <label for="nameAge" class="input-label">
+                        <i class="fa-regular fa-user"></i> मुख्य दर्शनार्थी का नाम व उम्र (Name & Age) <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="nameAge" name="nameAge" placeholder="उदा: Rahul Sharma, 35 Yrs" required>
+                        <i class="fa-solid fa-circle-check valid-icon"></i>
+                    </div>
+                    <span class="error-msg" id="nameAge-error">कृपया अपना नाम एवं उम्र दर्ज करें</span>
+                </div>
+
+                <!-- Devotee Nationality Selection -->
+                <div class="input-group">
+                    <label for="nationality" class="input-label">
+                        <i class="fa-solid fa-earth-americas"></i> Devotee Country / देश <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper select-wrapper">
+                        <select id="nationality" name="nationality" required>
+                            <option value="India" selected>🇮🇳 India (भारत)</option>
+                            <option value="Other">🌐 Other Country (अंतर्राष्ट्रीय श्रद्धालु / International Devotee)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    </div>
+                </div>
+
+                <!-- International Country Dropdown (Visible only if Other Country selected) -->
+                <div class="input-group hidden" id="country-group">
+                    <label for="countrySelect" class="input-label">
+                        <i class="fa-solid fa-globe"></i> Select Country / देश का नाम <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper select-wrapper">
+                        <select id="countrySelect" name="countrySelect">
+                            <option value="">-- Select Country --</option>
+                            <!-- Populated via JS -->
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    </div>
+                    <span class="error-msg" id="country-error">Please select your country</span>
+                </div>
+
+                <!-- State & District Dropdowns (For India) -->
+                <div class="grid-2" id="india-location-grid">
+                    <div class="input-group">
+                        <label for="stateSelect" class="input-label">
+                            <i class="fa-solid fa-map-location-dot"></i> Select State (राज्य) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper select-wrapper">
+                            <select id="stateSelect" name="stateSelect" required>
+                                <option value="">-- Select State --</option>
+                                <!-- Populated via JS -->
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                        <span class="error-msg" id="state-error">Please select your state</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="districtSelect" class="input-label">
+                            <i class="fa-solid fa-city"></i> Select District (जिला) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper select-wrapper">
+                            <select id="districtSelect" name="districtSelect" required disabled>
+                                <option value="">-- Select State First --</option>
+                                <!-- Populated dynamically based on State -->
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                        <span class="error-msg" id="district-error">Please select your district</span>
+                    </div>
+                </div>
+
+                <!-- Foreign City/Province Input (Visible for International Devotees) -->
+                <div class="input-group hidden" id="foreign-city-group">
+                    <label for="foreignCity" class="input-label">
+                        <i class="fa-solid fa-building-columns"></i> City / State / Province
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="foreignCity" name="foreignCity" placeholder="E.g. London, California, Kathmandu">
+                    </div>
+                </div>
+
+                <!-- 5. आधार नं0 / पासपोर्ट नं0 (Dynamic Label) -->
+                <div class="input-group">
+                    <label for="idNumber" class="input-label" id="idNumber-label">
+                        <i class="fa-solid fa-id-card"></i> <span id="id-label-text">आधार नं0 / पासपोर्ट नं0 (Aadhaar / Passport No)</span> <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." required>
+                        <i class="fa-solid fa-circle-check valid-icon"></i>
+                    </div>
+                    <span class="error-msg" id="idNumber-error">Please enter valid ID number</span>
+                </div>
+
+                <!-- 6. पुरुष (M) व महिला (F) की संख्या -->
+                <div class="input-group">
+                    <label class="input-label">
+                        <i class="fa-solid fa-users"></i> दर्शन हेतु पुरुषों (M) व महिलाओं (F) की संख्या <span class="required">*</span>
+                    </label>
+                    <div class="grid-2">
+                        <div class="input-wrapper">
+                            <input type="number" id="maleCount" name="maleCount" min="0" placeholder="पुरुषों (M) की संख्या" required>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="number" id="femaleCount" name="femaleCount" min="0" placeholder="महिलाओं (F) की संख्या" required>
+                        </div>
+                    </div>
+                    <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें</span>
+                </div>
+
+                <!-- 7. मो0नं0 & 8. गाडी नं0 -->
+                <div class="grid-2">
+                    <div class="input-group">
+                        <label for="mobile" class="input-label">
+                            <i class="fa-solid fa-phone"></i> मो0नं0 (Mobile No) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="tel" id="mobile" name="mobile" placeholder="Mobile Number with Country Code" required>
+                        </div>
+                        <span class="error-msg" id="mobile-error">Please enter a valid mobile number</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="vehicleNo" class="input-label">
+                            <i class="fa-solid fa-car"></i> गाडी नं0 (Vehicle No)
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP 42 AB 1234 (If any)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र -->
+                <div class="input-group">
+                    <label for="accompanying" class="input-label">
+                        <i class="fa-solid fa-users-rectangle"></i> साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र
+                    </label>
+                    <div class="input-wrapper">
+                        <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Amit Sharma (Age 30 Yrs)&#10;2. Supriya Sharma (Age 28 Yrs)"></textarea>
+                    </div>
+                </div>
+
+                <!-- 10. Referred by -->
+                <div class="input-group">
+                    <label for="referredBy" class="input-label">
+                        <i class="fa-solid fa-user-tag"></i> Referred by (किसके संदर्भ से)
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="referredBy" name="referredBy" placeholder="Reference Person / Org Name">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn" class="submit-btn spiritual-submit-btn">
+                    <span class="btn-text">
+                        <i class="fa-solid fa-gopuram"></i> दर्शन पास हेतु सबमिट करें (Submit Pass)
+                    </span>
+                    <span class="btn-loader hidden">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Submitting...
+                    </span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Success Modal Popup -->
+        <div id="success-modal" class="modal-overlay hidden">
+            <div class="modal-content spiritual-modal">
+                <div class="success-icon-wrap spiritual-success-icon">
+                    <i class="fa-solid fa-om"></i>
+                </div>
+                <h2>जय श्री राम! पंजीकरण सफल रहा</h2>
+                <p>आपकी दर्शन पास की जानकारी Google Sheet में सफलतापूर्वक दर्ज हो गई है।</p>
+                <button id="modal-close-btn" class="modal-btn spiritual-modal-btn">ठीक है (Done)</button>
+            </div>
+        </div>
+
+        <footer class="app-footer spiritual-footer">
+            <p><strong>श्री राम जन्मभूमि तीर्थ क्षेत्र</strong> • आधिकारिक Counter Management System Portal</p>
+        </footer>
+    </main>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
