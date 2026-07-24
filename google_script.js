@@ -57,9 +57,10 @@ function doPost(e) {
     var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
     var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
 
+    var visitSlot = data.visitSlot || data.visit_slot || '';
     var totalDevotees = mVal + fVal;
 
-    // 3. Append row in exact 16 column order (including numeric totals for Looker Studio SUM)
+    // 3. Append row in exact 17 column order (including Time Slot text column for Looker Studio)
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp
       visitDateTime,                                 // 2. दर्शन हेतु आने का दिनाँक व समय
@@ -76,7 +77,8 @@ function doPost(e) {
       submitterEmail,                                // 13. आवेदनकर्ता ईमेल ID (Submitter Email)
       totalDevotees,                                 // 14. कुल दर्शनार्थी संख्या (Total Devotees Numeric)
       mVal,                                          // 15. पुरुष संख्या (Male Numeric)
-      fVal                                           // 16. महिला संख्या (Female Numeric)
+      fVal,                                          // 16. महिला संख्या (Female Numeric)
+      visitSlot                                      // 17. समय स्लॉट (Time Slot Pure Text)
     ]);
 
     // 4. AUTOMATIC CENTER ALIGNMENT & CLEAN FORMATTING FOR NEW ROW

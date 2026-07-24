@@ -601,9 +601,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalReferredBy = "Other: " + getVal("otherRefName");
             }
 
-            // Construct Unstoppable 13-Column Payload
+            // Construct Unstoppable Payload
             const formData = {
                 visitDateTime: formattedVisitDateTime,
+                visitDate: formattedDateStr,
+                visitSlot: slotVal,
                 nameAge: getVal("nameAge"),
                 state: finalState,
                 district: finalDistrict,
