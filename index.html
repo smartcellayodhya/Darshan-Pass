@@ -144,31 +144,6 @@
 
         <!-- Clean Crisp White Form Card -->
         <section class="gov-form-card">
-            <!-- GOOGLE SUBMITTER IDENTITY CARD -->
-            <div id="google-account-card" class="gov-account-card">
-                <div class="account-card-header">
-                    <div class="google-badge-title">
-                        <i class="fa-brands fa-google google-icon"></i>
-                        <span>Google Account / आवेदनकर्ता की खाता जानकारी</span>
-                    </div>
-                </div>
-                <div class="account-card-body">
-                    <!-- Signed In State -->
-                    <div id="google-signed-in" class="signed-in-box">
-                        <div class="user-avatar-badge">
-                            <i class="fa-solid fa-user-check"></i>
-                        </div>
-                        <div class="user-info-text">
-                            <div class="user-name-str" id="display-user-name">Google Devotee</div>
-                            <div class="user-email-str" id="display-user-email">devotee@gmail.com</div>
-                        </div>
-                        <button type="button" id="change-account-btn" class="change-account-btn" title="गूगल खाता बदलें">
-                            <i class="fa-solid fa-rotate"></i> खाता बदलें
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <form id="darshan-form" novalidate>
                 <!-- SUB-SECTION 1: VISIT DETAILS -->
                 <div class="gov-section">
@@ -229,7 +204,7 @@
                             <label for="countrySelect" class="input-label">
                                 Select Country / देश का नाम <span class="required">*</span>
                             </label>
-                            <div class="input-wrapper select-wrapper searchable-select-wrapper">
+                            <div class="input-wrapper select-wrapper">
                                 <select id="countrySelect" name="countrySelect">
                                     <option value="">-- Select Country --</option>
                                 </select>
@@ -244,7 +219,7 @@
                                 <label for="stateSelect" class="input-label">
                                     Select State / राज्य <span class="required">*</span>
                                 </label>
-                                <div class="input-wrapper select-wrapper searchable-select-wrapper">
+                                <div class="input-wrapper select-wrapper">
                                     <select id="stateSelect" name="stateSelect" required>
                                         <option value="">-- Select State --</option>
                                     </select>
@@ -257,7 +232,7 @@
                                 <label for="districtSelect" class="input-label">
                                     Select District / जिला <span class="required">*</span>
                                 </label>
-                                <div class="input-wrapper select-wrapper searchable-select-wrapper">
+                                <div class="input-wrapper select-wrapper">
                                     <select id="districtSelect" name="districtSelect" required disabled>
                                         <option value="">-- Select State First --</option>
                                     </select>
@@ -387,7 +362,7 @@
                             <label for="referredBySelect" class="input-label">
                                 Referred By / किसके संदर्भ से <span class="required">*</span>
                             </label>
-                            <div class="input-wrapper select-wrapper searchable-select-wrapper">
+                            <div class="input-wrapper select-wrapper">
                                 <select id="referredBySelect" name="referredBySelect" required>
                                     <option value="">-- Select Reference Officer / रेफरेंस चुनें --</option>
                                     <option value="Ref by SSP sir">Ref by SSP sir</option>
