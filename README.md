@@ -4,41 +4,51 @@ Aapki Google Sheet link: [https://docs.google.com/spreadsheets/d/1hvU0bmecFROopD
 
 ---
 
-## 📊 Exact Google Sheet Columns (Row 1 Headers)
+## 📊 Google Sheet 19-Column Structure (Row 1 Headers & Status System)
 
-Apni Google Sheet ke **Row 1** me exact in 11 columns ko set karein:
-
-| Col # | Exact Column Header |
-| :--- | :--- |
-| **A1** | `Timestamp` |
-| **B1** | `दर्शन हेतु आने का दिनाँक व समय` |
-| **C1** | `नाम व उम्र` |
-| **D1** | `राज्य` |
-| **E1** | `जिला` |
-| **F1** | `आधार नं0/पासपोर्ट नं0` |
-| **G1** | `दर्शन हेतु पुरूषो (M) व महिलाओं (F) की अलग - अलग संख्या` |
-| **H1** | `मो0नं0` |
-| **I1** | `गाडी नं0` |
-| **J1** | `साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र` |
-| **K1** | `Referred by` |
+| Col # | Column Header | Descriptions & Automatic Behaviors |
+| :--- | :--- | :--- |
+| **A1** | `Timestamp` | Form submit hone ka samay (dd/mm/yyyy hh:mm:ss) |
+| **B1** | `दर्शन तिथि` | Visit Date (DD/MM/YYYY) |
+| **C1** | `दर्शन समय स्लॉट` | Visit Time Slot (07:00 AM - 09:00 AM) |
+| **D1** | `नाम व उम्र` | Devotee Name & Age |
+| **E1** | `राज्य` | State |
+| **F1** | `जिला` | District |
+| **G1** | `आधार नं0/पासपोर्ट नं0` | Govt ID Number |
+| **H1** | `पुरूषो व महिलाओं की संख्या` | Gender Counts (Text) |
+| **I1** | `मो0नं0` | Mobile Number |
+| **J1** | `गाडी नं0` | Vehicle Number |
+| **K1** | `साथ में आने वाले सदस्यों के नाम व उम्र` | Accompanying Devotees |
+| **L1** | `Referred by` | Reference Officer Name |
+| **M1** | `आवेदनकर्ता गूगल नाम` | Google Submitter Name |
+| **N1** | `आवेदनकर्ता ईमेल ID` | Google Submitter Email |
+| **O1** | `कुल दर्शनार्थी संख्या` | Total Devotees (Numeric SUM) |
+| **P1** | `पुरुष संख्या` | Male Count |
+| **Q1** | `महिला संख्या` | Female Count |
+| **R1** | `पास स्थिति (Pass Status)` | **Dropdown:** `Pending` / `Pass Created` / `Rejected` |
+| **S1** | `पास बनने की तिथि (Pass Created Date)` | **Auto-filled:** Jise din status `Pass Created` set hoga, us din ki date automatic fill ho jayegi. |
 
 ---
 
-## 🚀 Step-by-Step Setup Guide
+## 🟢 Automatic Light Green Highlight & Pass Created Date System
 
-### Step 1: Google Sheet Apps Script Deploy Karein
+1. **Light Green Row Highlight:**
+   - Jab aap ya aapki team Google Sheet me Column R (`पास स्थिति`) ko **`Pass Created`** select karegi:
+     - Poori Row **Light Green** (`#dcfce7`) se fill ho jayegi.
+     - Column S (`पास बनने की तिथि`) me aaj ki तारीख (Date) apne-aap fill ho jayegi!
+2. **Rejected Status:**
+   - Status **`Rejected`** karne par poori Row Light Red (`#fee2e2`) ho jayegi.
+3. **Pending Status:**
+   - Naye aavedan hamesha **`Pending`** status ke saath aayenge aur row normal rahegi.
+
+---
+
+## 🚀 How to Apply / Update in Google Sheet
+
 1. Apni [Google Sheet](https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit) kholein.
-2. Upar menu me **Extensions** -> **Apps Script** par click karein.
-3. [google_script.js](file:///d:/antigravity/Darshan%20pass/google_script.js) ka poora code copy karke editor me paste karein aur **Save (Ctrl + S)** karein.
-4. Top right corner par **Deploy** -> **New Deployment**:
-   - Type: **Web App**
-   - Execute as: **Me**
-   - Who has access: **Anyone** *(⚠️ Bohat zaroori hai)*
-5. **Deploy** button dabayein, Google account permissions allow karein, aur **Web App URL** copy kar lein.
-
-### Step 2: `script.js` Update Karein
-- [script.js](file:///d:/antigravity/Darshan%20pass/script.js) kholein aur Line 7 par `GOOGLE_APPS_SCRIPT_URL` ki jagah copied URL paste kar dein.
-
-### Step 3: Custom Domain Deploy Karein
-- [Vercel](https://vercel.com) ya [Netlify](https://netlify.com) par free account banayein.
-- Apne project folder (`d:\antigravity\Darshan pass`) ko upload karke Custom Domain (A Record / CNAME) add kar dein!
+2. Menu me **Extensions** -> **Apps Script** par click karein.
+3. [google_script.js](file:///d:/antigravity/Darshan%20pass/google_script.js) ka poora code copy karke Editor me paste karein aur **Save (Ctrl + S)** karein.
+4. Top Right corner me **Deploy** -> **New Deployment** (ya Manage Deployments -> Edit -> New Version) karke Deploy karein.
+5. Google Sheet kholein aur top menu bar me **⚙️ VIP Tools** menu dikhega:
+   - **`🎯 Setup Status, Format & Apply Highlighting`** par click karein -> Ye 19 columns, Dropdown aur Conditional Light Green highlighting set kar dega.
+   - **`📊 Generate VIP Dashboard`** par click karein -> Ye **`📊 VIP Dashboard`** tab me Date-wise **Pass Created vs Form Submitted** report & chart ready kar dega!
