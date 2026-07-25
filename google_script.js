@@ -3,26 +3,26 @@
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  * 
- * Complete 19-Column Structure:
+ * Clean 19-Column Structure (Pass Status & Created Date placed right after Timestamp):
  * 1. Timestamp (dd/mm/yyyy hh:mm:ss)
- * 2. दर्शन तिथि (Visit Date - DD/MM/YYYY)
- * 3. दर्शन समय स्लॉट (Visit Time Slot - 07:00 AM - 09:00 AM)
- * 4. नाम व उम्र (Name & Age)
- * 5. राज्य (State)
- * 6. जिला (District)
- * 7. आधार नं0/पासपोर्ट नं0 (ID Number)
- * 8. पुरूषो व महिलाओं की संख्या (Gender Counts Text)
- * 9. मो0नं0 (Mobile Number)
- * 10. गाडी नं0 (Vehicle Number)
- * 11. साथ में आने वाले सदस्यों के नाम व उम्र (Accompanying Devotees)
- * 12. Referred by (Reference Officer)
- * 13. आवेदनकर्ता गूगल नाम (Submitter Name)
- * 14. आवेदनकर्ता ईमेल ID (Submitter Email)
- * 15. कुल दर्शनार्थी संख्या (Total Devotees Numeric SUM)
- * 16. पुरुष संख्या (Male Count Numeric)
- * 17. महिला संख्या (Female Count Numeric)
- * 18. पास स्थिति (Pass Status - Pending / Pass Created / Rejected)
- * 19. पास बनने की तिथि (Pass Created Date - DD/MM/YYYY)
+ * 2. पास स्थिति (Pass Status - Pending / Pass Created / Rejected)
+ * 3. पास बनने की तिथि (Pass Created Date - DD/MM/YYYY)
+ * 4. दर्शन तिथि (Visit Date - DD/MM/YYYY)
+ * 5. दर्शन समय स्लॉट (Visit Time Slot - 07:00 AM - 09:00 AM)
+ * 6. नाम व उम्र (Name & Age)
+ * 7. राज्य (State)
+ * 8. जिला (District)
+ * 9. आधार नं0/पासपोर्ट नं0 (ID Number)
+ * 10. पुरूषो व महिलाओं की संख्या (Gender Counts Text)
+ * 11. मो0नं0 (Mobile Number)
+ * 12. गाडी नं0 (Vehicle Number)
+ * 13. साथ में आने वाले सदस्यों के नाम व उम्र (Accompanying Devotees)
+ * 14. Referred by (Reference Officer)
+ * 15. आवेदनकर्ता गूगल नाम (Submitter Name)
+ * 16. आवेदनकर्ता ईमेल ID (Submitter Email)
+ * 17. कुल दर्शनार्थी संख्या (Total Devotees Numeric SUM)
+ * 18. पुरुष संख्या (Male Count Numeric)
+ * 19. महिला संख्या (Female Count Numeric)
  */
 
 function doPost(e) {
@@ -86,27 +86,27 @@ function doPost(e) {
     var passStatus = "Pending";
     var passCreatedDate = ""; // Empty until pass is generated
 
-    // 3. Append row in 19-column order
+    // 3. Append row in 19-column order (Status & Created Date right after Timestamp)
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp
-      visitDate,                                     // 2. दर्शन तिथि (Visit Date - DD/MM/YYYY)
-      visitSlot,                                     // 3. दर्शन समय स्लॉट (Visit Time Slot)
-      nameAge,                                       // 4. नाम व उम्र
-      state,                                         // 5. राज्य
-      district,                                      // 6. जिला
-      idNumber,                                      // 7. आधार नं0/पासपोर्ट नं0
-      genderCountsStr,                               // 8. पुरूषो व महिलाओं की संख्या
-      mobile,                                        // 9. मो0नं0
-      vehicleNo,                                     // 10. गाडी नं0
-      accompanying,                                  // 11. साथ में आने वाले सदस्यों के नाम व उम्र
-      referredBy,                                    // 12. Referred by
-      submitterName,                                 // 13. Submitter Name
-      submitterEmail,                                // 14. Submitter Email
-      totalDevotees,                                 // 15. कुल दर्शनार्थी संख्या (Numeric SUM)
-      mVal,                                          // 16. पुरुष संख्या (Numeric)
-      fVal,                                          // 17. महिला संख्या (Numeric)
-      passStatus,                                    // 18. पास स्थिति (Pass Status)
-      passCreatedDate                                // 19. पास बनने की तिथि (Pass Created Date)
+      passStatus,                                    // 2. पास स्थिति (Pass Status - Column B)
+      passCreatedDate,                               // 3. पास बनने की तिथि (Pass Created Date - Column C)
+      visitDate,                                     // 4. दर्शन तिथि (Visit Date - DD/MM/YYYY)
+      visitSlot,                                     // 5. दर्शन समय स्लॉट (Visit Time Slot)
+      nameAge,                                       // 6. नाम व उम्र
+      state,                                         // 7. राज्य
+      district,                                      // 8. जिला
+      idNumber,                                      // 9. आधार नं0/पासपोर्ट नं0
+      genderCountsStr,                               // 10. पुरूषो व महिलाओं की संख्या
+      mobile,                                        // 11. मो0नं0
+      vehicleNo,                                     // 12. गाडी नं0
+      accompanying,                                  // 13. साथ में आने वाले सदस्यों के नाम व उम्र
+      referredBy,                                    // 14. Referred by
+      submitterName,                                 // 15. Submitter Name
+      submitterEmail,                                // 16. Submitter Email
+      totalDevotees,                                 // 17. कुल दर्शनार्थी संख्या (Numeric SUM)
+      mVal,                                          // 18. पुरुष संख्या (Numeric)
+      fVal                                           // 19. महिला संख्या (Numeric)
     ]);
 
     // 4. AUTOMATIC CENTER ALIGNMENT & DROPDOWN VALIDATION FOR NEW ROW
@@ -124,8 +124,8 @@ function doPost(e) {
 
       sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
 
-      // Add Dropdown to Pass Status cell (Column 18 / R)
-      var statusCell = sheet.getRange(lastRow, 18);
+      // Add Dropdown to Pass Status cell (Column 2 / B)
+      var statusCell = sheet.getRange(lastRow, 2);
       var rule = SpreadsheetApp.newDataValidation()
         .requireValueInList(["Pending", "Pass Created", "Rejected"], true)
         .setAllowInvalid(false)
@@ -137,7 +137,7 @@ function doPost(e) {
 
     return ContentService.createTextOutput(JSON.stringify({
       "result": "success",
-      "message": "Darshan Pass entry saved successfully with Status = Pending!"
+      "message": "Darshan Pass entry saved successfully with Status = Pending in Column B!"
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -157,7 +157,7 @@ function doGet(e) {
       formatEntireSheet();
       return ContentService.createTextOutput(JSON.stringify({
         "status": "success",
-        "message": "Google Sheet Formatted, Headers Added & Status System Initialized!"
+        "message": "Google Sheet Formatted! Pass Status is now in Column B right after Timestamp!"
       })).setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({
@@ -187,9 +187,9 @@ function getTargetSpreadsheet() {
 
 /**
  * AUTOMATIC EDIT TRIGGER (onEdit)
- * When status is changed to "Pass Created":
+ * When status in Column 2 (B) is changed to "Pass Created":
  * 1. Highlights the whole row in Light Green (#dcfce7)
- * 2. Auto-fills Column 19 (Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
+ * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
  */
 function onEdit(e) {
   if (!e || !e.range) return;
@@ -200,18 +200,18 @@ function onEdit(e) {
   var col = e.range.getColumn();
   var row = e.range.getRow();
 
-  // Column 18 = Pass Status (Column R)
-  if (col === 18 && row > 1) {
+  // Column 2 = Pass Status (Column B)
+  if (col === 2 && row > 1) {
     var statusVal = String(e.value || e.range.getValue() || '').trim();
     var lastCol = Math.max(sheet.getLastColumn(), 19);
     var rowRange = sheet.getRange(row, 1, 1, lastCol);
-    var dateCell = sheet.getRange(row, 19); // Column 19 (Pass Created Date)
+    var dateCell = sheet.getRange(row, 3); // Column 3 (C - Pass Created Date)
 
     if (statusVal.toLowerCase() === "pass created" || statusVal.toLowerCase() === "approved") {
       // 1. Light Green Row Background (#dcfce7)
       rowRange.setBackground("#dcfce7");
 
-      // 2. Auto-fill Pass Created Date if empty
+      // 2. Auto-fill Pass Created Date in Col C if empty
       if (!dateCell.getValue()) {
         var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
         dateCell.setValue(todayStr);
@@ -236,7 +236,7 @@ function onOpen() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
-      .addItem('🎯 Setup Status, Format & Apply Highlighting (फॉर्मेट व रंग सेट करें)', 'formatEntireSheet')
+      .addItem('🎯 Setup Status in Column B & Apply Highlighting (कॉलम B में स्टेटस सेट करें)', 'formatEntireSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
       .addToUi();
   } catch (err) {
@@ -246,6 +246,7 @@ function onOpen() {
 
 /**
  * UTILITY 1: SAFELY SETUP HEADERS, DROPDOWNS & CONDITIONAL GREEN HIGHLIGHTING
+ * Inserts Pass Status & Pass Created Date as Column B & C right after Timestamp (Col A)
  */
 function formatEntireSheet() {
   var ss = getTargetSpreadsheet();
@@ -259,17 +260,39 @@ function formatEntireSheet() {
     var lastRow = sheet.getLastRow();
     if (lastRow < 1) return;
 
-    // 1. Ensure Header Column 3 is Time Slot
-    var col3Header = String(sheet.getRange(1, 3).getValue() || '');
-    if (!col3Header.includes("समय") && !col3Header.includes("Slot")) {
-      sheet.insertColumnAfter(2); // Insert new empty Column C safely
-      sheet.getRange(1, 2).setValue("दर्शन तिथि");
-      sheet.getRange(1, 3).setValue("दर्शन समय स्लॉट");
+    // 1. Check if Column 2 is already "पास स्थिति"
+    var col2Header = String(sheet.getRange(1, 2).getValue() || '');
+    if (!col2Header.includes("स्थिति") && !col2Header.includes("Status")) {
+      // Safely insert 2 new columns after Timestamp (Col A)
+      sheet.insertColumnsAfter(1, 2);
     }
 
-    // 2. Ensure Column 18 & 19 Headers exist
-    sheet.getRange(1, 18).setValue("पास स्थिति (Pass Status)");
-    sheet.getRange(1, 19).setValue("पास बनने की तिथि (Pass Created Date)");
+    // 2. Set Row 1 Headers explicitly
+    var headers = [
+      "Timestamp",
+      "पास स्थिति (Pass Status)",
+      "पास बनने की तिथि (Pass Created Date)",
+      "दर्शन तिथि",
+      "दर्शन समय स्लॉट",
+      "नाम व उम्र",
+      "राज्य",
+      "जिला",
+      "आधार नं0/पासपोर्ट नं0",
+      "पुरूषो व महिलाओं की संख्या",
+      "मो0नं0",
+      "गाडी नं0",
+      "साथ में आने वाले सदस्यों के नाम व उम्र",
+      "Referred by",
+      "आवेदनकर्ता गूगल नाम",
+      "आवेदनकर्ता ईमेल ID",
+      "कुल दर्शनार्थी संख्या",
+      "पुरुष संख्या",
+      "महिला संख्या"
+    ];
+
+    for (var h = 0; h < headers.length; h++) {
+      sheet.getRange(1, h + 1).setValue(headers[h]);
+    }
 
     var lastCol = Math.max(sheet.getLastColumn(), 19);
 
@@ -295,8 +318,8 @@ function formatEntireSheet() {
       dataRange.setFontSize(10);
       sheet.getRange(2, 1, maxR - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
 
-      // Add Dropdown to Column 18 (R2:R1000)
-      var statusRange = sheet.getRange(2, 18, maxR - 1, 1);
+      // Add Dropdown to Column 2 (B2:B1000)
+      var statusRange = sheet.getRange(2, 2, maxR - 1, 1);
       var rule = SpreadsheetApp.newDataValidation()
         .requireValueInList(["Pending", "Pass Created", "Rejected"], true)
         .setAllowInvalid(false)
@@ -307,19 +330,19 @@ function formatEntireSheet() {
       var statusValues = statusRange.getValues();
       for (var i = 0; i < statusValues.length; i++) {
         if (i < lastRow - 1 && !statusValues[i][0]) {
-          sheet.getRange(i + 2, 18).setValue("Pending");
+          sheet.getRange(i + 2, 2).setValue("Pending");
         }
       }
     }
 
-    // 4. Setup Dynamic Conditional Formatting Rules (Auto Light Green for Pass Created)
+    // 4. Setup Dynamic Conditional Formatting Rules (Auto Light Green for Pass Created in Column B)
     sheet.clearConditionalFormatRules();
     
     var rangeToApply = sheet.getRange(2, 1, maxR - 1, lastCol);
 
     // Rule 1: Pass Created -> Light Green 1 (#dcfce7)
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$R2="Pass Created"')
+      .whenFormulaSatisfied('=$B2="Pass Created"')
       .setBackground("#dcfce7")
       .setFontColor("#065f46")
       .setRanges([rangeToApply])
@@ -327,7 +350,7 @@ function formatEntireSheet() {
 
     // Rule 2: Rejected -> Light Red (#fee2e2)
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$R2="Rejected"')
+      .whenFormulaSatisfied('=$B2="Rejected"')
       .setBackground("#fee2e2")
       .setFontColor("#991b1b")
       .setRanges([rangeToApply])
@@ -335,7 +358,7 @@ function formatEntireSheet() {
 
     // Rule 3: Pending -> Clean White (#ffffff)
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$R2="Pending"')
+      .whenFormulaSatisfied('=$B2="Pending"')
       .setBackground("#ffffff")
       .setRanges([rangeToApply])
       .build();
@@ -343,25 +366,25 @@ function formatEntireSheet() {
     sheet.setConditionalFormatRules([passCreatedRule, rejectedRule, pendingRule]);
 
     // Set Column Widths
-    sheet.setColumnWidth(1, 150); // Timestamp
-    sheet.setColumnWidth(2, 130); // Visit Date
-    sheet.setColumnWidth(3, 170); // Visit Time Slot
-    sheet.setColumnWidth(4, 160); // Name Age
-    sheet.setColumnWidth(5, 130); // State
-    sheet.setColumnWidth(6, 130); // District
-    sheet.setColumnWidth(7, 160); // ID
-    sheet.setColumnWidth(8, 180); // Gender Count
-    sheet.setColumnWidth(9, 130); // Mobile
-    sheet.setColumnWidth(10, 130); // Vehicle
-    sheet.setColumnWidth(11, 240); // Accompanying
-    sheet.setColumnWidth(12, 160); // Referred By
-    sheet.setColumnWidth(13, 150); // Submitter Name
-    sheet.setColumnWidth(14, 200); // Submitter Email
-    sheet.setColumnWidth(15, 130); // Total Devotees
-    sheet.setColumnWidth(16, 110); // Male Count
-    sheet.setColumnWidth(17, 110); // Female Count
-    sheet.setColumnWidth(18, 160); // Pass Status
-    sheet.setColumnWidth(19, 170); // Pass Created Date
+    sheet.setColumnWidth(1, 150); // 1. Timestamp
+    sheet.setColumnWidth(2, 160); // 2. Pass Status (B)
+    sheet.setColumnWidth(3, 170); // 3. Pass Created Date (C)
+    sheet.setColumnWidth(4, 130); // 4. Visit Date (D)
+    sheet.setColumnWidth(5, 170); // 5. Visit Time Slot (E)
+    sheet.setColumnWidth(6, 160); // 6. Name Age (F)
+    sheet.setColumnWidth(7, 130); // 7. State (G)
+    sheet.setColumnWidth(8, 130); // 8. District (H)
+    sheet.setColumnWidth(9, 160); // 9. ID (I)
+    sheet.setColumnWidth(10, 180); // 10. Gender Count (J)
+    sheet.setColumnWidth(11, 130); // 11. Mobile (K)
+    sheet.setColumnWidth(12, 130); // 12. Vehicle (L)
+    sheet.setColumnWidth(13, 240); // 13. Accompanying (M)
+    sheet.setColumnWidth(14, 160); // 14. Referred By (N)
+    sheet.setColumnWidth(15, 150); // 15. Submitter Name (O)
+    sheet.setColumnWidth(16, 200); // 16. Submitter Email (P)
+    sheet.setColumnWidth(17, 130); // 17. Total Devotees (Q)
+    sheet.setColumnWidth(18, 110); // 18. Male Count (R)
+    sheet.setColumnWidth(19, 110); // 19. Female Count (S)
   });
 
   SpreadsheetApp.flush();
@@ -405,31 +428,31 @@ function setupVipDashboard() {
   dashSheet.getRange("A5").setFormula("=COUNTA(" + dataSheetName + "!A2:A)");
   dashSheet.getRange("A5").setFontSize(18).setFontWeight("bold").setHorizontalAlignment("center");
 
-  // Card 2: Total Passes Created (Green)
+  // Card 2: Total Passes Created (Green - Column B)
   dashSheet.getRange("D4:E4").merge();
   dashSheet.getRange("D4").setValue("कुल बने पास (Pass Created)");
   dashSheet.getRange("D4").setBackground("#10b981").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("D5:E5").merge();
-  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!R2:R, \"Pass Created\")");
+  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pass Created\")");
   dashSheet.getRange("D5").setFontSize(18).setFontWeight("bold").setFontColor("#047857").setHorizontalAlignment("center");
 
-  // Card 3: Pending Applications (Yellow/Orange)
+  // Card 3: Pending Applications (Yellow/Orange - Column B)
   dashSheet.getRange("G4:H4").merge();
   dashSheet.getRange("G4").setValue("कुल लंबित (Pending)");
   dashSheet.getRange("G4").setBackground("#f59e0b").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("G5:H5").merge();
-  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!R2:R, \"Pending\")");
+  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pending\")");
   dashSheet.getRange("G5").setFontSize(18).setFontWeight("bold").setFontColor("#b45309").setHorizontalAlignment("center");
 
-  // Card 4: Rejected (Red)
+  // Card 4: Rejected (Red - Column B)
   dashSheet.getRange("J4:K4").merge();
   dashSheet.getRange("J4").setValue("निरस्त आवेदन (Rejected)");
   dashSheet.getRange("J4").setBackground("#ef4444").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("J5:K5").merge();
-  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!R2:R, \"Rejected\")");
+  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Rejected\")");
   dashSheet.getRange("J5").setFontSize(18).setFontWeight("bold").setFontColor("#b91c1c").setHorizontalAlignment("center");
 
-  // 3. TABLE 1: पास बनने की तिथि वार रिपोर्ट (PASS CREATED DATE REPORT)
+  // 3. TABLE 1: पास बनने की तिथि वार रिपोर्ट (PASS CREATED DATE REPORT - Column C)
   dashSheet.getRange("A7:C7").merge();
   dashSheet.getRange("A7").setValue("📅 पास बनने की तारीख वार रिपोर्ट (Passes Made)");
   dashSheet.getRange("A7").setBackground("#065f46").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
@@ -438,11 +461,11 @@ function setupVipDashboard() {
   dashSheet.getRange("B8").setValue("बने पास").setFontWeight("bold").setBackground("#d1fae5").setHorizontalAlignment("center");
   dashSheet.getRange("C8").setValue("कुल दर्शनार्थी").setFontWeight("bold").setBackground("#d1fae5").setHorizontalAlignment("center");
 
-  dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!S2:S, " + dataSheetName + "!S2:S <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!S$2:S, A9))");
-  dashSheet.getRange("C9:C28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!O$2:O, " + dataSheetName + "!S$2:S, A9))");
+  dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!C2:C, " + dataSheetName + "!C2:C <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!C$2:C, A9))");
+  dashSheet.getRange("C9:C28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!Q$2:Q, " + dataSheetName + "!C$2:C, A9))");
 
-  // 4. TABLE 2: दर्शन तिथि वार रिपोर्ट (VISIT DATE REPORT)
+  // 4. TABLE 2: दर्शन तिथि वार रिपोर्ट (VISIT DATE REPORT - Column D)
   dashSheet.getRange("E7:H7").merge();
   dashSheet.getRange("E7").setValue("🛕 दर्शन तिथि वार रिपोर्ट (Visit Date Summary)");
   dashSheet.getRange("E7").setBackground("#1e3a8a").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
@@ -452,12 +475,12 @@ function setupVipDashboard() {
   dashSheet.getRange("G8").setValue("स्वीकृत/बने पास").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
   dashSheet.getRange("H8").setValue("लंबित (Pending)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
-  dashSheet.getRange("E9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!B2:B, " + dataSheetName + "!B2:B <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("F9:F28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!B$2:B, E9))");
-  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!B$2:B, E9, " + dataSheetName + "!R$2:R, \"Pass Created\"))");
-  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!B$2:B, E9, " + dataSheetName + "!R$2:R, \"Pending\"))");
+  dashSheet.getRange("E9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!D2:D, " + dataSheetName + "!D2:D <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("F9:F28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!D$2:D, E9))");
+  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pass Created\"))");
+  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pending\"))");
 
-  // 5. TABLE 3: REFERRED BY REPORT
+  // 5. TABLE 3: REFERRED BY REPORT (Column N)
   dashSheet.getRange("J7:K7").merge();
   dashSheet.getRange("J7").setValue("🎖️ रेफरेंस अधिकारी वार रिपोर्ट");
   dashSheet.getRange("J7").setBackground("#475569").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
@@ -465,8 +488,8 @@ function setupVipDashboard() {
   dashSheet.getRange("J8").setValue("Referred By").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
   dashSheet.getRange("K8").setValue("बने पास").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
-  dashSheet.getRange("J9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!L2:L, " + dataSheetName + "!L2:L <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!L$2:L, J9, " + dataSheetName + "!R$2:R, \"Pass Created\"))");
+  dashSheet.getRange("J9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!N2:N, " + dataSheetName + "!N2:N <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!B$2:B, \"Pass Created\"))");
 
   // Format Dashboard Cells
   dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
