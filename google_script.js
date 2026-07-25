@@ -188,7 +188,7 @@ function getTargetSpreadsheet() {
 /**
  * AUTOMATIC EDIT TRIGGER (onEdit)
  * When status in Column 2 (B) is changed to "Pass Created":
- * 1. Highlights the whole row in Light Green (#dcfce7)
+ * 1. Highlights the whole row in Custom Sage Green (#9fc48a)
  * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
  */
 function onEdit(e) {
@@ -208,8 +208,9 @@ function onEdit(e) {
     var dateCell = sheet.getRange(row, 3); // Column 3 (C - Pass Created Date)
 
     if (statusVal.toLowerCase() === "pass created" || statusVal.toLowerCase() === "approved") {
-      // 1. Light Green Row Background (#dcfce7)
-      rowRange.setBackground("#dcfce7");
+      // 1. Custom Sage Green Row Background (#9fc48a - matching user's requested color)
+      rowRange.setBackground("#9fc48a");
+      rowRange.setFontColor("#000000");
 
       // 2. Auto-fill Pass Created Date in Col C if empty
       if (!dateCell.getValue()) {
@@ -220,10 +221,12 @@ function onEdit(e) {
     } else if (statusVal.toLowerCase() === "rejected") {
       // Light Red Row Background (#fee2e2)
       rowRange.setBackground("#fee2e2");
+      rowRange.setFontColor("#991b1b");
 
     } else if (statusVal.toLowerCase() === "pending" || !statusVal) {
       // Reset row background to White (#ffffff)
       rowRange.setBackground("#ffffff");
+      rowRange.setFontColor("#000000");
     }
   }
 }
@@ -335,16 +338,16 @@ function formatEntireSheet() {
       }
     }
 
-    // 4. Setup Dynamic Conditional Formatting Rules (Auto Light Green for Pass Created in Column B)
+    // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created)
     sheet.clearConditionalFormatRules();
     
     var rangeToApply = sheet.getRange(2, 1, maxR - 1, lastCol);
 
-    // Rule 1: Pass Created -> Light Green 1 (#dcfce7)
+    // Rule 1: Pass Created -> Custom Sage Green (#9fc48a)
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=$B2="Pass Created"')
-      .setBackground("#dcfce7")
-      .setFontColor("#065f46")
+      .setBackground("#9fc48a")
+      .setFontColor("#000000")
       .setRanges([rangeToApply])
       .build();
 
@@ -360,6 +363,7 @@ function formatEntireSheet() {
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=$B2="Pending"')
       .setBackground("#ffffff")
+      .setFontColor("#000000")
       .setRanges([rangeToApply])
       .build();
 
@@ -428,13 +432,13 @@ function setupVipDashboard() {
   dashSheet.getRange("A5").setFormula("=COUNTA(" + dataSheetName + "!A2:A)");
   dashSheet.getRange("A5").setFontSize(18).setFontWeight("bold").setHorizontalAlignment("center");
 
-  // Card 2: Total Passes Created (Green - Column B)
+  // Card 2: Total Passes Created (Sage Green - Column B)
   dashSheet.getRange("D4:E4").merge();
   dashSheet.getRange("D4").setValue("कुल बने पास (Pass Created)");
-  dashSheet.getRange("D4").setBackground("#10b981").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
+  dashSheet.getRange("D4").setBackground("#9fc48a").setFontColor("#000000").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("D5:E5").merge();
   dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pass Created\")");
-  dashSheet.getRange("D5").setFontSize(18).setFontWeight("bold").setFontColor("#047857").setHorizontalAlignment("center");
+  dashSheet.getRange("D5").setFontSize(18).setFontWeight("bold").setFontColor("#064e3b").setHorizontalAlignment("center");
 
   // Card 3: Pending Applications (Yellow/Orange - Column B)
   dashSheet.getRange("G4:H4").merge();
@@ -457,9 +461,9 @@ function setupVipDashboard() {
   dashSheet.getRange("A7").setValue("📅 पास बनने की तारीख वार रिपोर्ट (Passes Made)");
   dashSheet.getRange("A7").setBackground("#065f46").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
 
-  dashSheet.getRange("A8").setValue("पास बनने की तिथि").setFontWeight("bold").setBackground("#d1fae5").setHorizontalAlignment("center");
-  dashSheet.getRange("B8").setValue("बने पास").setFontWeight("bold").setBackground("#d1fae5").setHorizontalAlignment("center");
-  dashSheet.getRange("C8").setValue("कुल दर्शनार्थी").setFontWeight("bold").setBackground("#d1fae5").setHorizontalAlignment("center");
+  dashSheet.getRange("A8").setValue("पास बनने की तिथि").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
+  dashSheet.getRange("B8").setValue("बने पास").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
+  dashSheet.getRange("C8").setValue("कुल दर्शनार्थी").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
 
   dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!C2:C, " + dataSheetName + "!C2:C <> \"\")), \"(अभी कोई डेटा नहीं)\")");
   dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!C$2:C, A9))");
@@ -511,7 +515,7 @@ function setupVipDashboard() {
     .addRange(dashSheet.getRange("A8:B28"))
     .setPosition(30, 1, 0, 0)
     .setOption('title', 'प्रतिदिन कुल बने पास (Date-wise Passes Created)')
-    .setOption('colors', ['#10b981'])
+    .setOption('colors', ['#9fc48a'])
     .setOption('width', 600)
     .setOption('height', 380);
     
