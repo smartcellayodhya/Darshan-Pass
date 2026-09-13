@@ -735,17 +735,34 @@ document.addEventListener("DOMContentLoaded", () => {
             vehicleNoInput.disabled = false;
             vehicleNoInput.value = "";
         }
+        if (stateSelect) {
+            stateSelect.value = "";
+            stateSelect.dispatchEvent(new Event("change"));
+        }
         if (districtSelect) {
             districtSelect.disabled = true;
             districtSelect.innerHTML = '<option value="">-- Select State First --</option>';
+            districtSelect.dispatchEvent(new Event("change"));
         }
         if (nationalitySelect) {
             nationalitySelect.value = "India";
             nationalitySelect.dispatchEvent(new Event("change"));
         }
         if (referredBySelect) {
+            referredBySelect.value = "";
             referredBySelect.dispatchEvent(new Event("change"));
         }
+
+        // Reset custom searchable dropdown trigger text
+        const curLang = localStorage.getItem("darshan_lang") || "hi";
+        const t = (typeof translations !== "undefined" && translations[curLang]) ? translations[curLang] : {};
+        const stateTr = document.querySelector('.custom-select-container[data-target="stateSelect"] .trigger-text');
+        if (stateTr) stateTr.textContent = t.optSelectState || "-- राज्य चुनें --";
+        const distTr = document.querySelector('.custom-select-container[data-target="districtSelect"] .trigger-text');
+        if (distTr) distTr.textContent = t.optSelectDistrict || "-- पहले राज्य चुनें --";
+        const refTr = document.querySelector('.custom-select-container[data-target="referredBySelect"] .trigger-text');
+        if (refTr) refTr.textContent = t.optSelectRef || "-- रेफरेंस अधिकारी चुनें --";
+
         document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
 
         // Reset devotee count defaults (1 Male, 0 Female = 1 Total Single Devotee)
@@ -1128,6 +1145,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tokenIdEl) {
                 navigator.clipboard.writeText(tokenIdEl.textContent.trim()).then(() => {
                     copyTokenBtn.innerHTML = '<i class="fa-solid fa-check" style="color: #16a34a;"></i>';
+                    const strip = document.querySelector(".pass-token-strip");
+                    if (strip) {
+                        strip.classList.add("copied");
+                        setTimeout(() => strip.classList.remove("copied"), 1800);
+                    }
                     showToast("टोकन ID सफलतापूर्वक कॉपी हो गई!", "success");
                     setTimeout(() => {
                         copyTokenBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
@@ -2349,4 +2371,14 @@ document.addEventListener("DOMContentLoaded", () => {
     silentSyncSheetRow();
     // Keep it refreshed every 20 seconds while user fills the form to handle concurrent users
     setInterval(silentSyncSheetRow, 20000);
+
+    // -------------------------------------------------------------
+    // ONLINE / OFFLINE NETWORK STATUS NOTIFICATIONS (ITEM 1.3)
+    // -------------------------------------------------------------
+    window.addEventListener("online", () => {
+        showToast("इंटरनेट कनेक्शन पुनः जुड़ गया है।", "success");
+    });
+    window.addEventListener("offline", () => {
+        showToast("इंटरनेट कनेक्शन कट गया है। कृपया नेटवर्क जांचें।", "warning");
+    });
 });
