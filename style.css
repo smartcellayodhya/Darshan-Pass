@@ -522,22 +522,22 @@ body.gov-minimal-theme {
     font-weight: 500;
 }
 
-/* Highlight Box: Primary Devotee, Row Number & Token ID */
+/* Highlight Box: Primary Devotee & Token ID */
 .receipt-highlight-box {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
     background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    border: 1.5px solid #e2e8f0;
     border-radius: var(--radius-sm);
-    padding: 0.9rem;
-    margin-bottom: 1rem;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
 }
 
 .highlight-item {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
 .highlight-label {
@@ -564,20 +564,8 @@ body.gov-minimal-theme {
 
 #slip-devotee-name {
     color: #1e3a8a;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     word-break: break-word;
-}
-
-.row-pill {
-    display: inline-block;
-    background: #e0f2fe;
-    color: #0369a1;
-    border: 1px solid #bae6fd;
-    padding: 0.2rem 0.65rem;
-    border-radius: 9999px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1.05rem !important;
-    width: fit-content;
 }
 
 .token-copy-wrapper {
@@ -588,12 +576,13 @@ body.gov-minimal-theme {
 
 .token-code {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 0.92rem;
-    background: #f1f5f9;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #cbd5e1;
-    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 700;
+    background: #e0f2fe;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
     letter-spacing: 0.5px;
 }
 

@@ -425,12 +425,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 4500);
     }
 
-    // UNIQUE APPLICATION REFERENCE NUMBER GENERATOR (AYO-DP-YYYYMMDD-XXXX)
-    function generateApplicationId() {
+    // UNIQUE APPLICATION TOKEN GENERATOR (AYO-YYYYMMDD-ROW)
+    function generateTokenId(rowNumber) {
         const now = new Date();
         const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        return `AYO-DP-${ymd}-${rand}`;
+        let rowSuffix = "";
+        if (rowNumber && typeof rowNumber === "number") {
+            rowSuffix = String(rowNumber);
+            localStorage.setItem("darshan_last_row", rowSuffix);
+        } else if (rowNumber && !isNaN(parseInt(rowNumber))) {
+            rowSuffix = String(parseInt(rowNumber));
+            localStorage.setItem("darshan_last_row", rowSuffix);
+        } else {
+            // Persistent fallback row counter if server doesn't return row
+            let current = parseInt(localStorage.getItem("darshan_last_row") || "101", 10) + 1;
+            localStorage.setItem("darshan_last_row", current);
+            rowSuffix = String(current);
+        }
+        return `AYO-${ymd}-${rowSuffix}`;
     }
 
     // -------------------------------------------------------------
@@ -704,11 +716,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const devoteeNameVal = getVal("nameAge");
             const finalAccompanyingVal = totalCount <= 1 ? "लागू नहीं (अकेले दर्शनार्थी)" : (getVal("accompanying") || "कोई नहीं");
-            const generatedAppId = generateApplicationId();
 
             // Construct Transmission Payload
             const formData = {
-                applicationId: generatedAppId,
                 visitDateTime: formattedVisitDateTime,
                 visitDate: formattedDateStr,
                 visitSlot: slotVal,
@@ -729,11 +739,11 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 // Transmit Data and retrieve Google Sheet Row Number
                 const result = await sendDataWithRowFeedback(formData);
-                const finalRow = (result && result.rowNumber) ? result.rowNumber : "Saved";
+                const finalRow = (result && result.rowNumber) ? result.rowNumber : null;
+                const tokenNumber = generateTokenId(finalRow);
 
                 // Populate Acknowledgement Slip / Modal
                 const slipDevoteeName = document.getElementById("slip-devotee-name");
-                const slipRowNumber = document.getElementById("slip-row-number");
                 const slipTokenId = document.getElementById("slip-token-id");
                 const slipVisitDatetime = document.getElementById("slip-visit-datetime");
                 const slipTotalDevotees = document.getElementById("slip-total-devotees");
@@ -742,8 +752,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const slipAccompanying = document.getElementById("slip-accompanying");
 
                 if (slipDevoteeName) slipDevoteeName.textContent = devoteeNameVal;
-                if (slipRowNumber) slipRowNumber.textContent = typeof finalRow === "number" ? `Row #${finalRow}` : `Row #${finalRow}`;
-                if (slipTokenId) slipTokenId.textContent = generatedAppId;
+                if (slipTokenId) slipTokenId.textContent = tokenNumber;
                 if (slipVisitDatetime) slipVisitDatetime.textContent = formattedVisitDateTime;
                 if (slipTotalDevotees) slipTotalDevotees.textContent = `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
                 if (slipMobile) slipMobile.textContent = formData.mobile;
