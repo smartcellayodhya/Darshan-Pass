@@ -1611,7 +1611,7 @@ Reference: ${referredBy}
                     let statusSub = "आवेदन पर विचार चल रहा है";
                     if (statusClass === "status-pass-created") {
                         statusIcon = "fa-circle-check";
-                        statusSub = item.passCreatedDate ? `पास बन गया है (जारी तिथि: ${item.passCreatedDate})` : "पास स्वीकृत एवं तैयार है";
+                        statusSub = "पास स्वीकृत एवं तैयार है";
                     } else if (statusClass === "status-already-created") {
                         statusIcon = "fa-id-card-clip";
                         statusSub = "पास अन्य काउंटर से पहले ही जारी हो चुका है";
@@ -1642,12 +1642,6 @@ Reference: ${referredBy}
                                     <span class="cell-lbl"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी</span>
                                     <span class="cell-val text-primary">${item.name || '--'}</span>
                                 </div>
-                                ${(item.passCreatedDate && statusClass === "status-pass-created") ? `
-                                <div class="track-cell">
-                                    <span class="cell-lbl"><i class="fa-solid fa-stamp"></i> पास बनने की तिथि</span>
-                                    <span class="cell-val" style="color: #15803d; font-weight: 700;">${item.passCreatedDate}</span>
-                                </div>
-                                ` : ''}
                                 <div class="track-cell">
                                     <span class="cell-lbl"><i class="fa-regular fa-calendar-check"></i> दर्शन तिथि</span>
                                     <span class="cell-val">${cleanDate}</span>
