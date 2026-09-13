@@ -175,6 +175,63 @@ function doGet(e) {
     }
   }
 
+  // PASS APPLICATION TRACKING HANDLER
+  if (e && e.parameter && e.parameter.action === 'track') {
+    var query = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim().toLowerCase();
+    if (!query || !sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "result": "not_found",
+        "message": "कृपया टोकन या मोबाइल नंबर दर्ज करें"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = sheet.getDataRange().getValues();
+    var match = null;
+
+    for (var r = data.length - 1; r >= 1; r--) {
+      var rowData = data[r];
+      var rowNum = r + 1;
+      var status = String(rowData[1] || 'Pending').trim();
+      var passDate = String(rowData[2] || '').trim();
+      var vDate = String(rowData[3] || '').trim();
+      var vSlot = String(rowData[4] || '').trim();
+      var name = String(rowData[5] || '').trim();
+      var mob = String(rowData[10] || '').trim();
+      var ref = String(rowData[13] || '').trim();
+      var total = String(rowData[16] || '').trim();
+
+      var isMobileMatch = (query.length >= 10 && mob.includes(query));
+      var isRowMatch = (query === String(rowNum) || query.endsWith("-" + rowNum));
+
+      if (isMobileMatch || isRowMatch) {
+        match = {
+          rowNumber: rowNum,
+          status: status || "Pending",
+          passCreatedDate: passDate,
+          visitDate: vDate,
+          visitSlot: vSlot,
+          name: name,
+          mobile: mob,
+          referredBy: ref,
+          totalDevotees: total
+        };
+        break;
+      }
+    }
+
+    if (match) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "result": "success",
+        "data": match
+      })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({
+        "result": "not_found",
+        "message": "कोई आवेदन नहीं मिला। कृपया विवरण जांचें।"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService.createTextOutput(JSON.stringify({
     "status": "online",
     "lastRow": lastRow,

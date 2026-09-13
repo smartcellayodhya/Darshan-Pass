@@ -228,21 +228,33 @@ document.addEventListener("DOMContentLoaded", () => {
     checkAuthLock();
     updateGoogleAccountUI();
 
-    // Calculate local today YYYY-MM-DD date string
+    // Calculate local today and max 30-day date string (ITEM 3)
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const todayStr = `${year}-${month}-${day}`;
 
+    const maxDateObj = new Date();
+    maxDateObj.setDate(maxDateObj.getDate() + 30);
+    const maxYear = maxDateObj.getFullYear();
+    const maxMonth = String(maxDateObj.getMonth() + 1).padStart(2, '0');
+    const maxDay = String(maxDateObj.getDate()).padStart(2, '0');
+    const maxDateStr = `${maxYear}-${maxMonth}-${maxDay}`;
+
     if (visitDateInput) {
         visitDateInput.setAttribute("min", todayStr);
+        visitDateInput.setAttribute("max", maxDateStr);
         visitDateInput.value = todayStr; // Pre-select today's date by default
 
-        // Dynamically block past date selection
+        // Dynamically block past dates or dates beyond 30 days
         visitDateInput.addEventListener("change", () => {
             if (visitDateInput.value < todayStr) {
-                visitDateInput.value = todayStr; // Auto-reset to today
+                visitDateInput.value = todayStr;
+                showToast("पिछली तिथि नहीं चुनी जा सकती।", "warning");
+            } else if (visitDateInput.value > maxDateStr) {
+                visitDateInput.value = maxDateStr;
+                showToast("दर्शन पास अधिकतम 30 दिन आगे तक ही बुक किया जा सकता है।", "warning");
             }
         });
     }
@@ -371,13 +383,30 @@ document.addEventListener("DOMContentLoaded", () => {
         mobileInput.addEventListener("paste", () => setTimeout(cleanMobile, 10));
     }
 
-    // 2. Vehicle Number: No symbols at all, Automatic Uppercase
+    // 2. Vehicle Number: No symbols at all, Automatic Uppercase & On-Foot Checkbox (ITEM 4)
+    const noVehicleCheck = document.getElementById("noVehicleCheck");
     if (vehicleNoInput) {
         const cleanVehicle = () => {
-            vehicleNoInput.value = vehicleNoInput.value.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
+            if (!noVehicleCheck || !noVehicleCheck.checked) {
+                vehicleNoInput.value = vehicleNoInput.value.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase();
+            }
         };
         vehicleNoInput.addEventListener("input", cleanVehicle);
         vehicleNoInput.addEventListener("paste", () => setTimeout(cleanVehicle, 10));
+    }
+
+    if (noVehicleCheck && vehicleNoInput) {
+        noVehicleCheck.addEventListener("change", () => {
+            if (noVehicleCheck.checked) {
+                vehicleNoInput.value = "पैदल (On Foot)";
+                vehicleNoInput.disabled = true;
+                markGroup(vehicleNoInput, true);
+            } else {
+                vehicleNoInput.value = "";
+                vehicleNoInput.disabled = false;
+                markGroup(vehicleNoInput, true);
+            }
+        });
     }
 
     // 3. Name, Accompanying & Other Ref Name: NO SYMBOLS EXCEPT DOT (.)
@@ -510,11 +539,164 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // -------------------------------------------------------------
+    // DUPLICATE SUBMISSION CHECKER (ITEM 2)
+    // -------------------------------------------------------------
+    function getSubmissionsHistory() {
+        try {
+            return JSON.parse(localStorage.getItem("darshan_submissions_history") || "[]");
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function checkDuplicateSubmission(mobile, visitDate, visitSlot) {
+        if (!mobile || !visitDate || !visitSlot) return false;
+        const history = getSubmissionsHistory();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        return history.some(item => {
+            return item.mobile === mobile &&
+                   item.visitDate === visitDate &&
+                   item.visitSlot === visitSlot &&
+                   (now - (item.timestamp || 0)) < oneDayMs;
+        });
+    }
+
+    function recordSubmission(mobile, visitDate, visitSlot, token) {
+        try {
+            const history = getSubmissionsHistory();
+            history.unshift({
+                mobile: mobile,
+                visitDate: visitDate,
+                visitSlot: visitSlot,
+                token: token,
+                timestamp: Date.now()
+            });
+            localStorage.setItem("darshan_submissions_history", JSON.stringify(history.slice(0, 50)));
+        } catch (e) {
+            console.warn("Could not save submission to history:", e);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // DRAFT AUTO-SAVE & RESTORE (ITEM 5)
+    // -------------------------------------------------------------
+    function saveFormDraft() {
+        if (!form) return;
+        try {
+            const draft = {
+                visitDate: visitDateInput ? visitDateInput.value : "",
+                visitSlot: visitSlotSelect ? visitSlotSelect.value : "",
+                nationality: nationalitySelect ? nationalitySelect.value : "India",
+                stateSelect: stateSelect ? stateSelect.value : "",
+                districtSelect: districtSelect ? districtSelect.value : "",
+                countrySelect: countrySelect ? countrySelect.value : "",
+                idNumber: idNumberInput ? idNumberInput.value : "",
+                nameAge: nameAgeInput ? nameAgeInput.value : "",
+                maleCount: maleCountInput ? maleCountInput.value : "1",
+                femaleCount: femaleCountInput ? femaleCountInput.value : "0",
+                mobile: mobileInput ? mobileInput.value : "",
+                vehicleNo: vehicleNoInput ? vehicleNoInput.value : "",
+                noVehicle: noVehicleCheck ? noVehicleCheck.checked : false,
+                accompanying: accompanyingInput ? accompanyingInput.value : "",
+                referredBySelect: referredBySelect ? referredBySelect.value : "",
+                otherRefName: otherRefNameInput ? otherRefNameInput.value : "",
+                timestamp: Date.now()
+            };
+            localStorage.setItem("darshan_form_draft", JSON.stringify(draft));
+        } catch (e) {}
+    }
+
+    function clearFormDraft() {
+        localStorage.removeItem("darshan_form_draft");
+    }
+
+    let draftDebounceTimer = null;
+    function queueSaveDraft() {
+        clearTimeout(draftDebounceTimer);
+        draftDebounceTimer = setTimeout(saveFormDraft, 400);
+    }
+
+    function restoreFormDraft() {
+        try {
+            const draftStr = localStorage.getItem("darshan_form_draft");
+            if (!draftStr) return;
+            const draft = JSON.parse(draftStr);
+            if (!draft) return;
+
+            // Only restore if draft is less than 48 hours old
+            if (Date.now() - (draft.timestamp || 0) > 48 * 60 * 60 * 1000) {
+                clearFormDraft();
+                return;
+            }
+
+            if (draft.nationality && nationalitySelect) {
+                nationalitySelect.value = draft.nationality;
+                nationalitySelect.dispatchEvent(new Event("change"));
+            }
+            if (draft.visitDate && visitDateInput && draft.visitDate >= todayStr && draft.visitDate <= maxDateStr) {
+                visitDateInput.value = draft.visitDate;
+            }
+            if (draft.visitSlot && visitSlotSelect) {
+                visitSlotSelect.value = draft.visitSlot;
+            }
+            if (draft.stateSelect && stateSelect) {
+                stateSelect.value = draft.stateSelect;
+                stateSelect.dispatchEvent(new Event("change"));
+                if (draft.districtSelect && districtSelect) {
+                    setTimeout(() => {
+                        districtSelect.value = draft.districtSelect;
+                        districtSelect.dispatchEvent(new Event("change"));
+                    }, 80);
+                }
+            }
+            if (draft.countrySelect && countrySelect) {
+                countrySelect.value = draft.countrySelect;
+            }
+            if (draft.idNumber && idNumberInput) idNumberInput.value = draft.idNumber;
+            if (draft.nameAge && nameAgeInput) nameAgeInput.value = draft.nameAge;
+            if (draft.maleCount && maleCountInput) maleCountInput.value = draft.maleCount;
+            if (draft.femaleCount && femaleCountInput) femaleCountInput.value = draft.femaleCount;
+            if (draft.mobile && mobileInput) mobileInput.value = draft.mobile;
+            
+            if (draft.noVehicle && noVehicleCheck) {
+                noVehicleCheck.checked = true;
+                noVehicleCheck.dispatchEvent(new Event("change"));
+            } else if (draft.vehicleNo && vehicleNoInput) {
+                vehicleNoInput.value = draft.vehicleNo;
+            }
+
+            if (draft.accompanying && accompanyingInput) accompanyingInput.value = draft.accompanying;
+            if (draft.referredBySelect && referredBySelect) {
+                referredBySelect.value = draft.referredBySelect;
+                referredBySelect.dispatchEvent(new Event("change"));
+                if (draft.otherRefName && otherRefNameInput) {
+                    otherRefNameInput.value = draft.otherRefName;
+                }
+            }
+
+            const totalDev = (parseInt(draft.maleCount) || 1) + (parseInt(draft.femaleCount) || 0);
+            updateAccompanyingRequirement(totalDev);
+
+            showToast("अंतिम अधूरा ड्राफ्ट स्वतः लोड हो गया है।", "info");
+        } catch (e) {
+            console.warn("Could not restore draft:", e);
+        }
+    }
+
     function resetFormState() {
         if (form) form.reset();
         if (visitDateInput) {
             visitDateInput.setAttribute("min", todayStr);
             visitDateInput.value = todayStr;
+        }
+        if (noVehicleCheck) {
+            noVehicleCheck.checked = false;
+        }
+        if (vehicleNoInput) {
+            vehicleNoInput.disabled = false;
+            vehicleNoInput.value = "";
         }
         if (districtSelect) {
             districtSelect.disabled = true;
@@ -533,6 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (maleCountInput) maleCountInput.value = "1";
         if (femaleCountInput) femaleCountInput.value = "0";
         updateAccompanyingRequirement(1);
+        clearFormDraft();
     }
 
     // -------------------------------------------------------------
@@ -643,10 +826,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Vehicle No validation (Optional, but no symbols allowed)
+            // Vehicle No validation (Optional, or On-Foot)
             let isVehicleValid = true;
-            if (vehicleNoInput && vehicleNoInput.value.trim()) {
-                isVehicleValid = markGroup(vehicleNoInput, /^[A-Z0-9\s]+$/.test(vehicleNoInput.value.trim()));
+            if (noVehicleCheck && noVehicleCheck.checked) {
+                isVehicleValid = true;
+                if (vehicleNoInput) markGroup(vehicleNoInput, true);
+            } else if (vehicleNoInput && vehicleNoInput.value.trim()) {
+                isVehicleValid = markGroup(vehicleNoInput, /^[A-Z0-9\s]{4,15}$/.test(vehicleNoInput.value.trim()));
+                const vehErr = document.getElementById("vehicleNo-error");
+                if (!isVehicleValid && vehErr) {
+                    vehErr.textContent = "कृपया सही गाड़ी नंबर दर्ज करें (उदा: UP42AB1234) अथवा 'पैदल' चुनें";
+                }
             }
 
             let isLocationValid = true;
@@ -684,8 +874,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            setSubmittingState(true);
-
             // Format Visit DateTime string (DD/MM/YYYY format)
             const dateVal = getVal("visitDate");
             let formattedDateStr = dateVal;
@@ -697,6 +885,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             const slotVal = getVal("visitSlot");
             const formattedVisitDateTime = `${formattedDateStr} (${slotVal})`;
+
+            // DUPLICATE SUBMISSION CHECK (ITEM 2: Prevent duplicate within 24h)
+            if (checkDuplicateSubmission(mobVal, formattedDateStr, slotVal)) {
+                showToast("इस मोबाइल नंबर से आज इस स्लॉट के लिए आवेदन पहले से दर्ज है।", "warning");
+                const mobErr = document.getElementById("mobile-error");
+                if (mobErr) mobErr.textContent = "इस मोबाइल नंबर से इस तारीख व स्लॉट हेतु आवेदन पहले से दर्ज है";
+                if (mobileInput) {
+                    markGroup(mobileInput, false);
+                    mobileInput.focus();
+                }
+                return;
+            }
+
+            setSubmittingState(true);
 
             let finalState = "";
             let finalDistrict = "";
@@ -729,7 +931,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 maleCount: mVal,
                 femaleCount: fVal,
                 mobile: getVal("mobile"),
-                vehicleNo: getVal("vehicleNo"),
+                vehicleNo: (noVehicleCheck && noVehicleCheck.checked) ? "पैदल (On Foot)" : getVal("vehicleNo"),
                 accompanying: finalAccompanyingVal,
                 referredBy: finalReferredBy,
                 submitterName: subName,
@@ -756,6 +958,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (slipTotalDevotees) slipTotalDevotees.textContent = `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
                 if (slipMobile) slipMobile.textContent = formData.mobile;
                 if (slipReferredBy) slipReferredBy.textContent = finalReferredBy;
+
+                // Record submission & clear draft
+                recordSubmission(formData.mobile, formattedDateStr, slotVal, tokenNumber);
+                clearFormDraft();
 
                 // Display Success Modal
                 if (successModal) {
@@ -852,6 +1058,278 @@ document.addEventListener("DOMContentLoaded", () => {
         printSlipBtn.addEventListener("click", () => {
             window.print();
         });
+    }
+
+    // -------------------------------------------------------------
+    // DIRECT SLIP DOWNLOAD (SAVE PNG VIA HTML2CANVAS - ITEM 6)
+    // -------------------------------------------------------------
+    const downloadSlipBtn = document.getElementById("download-slip-btn");
+    if (downloadSlipBtn) {
+        downloadSlipBtn.addEventListener("click", async () => {
+            const printableSlip = document.getElementById("printable-slip");
+            if (!printableSlip) return;
+
+            if (typeof html2canvas === "undefined") {
+                showToast("इमेज डाउनलोड इंजन लोड नहीं हो सका, कृपया प्रिंट करें।", "warning");
+                window.print();
+                return;
+            }
+
+            try {
+                downloadSlipBtn.disabled = true;
+                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> डाउनलोड हो रहा है...';
+
+                const canvas = await html2canvas(printableSlip, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    logging: false
+                });
+
+                const dataUrl = canvas.toDataURL("image/png");
+                const tokenIdEl = document.getElementById("slip-token-id");
+                const tokenStr = (tokenIdEl && tokenIdEl.textContent.trim()) ? tokenIdEl.textContent.trim() : "receipt";
+                const cleanTokenStr = tokenStr.replace(/[^a-zA-Z0-9_-]/g, '');
+
+                const link = document.createElement("a");
+                link.download = `Darshan-Pass-${cleanTokenStr}.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast("रसीद सफलतापूर्वक डाउनलोड हो गई!", "success");
+            } catch (err) {
+                console.error("Slip image download error:", err);
+                showToast("डाउनलोड में समस्या आई, कृपया प्रिंट विकल्प का प्रयोग करें।", "error");
+            } finally {
+                downloadSlipBtn.disabled = false;
+                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-circle-down"></i> <span id="download-slip-text">रसीद डाउनलोड करें (Save PNG)</span>';
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // TRACK PASS APPLICATION STATUS (ITEM 1)
+    // -------------------------------------------------------------
+    const trackPassNavBtn = document.getElementById("track-pass-nav-btn");
+    const trackPassModal = document.getElementById("track-pass-modal");
+    const closeTrackModalBtn = document.getElementById("close-track-modal-btn");
+    const submitTrackBtn = document.getElementById("submit-track-btn");
+    const trackQueryInput = document.getElementById("track-query-input");
+    const trackResultBox = document.getElementById("track-result-box");
+    const trackSubmitText = document.getElementById("track-submit-text");
+    const trackSubmitLoader = document.getElementById("track-submit-loader");
+
+    if (trackPassNavBtn && trackPassModal) {
+        trackPassNavBtn.addEventListener("click", () => {
+            trackPassModal.classList.remove("hidden");
+            if (trackQueryInput) {
+                trackQueryInput.value = "";
+                setTimeout(() => trackQueryInput.focus(), 80);
+            }
+            if (trackResultBox) {
+                trackResultBox.classList.add("hidden");
+                trackResultBox.innerHTML = "";
+            }
+        });
+    }
+
+    if (closeTrackModalBtn && trackPassModal) {
+        closeTrackModalBtn.addEventListener("click", () => {
+            trackPassModal.classList.add("hidden");
+        });
+    }
+
+    if (trackPassModal) {
+        trackPassModal.addEventListener("click", (e) => {
+            if (e.target === trackPassModal) {
+                trackPassModal.classList.add("hidden");
+            }
+        });
+    }
+
+    if (submitTrackBtn && trackQueryInput && trackResultBox) {
+        async function executeTrackSearch() {
+            const query = trackQueryInput.value.trim();
+            if (!query) {
+                showToast("कृपया टोकन ID या 10-अंकों का मोबाइल नंबर दर्ज करें", "warning");
+                trackQueryInput.focus();
+                return;
+            }
+
+            trackResultBox.classList.add("hidden");
+            trackResultBox.innerHTML = "";
+            submitTrackBtn.disabled = true;
+            if (trackSubmitText) trackSubmitText.classList.add("hidden");
+            if (trackSubmitLoader) trackSubmitLoader.classList.remove("hidden");
+
+            try {
+                const trackUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encodeURIComponent(query)}`;
+                const res = await fetch(trackUrl);
+                const data = await res.json();
+
+                trackResultBox.classList.remove("hidden");
+                if (data && data.result === "success" && data.data) {
+                    const item = data.data;
+                    const statusStr = (item.status || "Pending").trim();
+                    let statusClass = "status-pending";
+                    let statusHindi = "प्रक्रियाधीन (Pending)";
+
+                    if (statusStr.toLowerCase().includes("pass") || statusStr.toLowerCase().includes("created") || statusStr === "स्वीकृत") {
+                        statusClass = "status-pass-created";
+                        statusHindi = "पास जारी (Pass Created)";
+                    } else if (statusStr.toLowerCase().includes("reject") || statusStr === "निरस्त") {
+                        statusClass = "status-rejected";
+                        statusHindi = "निरस्त (Rejected)";
+                    }
+
+                    trackResultBox.innerHTML = `
+                        <div class="track-status-pill ${statusClass}">
+                            <i class="fa-solid fa-circle-dot"></i> ${statusHindi}
+                        </div>
+                        <div class="track-info-row">
+                            <span class="track-info-label">टोकन ID:</span>
+                            <span class="track-info-val">AYO-${item.visitDate ? item.visitDate.replace(/\//g,'') : 'AYO'}-${item.rowNumber}</span>
+                        </div>
+                        <div class="track-info-row">
+                            <span class="track-info-label">मुख्य दर्शनार्थी:</span>
+                            <span class="track-info-val">${item.name || '--'}</span>
+                        </div>
+                        <div class="track-info-row">
+                            <span class="track-info-label">दर्शन तिथि व समय:</span>
+                            <span class="track-info-val">${item.visitDate || '--'} (${item.visitSlot || '--'})</span>
+                        </div>
+                        <div class="track-info-row">
+                            <span class="track-info-label">कुल दर्शनार्थी:</span>
+                            <span class="track-info-val">${item.totalDevotees || '1'}</span>
+                        </div>
+                        <div class="track-info-row">
+                            <span class="track-info-label">रेफरेंस / संदर्भ:</span>
+                            <span class="track-info-val">${item.referredBy || '--'}</span>
+                        </div>
+                    `;
+                } else {
+                    trackResultBox.innerHTML = `
+                        <div class="track-not-found">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; margin-bottom: 0.4rem; display: block;"></i>
+                            दर्ज विवरण से कोई आवेदन नहीं मिला। कृपया टोकन ID या 10-अंकों का मोबाइल नंबर पुनः जांचें।
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error("Track error:", err);
+                trackResultBox.classList.remove("hidden");
+                trackResultBox.innerHTML = `
+                    <div class="track-not-found">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem; margin-bottom: 0.4rem; display: block;"></i>
+                        सर्वर से संपर्क नहीं हो सका। कृपया थोड़ी देर बाद पुनः प्रयास करें।
+                    </div>
+                `;
+            } finally {
+                submitTrackBtn.disabled = false;
+                if (trackSubmitText) trackSubmitText.classList.remove("hidden");
+                if (trackSubmitLoader) trackSubmitLoader.classList.add("hidden");
+            }
+        }
+
+        submitTrackBtn.addEventListener("click", executeTrackSearch);
+        trackQueryInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                executeTrackSearch();
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // LANGUAGE SWITCHER (HINDI / ENGLISH - ITEM 8)
+    // -------------------------------------------------------------
+    const translations = {
+        hi: {
+            langBtn: "English",
+            trackBtn: "स्थिति देखें",
+            portalTitle: "श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन",
+            downloadSlip: "रसीद डाउनलोड करें (Save PNG)",
+            printSlip: "रसीद प्रिंट करें / PDF",
+            submitAnother: "दूसरा फॉर्म भरें",
+            closeModal: "बंद करें",
+            trackModalTitle: "आवेदन स्थिति जांचें (Track Pass)",
+            trackModalDesc: "अपने आवेदन का टोकन ID (उदा: AYO-20260913-145) या 10-अंकों का मोबाइल नंबर दर्ज करें:",
+            trackSearchBtn: "खोजें (Search)",
+            submitBtn: "सबमिट करें (Submit)",
+            noVehicle: "पैदल / कोई वाहन नहीं (On Foot / No Vehicle)"
+        },
+        en: {
+            langBtn: "हिन्दी",
+            trackBtn: "Track Status",
+            portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",
+            downloadSlip: "Download Slip (Save PNG)",
+            printSlip: "Print Slip / PDF",
+            submitAnother: "Submit Another Form",
+            closeModal: "Close",
+            trackModalTitle: "Track Application Status",
+            trackModalDesc: "Enter your Application Token ID (e.g. AYO-20260913-145) or 10-digit Mobile Number:",
+            trackSearchBtn: "Search Status",
+            submitBtn: "Submit Application",
+            noVehicle: "On Foot / No Vehicle"
+        }
+    };
+
+    function applyLanguage(lang) {
+        const t = translations[lang] || translations.hi;
+        localStorage.setItem("darshan_lang", lang);
+
+        const langBtnText = document.getElementById("lang-btn-text");
+        if (langBtnText) langBtnText.textContent = t.langBtn;
+
+        const trackNavLabel = document.getElementById("track-nav-label");
+        if (trackNavLabel) trackNavLabel.textContent = t.trackBtn;
+
+        const mainTitle = document.getElementById("main-portal-title");
+        if (mainTitle) mainTitle.textContent = t.portalTitle;
+
+        const downloadSlipText = document.getElementById("download-slip-text");
+        if (downloadSlipText) downloadSlipText.textContent = t.downloadSlip;
+
+        const printSlipText = document.getElementById("print-slip-text");
+        if (printSlipText) printSlipText.textContent = t.printSlip;
+
+        const submitAnotherText = document.getElementById("submit-another-text");
+        if (submitAnotherText) submitAnotherText.textContent = t.submitAnother;
+
+        const closeModalText = document.getElementById("close-modal-text");
+        if (closeModalText) closeModalText.textContent = t.closeModal;
+
+        const trackModalTitle = document.getElementById("track-modal-title");
+        if (trackModalTitle) trackModalTitle.innerHTML = `<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> ${t.trackModalTitle}`;
+
+        const trackModalDesc = document.getElementById("track-modal-desc");
+        if (trackModalDesc) trackModalDesc.textContent = t.trackModalDesc;
+
+        const trackSubmitText = document.getElementById("track-submit-text");
+        if (trackSubmitText) trackSubmitText.textContent = t.trackSearchBtn;
+
+        if (btnText) btnText.textContent = t.submitBtn;
+
+        const noVehicleText = document.getElementById("no-vehicle-text");
+        if (noVehicleText) noVehicleText.textContent = t.noVehicle;
+    }
+
+    const langToggleBtn = document.getElementById("lang-toggle-btn");
+    if (langToggleBtn) {
+        langToggleBtn.addEventListener("click", () => {
+            const currentLang = localStorage.getItem("darshan_lang") || "hi";
+            const nextLang = currentLang === "hi" ? "en" : "hi";
+            applyLanguage(nextLang);
+            showToast(nextLang === "en" ? "Switched to English" : "हिन्दी भाषा चुनी गई", "info");
+        });
+    }
+
+    // Auto-save form inputs
+    if (form) {
+        form.addEventListener("input", queueSaveDraft);
+        form.addEventListener("change", queueSaveDraft);
     }
 
     // -------------------------------------------------------------
@@ -1143,4 +1621,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setupVoiceTyping();
     enforceDevoteeCountLimit();
     initCustomSearchableSelects();
+    restoreFormDraft();
+    applyLanguage(localStorage.getItem("darshan_lang") || "hi");
 });
