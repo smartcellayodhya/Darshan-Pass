@@ -748,80 +748,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function clearFormDraft() {
-        localStorage.removeItem("darshan_form_draft");
+        try {
+            localStorage.removeItem("darshan_form_draft");
+            sessionStorage.removeItem("darshan_form_draft");
+        } catch (e) {}
+    }
+
+    function saveFormDraft() {
+        // Disabled per requirement: Browser refresh must always load a fresh, new form
     }
 
     let draftDebounceTimer = null;
     function queueSaveDraft() {
-        clearTimeout(draftDebounceTimer);
-        draftDebounceTimer = setTimeout(saveFormDraft, 400);
+        // Disabled per requirement
     }
 
     function restoreFormDraft() {
-        try {
-            const draftStr = localStorage.getItem("darshan_form_draft");
-            if (!draftStr) return;
-            const draft = JSON.parse(draftStr);
-            if (!draft) return;
-
-            // Only restore if draft is less than 48 hours old
-            if (Date.now() - (draft.timestamp || 0) > 48 * 60 * 60 * 1000) {
-                clearFormDraft();
-                return;
-            }
-
-            if (draft.nationality && nationalitySelect) {
-                nationalitySelect.value = draft.nationality;
-                nationalitySelect.dispatchEvent(new Event("change"));
-            }
-            if (draft.visitDate && visitDateInput && draft.visitDate >= todayStr && draft.visitDate <= maxDateStr) {
-                visitDateInput.value = draft.visitDate;
-            }
-            if (draft.visitSlot && visitSlotSelect) {
-                visitSlotSelect.value = draft.visitSlot;
-            }
-            if (draft.stateSelect && stateSelect) {
-                stateSelect.value = draft.stateSelect;
-                stateSelect.dispatchEvent(new Event("change"));
-                if (draft.districtSelect && districtSelect) {
-                    setTimeout(() => {
-                        districtSelect.value = draft.districtSelect;
-                        districtSelect.dispatchEvent(new Event("change"));
-                    }, 80);
-                }
-            }
-            if (draft.countrySelect && countrySelect) {
-                countrySelect.value = draft.countrySelect;
-            }
-            if (draft.idNumber && idNumberInput) idNumberInput.value = draft.idNumber;
-            if (draft.nameAge && nameAgeInput) nameAgeInput.value = draft.nameAge;
-            if (draft.maleCount && maleCountInput) maleCountInput.value = draft.maleCount;
-            if (draft.femaleCount && femaleCountInput) femaleCountInput.value = draft.femaleCount;
-            if (draft.mobile && mobileInput) mobileInput.value = draft.mobile;
-            
-            if (draft.noVehicle && noVehicleCheck) {
-                noVehicleCheck.checked = true;
-                noVehicleCheck.dispatchEvent(new Event("change"));
-            } else if (draft.vehicleNo && vehicleNoInput) {
-                vehicleNoInput.value = draft.vehicleNo;
-            }
-
-            if (draft.accompanying && accompanyingInput) accompanyingInput.value = draft.accompanying;
-            if (draft.referredBySelect && referredBySelect) {
-                referredBySelect.value = draft.referredBySelect;
-                referredBySelect.dispatchEvent(new Event("change"));
-                if (draft.otherRefName && otherRefNameInput) {
-                    otherRefNameInput.value = draft.otherRefName;
-                }
-            }
-
-            const totalDev = (parseInt(draft.maleCount) || 1) + (parseInt(draft.femaleCount) || 0);
-            updateAccompanyingRequirement(totalDev, draft.accompanyingMembers || null);
-
-            showToast("अंतिम अधूरा ड्राफ्ट स्वतः लोड हो गया है।", "info");
-        } catch (e) {
-            console.warn("Could not restore draft:", e);
-        }
+        // Disabled per requirement: Browser refresh must always load a fresh, new form
+        clearFormDraft();
     }
 
     function resetFormState() {
@@ -1604,19 +1548,20 @@ Reference: ${referredBy}
                 trackResultBox.classList.remove("hidden");
                 if (data && data.result === "success" && data.data) {
                     const item = data.data;
-                    const statusStr = (item.status || "Pending").trim();
+                    const statusStr = String(item.status || "Pending").trim();
                     let statusClass = "status-pending";
                     let statusHindi = "प्रक्रियाधीन";
 
-                    if (statusStr.toLowerCase().includes("already") || statusStr.includes("अन्य काउंटर")) {
+                    const lowerStatus = statusStr.toLowerCase();
+                    if (lowerStatus.includes("already") || statusStr.includes("अन्य काउंटर")) {
                         statusClass = "status-already-created";
                         statusHindi = "अन्य काउंटर से जारी";
-                    } else if (statusStr.toLowerCase().includes("pass") || statusStr.toLowerCase().includes("created") || statusStr === "स्वीकृत") {
+                    } else if (lowerStatus.includes("pass") || lowerStatus.includes("created") || lowerStatus.includes("बन गया") || lowerStatus.includes("approved") || statusStr.includes("स्वीकृत") || statusStr.includes("जारी")) {
                         statusClass = "status-pass-created";
-                        statusHindi = "पास जारी";
-                    } else if (statusStr.toLowerCase().includes("reject") || statusStr === "निरस्त") {
+                        statusHindi = "पास जारी (Pass Created)";
+                    } else if (lowerStatus.includes("reject") || statusStr.includes("निरस्त") || statusStr.includes("अस्वीकृत")) {
                         statusClass = "status-rejected";
-                        statusHindi = "निरस्त";
+                        statusHindi = "निरस्त (Rejected)";
                     }
 
                     function formatTrackDate(raw) {
@@ -1666,10 +1611,10 @@ Reference: ${referredBy}
                     let statusSub = "आवेदन पर विचार चल रहा है";
                     if (statusClass === "status-pass-created") {
                         statusIcon = "fa-circle-check";
-                        statusSub = "पास स्वीकृत एवं तैयार है";
+                        statusSub = item.passCreatedDate ? `पास बन गया है (जारी तिथि: ${item.passCreatedDate})` : "पास स्वीकृत एवं तैयार है";
                     } else if (statusClass === "status-already-created") {
                         statusIcon = "fa-id-card-clip";
-                        statusSub = "पास अन्य काउंटर से जारी है";
+                        statusSub = "पास अन्य काउंटर से पहले ही जारी हो चुका है";
                     } else if (statusClass === "status-rejected") {
                         statusIcon = "fa-circle-xmark";
                         statusSub = "आवेदन निरस्त कर दिया गया है";
@@ -1697,6 +1642,12 @@ Reference: ${referredBy}
                                     <span class="cell-lbl"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी</span>
                                     <span class="cell-val text-primary">${item.name || '--'}</span>
                                 </div>
+                                ${(item.passCreatedDate && statusClass === "status-pass-created") ? `
+                                <div class="track-cell">
+                                    <span class="cell-lbl"><i class="fa-solid fa-stamp"></i> पास बनने की तिथि</span>
+                                    <span class="cell-val" style="color: #15803d; font-weight: 700;">${item.passCreatedDate}</span>
+                                </div>
+                                ` : ''}
                                 <div class="track-cell">
                                     <span class="cell-lbl"><i class="fa-regular fa-calendar-check"></i> दर्शन तिथि</span>
                                     <span class="cell-val">${cleanDate}</span>
@@ -2498,12 +2449,25 @@ Reference: ${referredBy}
         updateAccompanyingRequirement(initialTotal);
     }
 
-    // Initialize Voice Typing, Devotee Count Limit & Searchable Dropdowns
+    // 1. Clear any old draft and reset form on page refresh / load so it is always 100% brand new
+    clearFormDraft();
+    resetFormState();
+
+    // 2. Clear tracking modal inputs on page load
+    if (trackQueryInput) trackQueryInput.value = "";
+    if (trackResultBox) {
+        trackResultBox.classList.add("hidden");
+        trackResultBox.innerHTML = "";
+    }
+
+    // 3. Default language to Hindi on every page refresh / load
+    localStorage.setItem("darshan_lang", "hi");
+    applyLanguage("hi");
+
+    // 4. Initialize Voice Typing, Devotee Count Limit & Searchable Dropdowns
     setupVoiceTyping();
     enforceDevoteeCountLimit();
     initCustomSearchableSelects();
-    restoreFormDraft();
-    applyLanguage(localStorage.getItem("darshan_lang") || "hi");
 
     // -------------------------------------------------------------
     // PROGRESSIVE WEB APP (PWA) INSTALL & SERVICE WORKER

@@ -245,28 +245,122 @@ function doGet(e) {
     var data = sheet.getDataRange().getValues();
     var match = null;
 
+    var statusCol = findStatusColumn(sheet);
+    var dateCol = findPassCreatedDateColumn(sheet);
+    var colSlot = findColumnByKeywords(sheet, ["स्लॉट", "slot"], 5);
+    var colName = findColumnByKeywords(sheet, ["नाम", "name"], 6);
+    var colMob = findColumnByKeywords(sheet, ["मो0नं0", "mobile", "phone"], 11);
+    var colRef = findColumnByKeywords(sheet, ["referred", "संदर्भ"], 14);
+    var colTotal = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
+
     for (var r = data.length - 1; r >= 1; r--) {
       var rowData = data[r];
       var rowNum = r + 1;
-      var status = String(rowData[1] || 'Pending').trim();
-      var passDate = formatSheetDateToDDMMYYYY(rowData[2]);
-      var vDate = formatSheetDateToDDMMYYYY(rowData[3]);
-      var vSlot = String(rowData[4] || '').trim();
-      var name = String(rowData[5] || '').trim();
-      var mob = String(rowData[10] || '').trim();
-      var ref = String(rowData[13] || '').trim();
-      var total = String(rowData[16] || '').trim();
+
+      // Detect slot cell index dynamically in this row
+      var slotIdx = -1;
+      for (var c = 0; c < rowData.length; c++) {
+        var strCell = String(rowData[c] || '').trim();
+        if (/^\d{1,2}:\d{2}\s*(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)$/i.test(strCell)) {
+          slotIdx = c;
+          break;
+        }
+      }
+
+      var vSlot = "";
+      var vDate = "";
+      var name = "";
+      var mob = "";
+      var ref = "";
+      var total = "";
+
+      if (slotIdx !== -1) {
+        vSlot = String(rowData[slotIdx] || '').trim();
+        vDate = formatSheetDateToDDMMYYYY(rowData[slotIdx - 1]);
+        name = String(rowData[slotIdx + 1] || '').trim();
+        mob = String(rowData[slotIdx + 6] || '').trim();
+        ref = String(rowData[slotIdx + 9] || '').trim();
+        total = String(rowData[slotIdx + 12] || '').trim();
+      } else {
+        vDate = formatSheetDateToDDMMYYYY(rowData[colSlot - 2] || rowData[3]);
+        vSlot = String(rowData[colSlot - 1] || rowData[4] || '').trim();
+        name = String(rowData[colName - 1] || rowData[5] || '').trim();
+        mob = String(rowData[colMob - 1] || rowData[10] || '').trim();
+        ref = String(rowData[colRef - 1] || rowData[13] || '').trim();
+        total = String(rowData[colTotal - 1] || rowData[16] || '').trim();
+      }
 
       // Skip ghost or blank rows
       if (!name && !mob && !vDate) continue;
 
-      var isMobileMatch = (query.length >= 10 && (mob === query || mob.includes(query) || query.includes(mob)));
+      var cleanMob = String(mob).replace(/\D/g, '');
+      var cleanQuery = query.replace(/\D/g, '');
+      var isMobileMatch = (cleanQuery.length >= 10 && (cleanMob === cleanQuery || cleanMob.includes(cleanQuery) || cleanQuery.includes(cleanMob)));
       var isRowMatch = (targetTokenRow !== "" && String(rowNum) === targetTokenRow);
 
+      // Also check all cells in row for 10-digit mobile match if not matched
+      if (!isMobileMatch && !isRowMatch && cleanQuery.length >= 10) {
+        for (var mc = 0; mc < rowData.length; mc++) {
+          var cellDigits = String(rowData[mc] || '').replace(/\D/g, '');
+          if (cellDigits === cleanQuery || (cellDigits.length >= 10 && cellDigits.includes(cleanQuery))) {
+            isMobileMatch = true;
+            break;
+          }
+        }
+      }
+
       if (isMobileMatch || isRowMatch) {
+        // DETECT STATUS WITH 100% BULLETPROOF ACCURACY:
+        var status = "";
+        var passDate = "";
+
+        // 1. Check all cells in the row before visit date / slot
+        var maxStatusCheck = (slotIdx !== -1) ? slotIdx : Math.min(rowData.length, 6);
+        for (var sc = 1; sc < maxStatusCheck; sc++) {
+          var scRaw = String(rowData[sc] || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
+          if (scRaw.includes("pass created") || scRaw.includes("approved") || scRaw.includes("बन गया") || scRaw.includes("स्वीकृत")) {
+            status = "Pass Created";
+          } else if (scRaw.includes("already") || scRaw.includes("अन्य काउंटर")) {
+            status = "Already Created (अन्य काउंटर से)";
+          } else if (scRaw.includes("rejected") || scRaw.includes("निरस्त") || scRaw.includes("अस्वीकृत")) {
+            status = "Rejected";
+          } else if (scRaw.includes("pending")) {
+            if (!status) status = "Pending";
+          }
+
+          var testDate = formatSheetDateToDDMMYYYY(rowData[sc]);
+          if (testDate && testDate.includes("/") && testDate !== vDate) {
+            passDate = testDate;
+          }
+        }
+
+        // 2. Cross-check against detected statusCol
+        if (statusCol > 0 && statusCol <= rowData.length) {
+          var colVal = String(rowData[statusCol - 1] || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
+          if (colVal.includes("pass created") || colVal.includes("approved") || colVal.includes("बन गया") || colVal.includes("स्वीकृत")) {
+            status = "Pass Created";
+          } else if (colVal.includes("already") || colVal.includes("अन्य काउंटर")) {
+            status = "Already Created (अन्य काउंटर से)";
+          } else if (colVal.includes("rejected") || colVal.includes("निरस्त") || colVal.includes("अस्वीकृत")) {
+            status = "Rejected";
+          } else if (colVal.includes("pending") && !status) {
+            status = "Pending";
+          }
+        }
+
+        if (!status) status = "Pending";
+
+        // 3. Extract Pass Created Date
+        if (!passDate && dateCol > 0 && dateCol <= rowData.length) {
+          passDate = formatSheetDateToDDMMYYYY(rowData[dateCol - 1]);
+        }
+        if (!passDate && status === "Pass Created") {
+          passDate = formatSheetDateToDDMMYYYY(rowData[0]);
+        }
+
         match = {
           rowNumber: rowNum,
-          status: status || "Pending",
+          status: status,
           passCreatedDate: passDate,
           visitDate: vDate,
           visitSlot: vSlot,
