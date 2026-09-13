@@ -749,7 +749,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const slipTotalDevotees = document.getElementById("slip-total-devotees");
                 const slipMobile = document.getElementById("slip-mobile");
                 const slipReferredBy = document.getElementById("slip-referred-by");
-                const slipAccompanying = document.getElementById("slip-accompanying");
 
                 if (slipDevoteeName) slipDevoteeName.textContent = devoteeNameVal;
                 if (slipTokenId) slipTokenId.textContent = tokenNumber;
@@ -757,7 +756,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (slipTotalDevotees) slipTotalDevotees.textContent = `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
                 if (slipMobile) slipMobile.textContent = formData.mobile;
                 if (slipReferredBy) slipReferredBy.textContent = finalReferredBy;
-                if (slipAccompanying) slipAccompanying.textContent = finalAccompanyingVal;
 
                 // Display Success Modal
                 if (successModal) {
