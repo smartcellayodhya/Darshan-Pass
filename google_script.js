@@ -3,10 +3,10 @@
  * 
  * Target Google Sheet: https://docs.google.com/spreadsheets/d/1hvU0bmecFROopDXRFvBqN6RiJqXhskCQfKNasopNwPo/edit
  * 
- * Clean 19-Column Structure (Pass Status & Created Date placed right after Timestamp):
+ * Clean 19-Column Structure (Pass Created Date in Col B & Pass Status in Col C):
  * 1. Timestamp (dd/mm/yyyy hh:mm:ss)
- * 2. पास स्थिति (Pass Status - Pending / Pass Created / Rejected)
- * 3. पास बनने की तिथि (Pass Created Date - DD/MM/YYYY)
+ * 2. पास बनने की तिथि (Pass Created Date - DD/MM/YYYY)
+ * 3. पास स्थिति (Pass Status - Pending / Pass Created / Rejected)
  * 4. दर्शन तिथि (Visit Date - DD/MM/YYYY)
  * 5. दर्शन समय स्लॉट (Visit Time Slot - 07:00 AM - 09:00 AM)
  * 6. नाम व उम्र (Name & Age)
@@ -24,6 +24,46 @@
  * 18. पुरुष संख्या (Male Count Numeric)
  * 19. महिला संख्या (Female Count Numeric)
  */
+
+/**
+ * 🔐 AUTHORIZED ADMIN CONFIGURATION
+ * Only users listed in ADMIN_EMAILS or the Spreadsheet Owner can access/view "⚙️ VIP Tools".
+ * Unauthorized shared editors or viewers will NOT see the VIP Tools menu and cannot run administrative tools.
+ */
+var ADMIN_EMAILS = [
+  "smartcellayd@gmail.com"
+];
+
+function isAuthorizedAdmin() {
+  try {
+    var activeEmail = (Session.getActiveUser().getEmail() || '').toLowerCase().trim();
+    var effectiveEmail = (Session.getEffectiveUser().getEmail() || '').toLowerCase().trim();
+
+    for (var i = 0; i < ADMIN_EMAILS.length; i++) {
+      var adm = ADMIN_EMAILS[i].toLowerCase().trim();
+      if ((activeEmail && activeEmail === adm) || (effectiveEmail && effectiveEmail === adm)) {
+        return true;
+      }
+    }
+
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet() || getTargetSpreadsheet();
+      if (ss) {
+        var owner = ss.getOwner();
+        if (owner && owner.getEmail()) {
+          var ownerEmail = owner.getEmail().toLowerCase().trim();
+          if ((activeEmail && activeEmail === ownerEmail) || (effectiveEmail && effectiveEmail === ownerEmail)) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return false;
+  } catch (err) {
+    return false;
+  }
+}
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -94,11 +134,11 @@ function doPost(e) {
     var passStatus = "Pending";
     var passCreatedDate = ""; // Empty until pass is generated
 
-    // 3. Append row in 19-column order (Status & Created Date right after Timestamp)
+    // 3. Append row in exact 19-column order matching Google Sheet
     sheet.appendRow([
-      new Date(),                                    // 1. Timestamp
-      passStatus,                                    // 2. पास स्थिति (Pass Status - Column B)
-      passCreatedDate,                               // 3. पास बनने की तिथि (Pass Created Date - Column C)
+      new Date(),                                    // 1. Timestamp (Column A)
+      passCreatedDate,                               // 2. पास बनने की तिथि (Pass Created Date - Column B)
+      passStatus,                                    // 3. पास स्थिति (Pass Status - Column C)
       visitDate,                                     // 4. दर्शन तिथि (Visit Date - DD/MM/YYYY)
       visitSlot,                                     // 5. दर्शन समय स्लॉट (Visit Time Slot)
       nameAge,                                       // 6. नाम व उम्र
@@ -135,8 +175,8 @@ function doPost(e) {
 
       sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
 
-      // Add Dropdown to Pass Status cell (Column 2 / B)
-      var statusCell = sheet.getRange(lastRow, 2);
+      // Add Dropdown to Pass Status cell (Column 3 / C)
+      var statusCell = sheet.getRange(lastRow, 3);
       var rule = SpreadsheetApp.newDataValidation()
         .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
         .setAllowInvalid(false)
@@ -574,7 +614,19 @@ function setupDynamicConditionalFormatting(sheet, optStatusCol) {
     var maxFormatRows = Math.max(sheet.getMaxRows(), 1000);
     var formatRange = sheet.getRange("A2:S" + maxFormatRows);
 
-    sheet.clearConditionalFormatRules();
+    // Retrieve existing rules so user-defined rules are NOT erased
+    var existingRules = sheet.getConditionalFormatRules() || [];
+    var preservedRules = existingRules.filter(function (r) {
+      try {
+        var cond = r.getBooleanCondition();
+        if (!cond) return true;
+        var vals = cond.getCriteriaValues() || [];
+        var fStr = vals.join(" ").toLowerCase();
+        return fStr.indexOf("pass created") === -1 && fStr.indexOf("approved") === -1 && fStr.indexOf("बन गया") === -1;
+      } catch (e) {
+        return true;
+      }
+    });
 
     // Check dynamic column letter (e.g. $C2) AND fallbacks ($B2, $C2)
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
@@ -605,7 +657,8 @@ function setupDynamicConditionalFormatting(sheet, optStatusCol) {
       .setRanges([formatRange])
       .build();
 
-    sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
+    var allRules = [passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule].concat(preservedRules);
+    sheet.setConditionalFormatRules(allRules);
   } catch (cfErr) {
     console.warn("Conditional formatting setup notice:", cfErr);
   }
@@ -633,8 +686,8 @@ function onEdit(e) {
       // STRICT ANTI-TAMPER GUARD: Instantly restore official standard headers
       var stdHeadersList = [
         "Timestamp",
-        "पास स्थिति (Pass Status)",
         "पास बनने की तिथि (Pass Created Date)",
+        "पास स्थिति (Pass Status)",
         "दर्शन तिथि",
         "दर्शन समय स्लॉट",
         "नाम व उम्र",
@@ -666,8 +719,9 @@ function onEdit(e) {
     }
 
     var statusCol = findStatusColumn(sheet);
+    if (!statusCol || statusCol === -1) statusCol = 3; // Column 3 (C): पास स्थिति (Pass Status)
     var dateCol = findPassCreatedDateColumn(sheet);
-    if (dateCol === -1) dateCol = 3; // Column 3: पास बनने की तिथि (Pass Created Date)
+    if (!dateCol || dateCol === -1) dateCol = 2; // Column 2 (B): पास बनने की तिथि (Pass Created Date)
     var colJ = findColumnByKeywords(sheet, ["पुरूषो व महिलाओं", "gender"], 10);
     var colM = findColumnByKeywords(sheet, ["साथ में आने वाले", "सदस्यों", "accompanying"], 13);
     var colQ = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
@@ -795,7 +849,14 @@ function onEdit(e) {
  * Parses Column J (पुरूषो व महिलाओं की संख्या) and synchronizes Column Q (कुल), R (पुरुष), S (महिला).
  * Also left-aligns Column M (साथ में आने वाले सदस्यों के नाम व उम्र) across all rows.
  */
-function syncAllDevoteeCounts(optSheet) {
+function syncAllDevoteeCounts(optSheet, bypassAuth) {
+  if (!bypassAuth && !isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return;
+  }
+
   var ss = getTargetSpreadsheet();
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return;
@@ -863,6 +924,13 @@ function syncAllDevoteeCounts(optSheet) {
  * Removes strict data validation reject rules and range protections on Row 1.
  */
 function unlockRow1Headers(optSheet) {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return { success: false, message: "Unauthorized" };
+  }
+
   var ss = getTargetSpreadsheet();
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return { success: false, message: "Sheet not found" };
@@ -915,14 +983,21 @@ function unlockRow1Headers(optSheet) {
  * 4. Applies Strict Range Protection removing all editors
  */
 function lockAndProtectHeaderRow(optSheet) {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return { success: false, message: "Unauthorized" };
+  }
+
   var ss = getTargetSpreadsheet();
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return { success: false, message: "Sheet not found" };
 
   var standardHeadersList = [
     "Timestamp",
-    "पास स्थिति (Pass Status)",
     "पास बनने की तिथि (Pass Created Date)",
+    "पास स्थिति (Pass Status)",
     "दर्शन तिथि",
     "दर्शन समय स्लॉट",
     "नाम व उम्र",
@@ -1012,6 +1087,13 @@ function lockAndProtectHeaderRow(optSheet) {
  * 4. Permanently locks and protects Row 1 headers
  */
 function refreshAllRowColors(optSheet) {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return;
+  }
+
   var ss = getTargetSpreadsheet();
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return;
@@ -1021,16 +1103,17 @@ function refreshAllRowColors(optSheet) {
   var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
   if (lastRow < 2) return;
 
-  // 1. Sync Devotee Counts & Left-align Column M
+  // 1. Sync Devotee Counts & Left-align Column M (bypassAuth=true since already verified)
   try {
-    syncAllDevoteeCounts(sheet);
+    syncAllDevoteeCounts(sheet, true);
   } catch (syncErr) {
     console.warn("Devotee sync notice:", syncErr);
   }
 
   var statusCol = findStatusColumn(sheet);
+  if (!statusCol || statusCol === -1) statusCol = 3; // Column 3 (C): पास स्थिति (Pass Status)
   var dateCol = findPassCreatedDateColumn(sheet);
-  if (dateCol === -1) dateCol = 3; // Column 3: पास बनने की तिथि (Pass Created Date)
+  if (!dateCol || dateCol === -1) dateCol = 2; // Column 2 (B): पास बनने की तिथि (Pass Created Date)
   var numDataRows = lastRow - 1;
 
   // Read status values directly from detected status column
@@ -1052,7 +1135,7 @@ function refreshAllRowColors(optSheet) {
       bg = "#9fc48a"; // Sage Green
       fc = "#000000";
 
-      // Auto-fill Pass Created Date in Column C if empty
+      // Auto-fill Pass Created Date in Column B if empty
       if (dateVals && !dateVals[i][0]) {
         var rowTs = sheet.getRange(i + 2, 1).getValue();
         dateVals[i][0] = formatSheetDateToDDMMYYYY(rowTs) || Utilities.formatDate(new Date(), scriptTz, "dd/MM/yyyy");
@@ -1101,14 +1184,20 @@ function refreshAllRowColors(optSheet) {
 
 /**
  * AUTOMATIC CUSTOM MENU IN GOOGLE SHEETS
- * Adds a "⚙️ VIP Tools" menu to Google Sheet top bar when opened.
+ * Adds a "⚙️ VIP Tools" menu to Google Sheet top bar ONLY when opened by an authorized admin.
  */
 function onOpen() {
   try {
+    // 🔐 SECURITY GUARD: Only create VIP Tools menu for authorized admin (smartcellayd@gmail.com)
+    if (!isAuthorizedAdmin()) {
+      return; // Do NOT show VIP menu to unauthorized editors/viewers!
+    }
+
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
       .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
+      .addItem('🛡️ Restore Pass Status Dropdowns (कॉलम C ड्रॉपडाउन रीस्टोर करें)', 'restoreStatusDropdowns')
       .addItem('🔓 Unlock Row 1 Headers (कठोर लॉक हटाएं / अनलॉक करें)', 'unlockRow1Headers')
       .addItem('🔒 Safe-Lock Row 1 (सुरक्षित वार्निंग लॉक लगाएं)', 'lockAndProtectHeaderRow')
       .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
@@ -1121,12 +1210,50 @@ function onOpen() {
 }
 
 /**
+ * RESTORE PASS STATUS DROPDOWNS ON COLUMN C (कॉलम C ड्रॉपडाउन सुरक्षित रीस्टोर करें)
+ * Re-applies the dropdown list to Column C (Pass Status) for all data rows without touching any other validations or data.
+ */
+function restoreStatusDropdowns(optSheet) {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return;
+  }
+
+  var ss = getTargetSpreadsheet();
+  var sheet = optSheet || getMainDataSheet(ss);
+  if (!sheet) return;
+
+  var maxRows = Math.max(sheet.getMaxRows(), 1000);
+  var statusCol = findStatusColumn(sheet) || 3;
+
+  var statusRange = sheet.getRange(2, statusCol, maxRows - 1, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
+    .setAllowInvalid(false)
+    .build();
+  statusRange.setDataValidation(rule);
+
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast("🛡️ कॉलम C (Pass Status) के सभी ड्रॉपडाउन रूल्स सफलतापूर्वक रीस्टोर कर दिए गए हैं!", "Dropdowns Restored", 5);
+  } catch (e) {}
+}
+
+/**
  * 1-CLICK COLUMN REPAIR & DATA REALIGNMENT
  * Automatically unhides hidden columns, detects shifted cells (e.g. +2 column shift),
  * realigns all data under the proper 19 headers, preserves existing pass statuses,
  * deletes duplicate/empty shift columns, sets dropdowns & sage green highlighting.
  */
 function fixAndRealignAllSheetColumns() {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return { success: false, message: "Unauthorized" };
+  }
+
   var ss = getTargetSpreadsheet();
   if (!ss) {
     throw new Error("Spreadsheet could not be opened. Check ID or active sheet permissions.");
@@ -1138,8 +1265,8 @@ function fixAndRealignAllSheetColumns() {
 
   var standardHeaders = [
     "Timestamp",
-    "पास स्थिति (Pass Status)",
     "पास बनने की तिथि (Pass Created Date)",
+    "पास स्थिति (Pass Status)",
     "दर्शन तिथि",
     "दर्शन समय स्लॉट",
     "नाम व उम्र",
@@ -1184,7 +1311,7 @@ function fixAndRealignAllSheetColumns() {
       return Utilities.formatDate(v, Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
     }
     var s = String(v).trim();
-    if (!isDatePattern(s)) return ""; // Strictly only return if it's a valid date!
+    if (!isDatePattern(s)) return "";
     if (s.includes("-")) {
       var parts = s.split("-");
       if (parts.length === 3 && parts[0].length === 4) {
@@ -1232,8 +1359,8 @@ function fixAndRealignAllSheetColumns() {
       if (!hasData) continue;
 
       var timestamp = row[0] || "";
-      var status = "Pending";
       var createdDate = "";
+      var status = "Pending";
       var visitDate = "";
       var visitSlot = "";
       var nameAge = "";
@@ -1303,8 +1430,11 @@ function fixAndRealignAllSheetColumns() {
 
       } else {
         // Fallback: If no slot string found, check standard 19-column layout
-        status = isStatusVal(row[1]) ? cleanStatusVal(row[1]) : "Pending";
-        createdDate = formatDateVal(row[2] || "");
+        // Col A (0): Timestamp
+        // Col B (1): Pass Created Date
+        // Col C (2): Pass Status
+        createdDate = formatDateVal(row[1] || "");
+        status = isStatusVal(row[2]) ? cleanStatusVal(row[2]) : "Pending";
         visitDate = formatDateVal(row[3] || "");
         visitSlot = String(row[4] || "").trim();
         nameAge = String(row[5] || "").trim();
@@ -1329,7 +1459,6 @@ function fixAndRealignAllSheetColumns() {
                          (visitDate && String(visitDate).trim().length > 5) || 
                          (cleanMob.length >= 8);
       if (!isGenuineRow) {
-        // Skip ghost/empty submissions like "Male: 0, Female: 0"
         continue;
       }
 
@@ -1340,8 +1469,8 @@ function fixAndRealignAllSheetColumns() {
 
       cleanedRows.push([
         timestamp,
-        status,
         createdDate,
+        status,
         visitDate,
         visitSlot,
         nameAge,
@@ -1367,18 +1496,14 @@ function fixAndRealignAllSheetColumns() {
       return;
     }
 
-    // 3. Reset all old backgrounds, text colors and validations across entire sheet
+    // 3. Reset backgrounds and font colors (DO NOT wipe data validations!)
     var maxR = sheet.getMaxRows();
     var maxC = sheet.getMaxColumns();
     if (maxR > 1) {
       var allDataRange = sheet.getRange(2, 1, maxR - 1, maxC);
       allDataRange.setBackground(null);
       allDataRange.setFontColor(null);
-      try {
-        allDataRange.clearDataValidations();
-      } catch (valErr) {
-        console.warn("Validation clear notice:", valErr);
-      }
+      // NOTE: We do NOT call clearDataValidations() so all existing validation rules remain preserved!
     }
 
     // 4. Write standard Row 1 Headers
@@ -1438,9 +1563,9 @@ function fixAndRealignAllSheetColumns() {
       sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
 
-    // 11. Dropdown Validation on Column B (Pass Status)
-    var statusRowsCount = Math.max(cleanedRows.length + 5, 20);
-    var statusRange = sheet.getRange(2, 2, statusRowsCount, 1);
+    // 11. Dropdown Validation on Column C (Pass Status - Column 3)
+    var statusRowsCount = Math.max(cleanedRows.length + 5, 50);
+    var statusRange = sheet.getRange(2, 3, statusRowsCount, 1);
     var statusRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
       .setAllowInvalid(false)
@@ -1459,9 +1584,9 @@ function fixAndRealignAllSheetColumns() {
 
     // 13. Column Widths
     var colWidths = [
-      150, // 1. Timestamp
-      165, // 2. Pass Status (B)
-      165, // 3. Pass Created Date (C)
+      150, // 1. Timestamp (A)
+      165, // 2. Pass Created Date (B)
+      165, // 3. Pass Status (C)
       130, // 4. Visit Date (D)
       170, // 5. Visit Time Slot (E)
       160, // 6. Name Age (F)
@@ -1514,6 +1639,12 @@ function fixAndRealignAllSheetColumns() {
  * (Now safely calls fixAndRealignAllSheetColumns so it NEVER duplicates or shifts columns!)
  */
 function formatEntireSheet() {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return { success: false, message: "Unauthorized" };
+  }
   return fixAndRealignAllSheetColumns();
 }
 
@@ -1521,6 +1652,13 @@ function formatEntireSheet() {
  * UTILITY 2: CREATE ADVANCED VIP DASHBOARD & DAILY PASS REPORT (📊 VIP Dashboard)
  */
 function setupVipDashboard() {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return;
+  }
+
   var ss = getTargetSpreadsheet();
   if (!ss) return;
 
@@ -1555,31 +1693,31 @@ function setupVipDashboard() {
   dashSheet.getRange("A5").setFormula("=COUNTA(" + dataSheetName + "!A2:A)");
   dashSheet.getRange("A5").setFontSize(18).setFontWeight("bold").setHorizontalAlignment("center");
 
-  // Card 2: Total Passes Created (Sage Green - Column B or C)
+  // Card 2: Total Passes Created (Sage Green - Column C: Pass Status)
   dashSheet.getRange("D4:E4").merge();
   dashSheet.getRange("D4").setValue("कुल बने पास (Pass Created)");
   dashSheet.getRange("D4").setBackground("#9fc48a").setFontColor("#000000").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("D5:E5").merge();
-  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pass Created\") + COUNTIF(" + dataSheetName + "!C2:C, \"Pass Created\")");
+  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!C2:C, \"Pass Created\")");
   dashSheet.getRange("D5").setFontSize(18).setFontWeight("bold").setFontColor("#064e3b").setHorizontalAlignment("center");
 
-  // Card 3: Pending Applications (Yellow/Orange - Column B or C)
+  // Card 3: Pending Applications (Yellow/Orange - Column C: Pass Status)
   dashSheet.getRange("G4:H4").merge();
   dashSheet.getRange("G4").setValue("कुल लंबित (Pending)");
   dashSheet.getRange("G4").setBackground("#f59e0b").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("G5:H5").merge();
-  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pending\") + COUNTIF(" + dataSheetName + "!C2:C, \"Pending\")");
+  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!C2:C, \"Pending\")");
   dashSheet.getRange("G5").setFontSize(18).setFontWeight("bold").setFontColor("#b45309").setHorizontalAlignment("center");
 
-  // Card 4: Rejected (Red - Column B or C)
+  // Card 4: Rejected (Red - Column C: Pass Status)
   dashSheet.getRange("J4:K4").merge();
   dashSheet.getRange("J4").setValue("निरस्त आवेदन (Rejected)");
   dashSheet.getRange("J4").setBackground("#ef4444").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("J5:K5").merge();
-  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Rejected\") + COUNTIF(" + dataSheetName + "!C2:C, \"Rejected\")");
+  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!C2:C, \"Rejected\")");
   dashSheet.getRange("J5").setFontSize(18).setFontWeight("bold").setFontColor("#b91c1c").setHorizontalAlignment("center");
 
-  // 3. TABLE 1: पास बनने की तिथि वार रिपोर्ट (PASS CREATED DATE REPORT - Column C)
+  // 3. TABLE 1: पास बनने की तिथि वार रिपोर्ट (PASS CREATED DATE REPORT - Column B)
   dashSheet.getRange("A7:C7").merge();
   dashSheet.getRange("A7").setValue("📅 पास बनने की तारीख वार रिपोर्ट (Passes Made)");
   dashSheet.getRange("A7").setBackground("#065f46").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
@@ -1588,9 +1726,9 @@ function setupVipDashboard() {
   dashSheet.getRange("B8").setValue("बने पास").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
   dashSheet.getRange("C8").setValue("कुल दर्शनार्थी").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
 
-  dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!C2:C, " + dataSheetName + "!C2:C <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!C$2:C, A9))");
-  dashSheet.getRange("C9:C28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!Q$2:Q, " + dataSheetName + "!C$2:C, A9))");
+  dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!B2:B, " + dataSheetName + "!B2:B <> \"\")), \"(अभी कोई डेटा नहीं)\")");
+  dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!B$2:B, A9))");
+  dashSheet.getRange("C9:C28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!Q$2:Q, " + dataSheetName + "!B$2:B, A9))");
 
   // 4. TABLE 2: दर्शन तिथि वार रिपोर्ट (VISIT DATE REPORT - Column D)
   dashSheet.getRange("E7:H7").merge();
@@ -1604,8 +1742,8 @@ function setupVipDashboard() {
 
   dashSheet.getRange("E9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!D2:D, " + dataSheetName + "!D2:D <> \"\")), \"(अभी कोई डेटा नहीं)\")");
   dashSheet.getRange("F9:F28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!D$2:D, E9))");
-  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pass Created\") + COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
-  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pending\") + COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pending\"))");
+  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
+  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pending\"))");
 
   // 5. TABLE 3: REFERRED BY REPORT (Column N)
   dashSheet.getRange("J7:K7").merge();
@@ -1616,7 +1754,7 @@ function setupVipDashboard() {
   dashSheet.getRange("K8").setValue("बने पास").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
   dashSheet.getRange("J9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!N2:N, " + dataSheetName + "!N2:N <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!B$2:B, \"Pass Created\") + COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
+  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
 
   // Format Dashboard Cells
   dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
