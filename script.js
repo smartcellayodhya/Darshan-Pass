@@ -496,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // ULTRA-FAST SINGLE-SHOT TRANSMISSION PIPELINE (~1s RESPONSE)
+    // ULTRA-FAST TRANSMISSION PIPELINE WITH ATOMIC ROW FEEDBACK
     // -------------------------------------------------------------
     async function sendDataWithRowFeedback(formData) {
         const payloadStr = JSON.stringify(formData);
@@ -507,23 +507,45 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Offline");
         }
 
-        // Direct single-shot transmission via no-cors mode to Google Apps Script
-        // Avoids CORS preflight redirects, network stalls and latency
+        let assignedRow = null;
+
+        // Try direct POST first to read exact atomic row number assigned by Google Sheets
         try {
-            await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            const res = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "text/plain" },
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: payloadStr
             });
-        } catch (fetchErr) {
-            console.warn("Direct transmission fallback via sendBeacon...", fetchErr);
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && (data.rowNumber || data.row)) {
+                    assignedRow = parseInt(data.rowNumber || data.row, 10);
+                    localStorage.setItem("darshan_last_row", String(assignedRow));
+                }
+            }
+        } catch (postErr) {
+            // If cross-origin redirect prevents reading JSON, fall through to robust delivery
+            console.warn("Direct POST JSON response unavailable, falling back to guaranteed delivery...", postErr);
+        }
+
+        // Guaranteed delivery fallback via no-cors if direct POST did not return assignedRow
+        if (!assignedRow) {
+            try {
+                await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain" },
+                    body: payloadStr
+                });
+            } catch (fetchErr) {
+                console.warn("Direct transmission fallback via sendBeacon...", fetchErr);
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
+                }
             }
         }
 
-        // Silent background query to sync actual Google Sheet row counter for future passes
+        // Silent background query to refresh actual Google Sheet row counter
         setTimeout(() => {
             fetch(GOOGLE_APPS_SCRIPT_URL)
                 .then(r => r.json())
@@ -533,10 +555,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
                 .catch(() => {});
-        }, 120);
+        }, 150);
 
         return {
-            success: true
+            success: true,
+            rowNumber: assignedRow
         };
     }
 
@@ -984,25 +1007,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitterEmail: subEmail
             };
 
-            // Generate accurate token ID synced with Google Sheet row count
-            let currentCounter = null;
-            try {
-                const rowSyncRes = await fetch(GOOGLE_APPS_SCRIPT_URL);
-                const rowSyncData = await rowSyncRes.json();
-                if (rowSyncData && rowSyncData.lastRow) {
-                    currentCounter = parseInt(rowSyncData.lastRow, 10) + 1;
-                }
-            } catch (e) {}
-            if (!currentCounter) {
-                currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "1542", 10) + 1;
-            }
-            localStorage.setItem("darshan_last_row", String(currentCounter));
-            const tokenNumber = generateTokenId(currentCounter);
+            // Fast provisional token ID from pre-synced background row counter
+            let currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "1545", 10) + 1;
+            let tokenNumber = generateTokenId(currentCounter);
             formData.token = tokenNumber;
 
             try {
-                // Transmit Data via ultra-fast pipeline (~1s)
-                await sendDataWithRowFeedback(formData);
+                // Direct single transmission pipeline (~1.5s)
+                const sendResult = await sendDataWithRowFeedback(formData);
+
+                // If Google Apps Script returned the exact atomic row assigned to this entry, update Token ID seamlessly
+                if (sendResult && sendResult.rowNumber) {
+                    currentCounter = sendResult.rowNumber;
+                    localStorage.setItem("darshan_last_row", String(currentCounter));
+                    tokenNumber = generateTokenId(currentCounter);
+                } else {
+                    localStorage.setItem("darshan_last_row", String(currentCounter));
+                }
 
                 // Populate Acknowledgement Slip / Modal
                 const slipDevoteeName = document.getElementById("slip-devotee-name");
@@ -2314,14 +2335,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Background silent sync of latest sheet row for instant token generator
-    try {
-        fetch(GOOGLE_APPS_SCRIPT_URL)
-            .then(r => r.json())
-            .then(d => {
-                if (d && d.lastRow) {
-                    localStorage.setItem("darshan_last_row", String(d.lastRow));
-                }
-            })
-            .catch(() => {});
-    } catch(e) {}
+    function silentSyncSheetRow() {
+        try {
+            fetch(GOOGLE_APPS_SCRIPT_URL)
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.lastRow) {
+                        localStorage.setItem("darshan_last_row", String(d.lastRow));
+                    }
+                })
+                .catch(() => {});
+        } catch(e) {}
+    }
+    silentSyncSheetRow();
+    // Keep it refreshed every 20 seconds while user fills the form to handle concurrent users
+    setInterval(silentSyncSheetRow, 20000);
 });
