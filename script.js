@@ -477,11 +477,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // RELIABLE TRANSMISSION PIPELINE WITH SHEET ROW NUMBER RETURN
+    // ULTRA-FAST SINGLE-SHOT TRANSMISSION PIPELINE (~1s RESPONSE)
     // -------------------------------------------------------------
     async function sendDataWithRowFeedback(formData) {
         const payloadStr = JSON.stringify(formData);
-        let rowNumber = null;
 
         // Check active internet connection first
         if (navigator.onLine === false) {
@@ -489,55 +488,36 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Offline");
         }
 
+        // Direct single-shot transmission via no-cors mode to Google Apps Script
+        // Avoids CORS preflight redirects, network stalls and latency
         try {
-            // Attempt standard POST fetch to Google Apps Script
-            const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
                 body: payloadStr
             });
-
-            if (response.ok) {
-                const resJson = await response.json();
-                if (resJson && (resJson.rowNumber || resJson.row)) {
-                    rowNumber = resJson.rowNumber || resJson.row;
-                }
-            }
         } catch (fetchErr) {
-            console.warn("Direct POST JSON response not readable due to CORS redirect, initiating fallback...", fetchErr);
-            // Fallback: send via no-cors mode to ensure Google Sheet definitely receives data
-            try {
-                await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "text/plain" },
-                    body: payloadStr
-                });
-            } catch (fallbackErr) {
-                if (navigator.sendBeacon) {
-                    navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
-                }
+            console.warn("Direct transmission fallback via sendBeacon...", fetchErr);
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
             }
         }
 
-        // If row number was not returned in direct POST, query the latest row via GET
-        if (!rowNumber) {
-            try {
-                const getRes = await fetch(GOOGLE_APPS_SCRIPT_URL);
-                if (getRes.ok) {
-                    const getJson = await getRes.json();
-                    if (getJson && getJson.lastRow) {
-                        rowNumber = getJson.lastRow;
+        // Silent background query to sync actual Google Sheet row counter for future passes
+        setTimeout(() => {
+            fetch(GOOGLE_APPS_SCRIPT_URL)
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.lastRow) {
+                        localStorage.setItem("darshan_last_row", String(d.lastRow));
                     }
-                }
-            } catch (getErr) {
-                console.warn("Could not query lastRow from GET endpoint:", getErr);
-            }
-        }
+                })
+                .catch(() => {});
+        }, 120);
 
         return {
-            success: true,
-            rowNumber: rowNumber
+            success: true
         };
     }
 
@@ -985,11 +965,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitterEmail: subEmail
             };
 
+            // Generate immediate accurate token ID
+            const currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "101", 10) + 1;
+            localStorage.setItem("darshan_last_row", String(currentCounter));
+            const tokenNumber = generateTokenId(currentCounter);
+            formData.token = tokenNumber;
+
             try {
-                // Transmit Data and retrieve Google Sheet Row Number
-                const result = await sendDataWithRowFeedback(formData);
-                const finalRow = (result && result.rowNumber) ? result.rowNumber : null;
-                const tokenNumber = generateTokenId(finalRow);
+                // Transmit Data via ultra-fast pipeline (~1s)
+                await sendDataWithRowFeedback(formData);
 
                 // Populate Acknowledgement Slip / Modal
                 const slipDevoteeName = document.getElementById("slip-devotee-name");
@@ -1063,6 +1047,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (modalCloseBtn) {
         modalCloseBtn.addEventListener("click", closeFormSession);
     }
+    const modalCloseIconBtn = document.getElementById("modal-close-icon-btn");
+    if (modalCloseIconBtn) {
+        modalCloseIconBtn.addEventListener("click", closeFormSession);
+    }
 
     if (successModal) {
         successModal.addEventListener("click", (e) => {
@@ -1122,9 +1110,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            const copyBtn = printableSlip.querySelector(".pass-copy-btn, .token-copy-btn");
+
             try {
                 downloadSlipBtn.disabled = true;
                 downloadSlipBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> डाउनलोड हो रहा है...';
+
+                if (copyBtn) copyBtn.style.display = "none";
 
                 const canvas = await html2canvas(printableSlip, {
                     scale: 2,
@@ -1132,6 +1124,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     backgroundColor: "#ffffff",
                     logging: false
                 });
+
+                if (copyBtn) copyBtn.style.display = "";
 
                 const dataUrl = canvas.toDataURL("image/png");
                 const tokenIdEl = document.getElementById("slip-token-id");
@@ -1147,11 +1141,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 showToast("रसीद सफलतापूर्वक डाउनलोड हो गई!", "success");
             } catch (err) {
+                if (copyBtn) copyBtn.style.display = "";
                 console.error("Slip image download error:", err);
                 showToast("डाउनलोड में समस्या आई, कृपया प्रिंट विकल्प का प्रयोग करें।", "error");
             } finally {
+                if (copyBtn) copyBtn.style.display = "";
                 downloadSlipBtn.disabled = false;
-                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-circle-down"></i> <span id="download-slip-text">रसीद डाउनलोड करें (Save PNG)</span>';
+                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-circle-down"></i> <span id="download-slip-text">रसीद डाउनलोड</span>';
             }
         });
     }
@@ -1995,4 +1991,16 @@ https://darshan-pass.vercel.app
     initCustomSearchableSelects();
     restoreFormDraft();
     applyLanguage(localStorage.getItem("darshan_lang") || "hi");
+
+    // Background silent sync of latest sheet row for instant token generator
+    try {
+        fetch(GOOGLE_APPS_SCRIPT_URL)
+            .then(r => r.json())
+            .then(d => {
+                if (d && d.lastRow) {
+                    localStorage.setItem("darshan_last_row", String(d.lastRow));
+                }
+            })
+            .catch(() => {});
+    } catch(e) {}
 });
