@@ -397,8 +397,9 @@ function fixAndRealignAllSheetColumns() {
 
   function isSlotPattern(v) {
     if (!v) return false;
-    var s = String(v).toUpperCase();
-    return s.includes("AM") || s.includes("PM") || s.includes("स्लॉट") || s.includes("SLOT") || s.includes("07:00") || s.includes("09:00");
+    var s = String(v).toUpperCase().trim();
+    return (s.includes("AM") || s.includes("PM") || s.includes("SLOT") || s.includes("स्लॉट")) &&
+           /\d{1,2}[:.]\d{2}/.test(s);
   }
 
   function formatDateVal(v) {
@@ -407,6 +408,7 @@ function fixAndRealignAllSheetColumns() {
       return Utilities.formatDate(v, Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
     }
     var s = String(v).trim();
+    if (!isDatePattern(s)) return ""; // Strictly only return if it's a valid date!
     if (s.includes("-")) {
       var parts = s.split("-");
       if (parts.length === 3 && parts[0].length === 4) {
@@ -473,94 +475,76 @@ function fixAndRealignAllSheetColumns() {
       var maleCount = 0;
       var femaleCount = 0;
 
-      // Detection condition for +2 column shift (where Col D has Status and Col F has Visit Date):
-      var isColDStatus = isStatusVal(row[3]); // Col D (index 3)
-      var isColFDate = isDatePattern(row[5]);  // Col F (index 5)
-      var isColGSlot = isSlotPattern(row[6]);  // Col G (index 6)
+      // DYNAMIC SLOT ANCHOR: Locate where Visit Time Slot resides in the row
+      var slotIdx = -1;
+      for (var c = 1; c < row.length; c++) {
+        if (isSlotPattern(row[c])) {
+          slotIdx = c;
+          break;
+        }
+      }
 
-      if (isColDStatus || isColFDate || isColGSlot) {
-        // === SHIFTED BY +2 COLUMNS CASE ===
-        status = cleanStatusVal(row[3] || row[1] || "Pending");
-        createdDate = formatDateVal(row[4] || row[2] || "");
-        visitDate = formatDateVal(row[5]);
-        visitSlot = String(row[6] || '').trim();
-        nameAge = String(row[7] || '').trim();
-        state = String(row[8] || '').trim();
-        district = String(row[9] || '').trim();
-        idNumber = String(row[10] || '').trim();
-        genderCounts = String(row[11] || '').trim();
-        mobile = String(row[12] || '').trim();
-        vehicleNo = String(row[13] || '').trim();
-        accompanying = String(row[14] || '').trim();
-        referredBy = String(row[15] || '').trim();
-        submitterName = String(row[16] || '').trim();
-        submitterEmail = String(row[17] || '').trim();
-        totalDevotees = row[18] || '';
-        maleCount = row[19] || '';
-        femaleCount = row[20] || '';
+      if (slotIdx !== -1) {
+        visitSlot = String(row[slotIdx]).trim();
 
-      } else if (isDatePattern(row[3]) && isSlotPattern(row[4])) {
-        // === NORMAL 19-COLUMN CASE (Col D is Visit Date, Col E is Slot) ===
-        status = cleanStatusVal(row[1] || "Pending");
-        createdDate = formatDateVal(row[2] || "");
-        visitDate = formatDateVal(row[3]);
-        visitSlot = String(row[4] || '').trim();
-        nameAge = String(row[5] || '').trim();
-        state = String(row[6] || '').trim();
-        district = String(row[7] || '').trim();
-        idNumber = String(row[8] || '').trim();
-        genderCounts = String(row[9] || '').trim();
-        mobile = String(row[10] || '').trim();
-        vehicleNo = String(row[11] || '').trim();
-        accompanying = String(row[12] || '').trim();
-        referredBy = String(row[13] || '').trim();
-        submitterName = String(row[14] || '').trim();
-        submitterEmail = String(row[15] || '').trim();
-        totalDevotees = row[16] || '';
-        maleCount = row[17] || '';
-        femaleCount = row[18] || '';
+        // 1. Look for Visit Date before slotIdx
+        for (var b = slotIdx - 1; b >= 1; b--) {
+          if (isDatePattern(row[b])) {
+            visitDate = formatDateVal(row[b]);
+            break;
+          }
+        }
+        // If no explicit visit date found before slot, use date from timestamp
+        if (!visitDate && timestamp) {
+          visitDate = formatDateVal(timestamp);
+        }
 
-      } else if (isDatePattern(row[1]) && isSlotPattern(row[2])) {
-        // === LEGACY 14-COLUMN GOOGLE FORM CASE ===
-        status = "Pending";
-        createdDate = "";
-        visitDate = formatDateVal(row[1]);
-        visitSlot = String(row[2] || '').trim();
-        nameAge = String(row[3] || '').trim();
-        state = String(row[4] || '').trim();
-        district = String(row[5] || '').trim();
-        idNumber = String(row[6] || '').trim();
-        genderCounts = String(row[7] || '').trim();
-        mobile = String(row[8] || '').trim();
-        vehicleNo = String(row[9] || '').trim();
-        accompanying = String(row[10] || '').trim();
-        referredBy = String(row[11] || '').trim();
-        submitterName = String(row[12] || '').trim();
-        submitterEmail = String(row[13] || '').trim();
-        totalDevotees = row[14] || '';
-        maleCount = row[15] || '';
-        femaleCount = row[16] || '';
+        // 2. Devotee details always follow the slot sequentially
+        nameAge = String(row[slotIdx + 1] || '').trim();
+        state = String(row[slotIdx + 2] || '').trim();
+        district = String(row[slotIdx + 3] || '').trim();
+        idNumber = String(row[slotIdx + 4] || '').trim();
+        genderCounts = String(row[slotIdx + 5] || '').trim();
+        mobile = String(row[slotIdx + 6] || '').trim();
+        vehicleNo = String(row[slotIdx + 7] || '').trim();
+        accompanying = String(row[slotIdx + 8] || '').trim();
+        referredBy = String(row[slotIdx + 9] || '').trim();
+        submitterName = String(row[slotIdx + 10] || '').trim();
+        submitterEmail = String(row[slotIdx + 11] || '').trim();
+        totalDevotees = row[slotIdx + 12] || '';
+        maleCount = row[slotIdx + 13] || '';
+        femaleCount = row[slotIdx + 14] || '';
+
+        // 3. Extract Status and Created Date from cells before the slot
+        for (var sIdx = 1; sIdx < slotIdx; sIdx++) {
+          var val = row[sIdx];
+          if (isStatusVal(val)) {
+            status = cleanStatusVal(val);
+          } else if (isDatePattern(val) && formatDateVal(val) !== visitDate) {
+            createdDate = formatDateVal(val);
+          }
+        }
 
       } else {
-        // Fallback Mapping
+        // Fallback: If no slot string found, check standard 19-column layout
         status = isStatusVal(row[1]) ? cleanStatusVal(row[1]) : "Pending";
         createdDate = formatDateVal(row[2] || "");
-        visitDate = formatDateVal(row[3] || row[5] || "");
-        visitSlot = String(row[4] || row[6] || "");
-        nameAge = String(row[5] || row[7] || "");
-        state = String(row[6] || row[8] || "");
-        district = String(row[7] || row[9] || "");
-        idNumber = String(row[8] || row[10] || "");
-        genderCounts = String(row[9] || row[11] || "");
-        mobile = String(row[10] || row[12] || "");
-        vehicleNo = String(row[11] || row[13] || "");
-        accompanying = String(row[12] || row[14] || "");
-        referredBy = String(row[13] || row[15] || "");
-        submitterName = String(row[14] || row[16] || "");
-        submitterEmail = String(row[15] || row[17] || "");
-        totalDevotees = row[16] || row[18] || "";
-        maleCount = row[17] || row[19] || "";
-        femaleCount = row[18] || row[20] || "";
+        visitDate = formatDateVal(row[3] || "");
+        visitSlot = String(row[4] || "").trim();
+        nameAge = String(row[5] || "").trim();
+        state = String(row[6] || "").trim();
+        district = String(row[7] || "").trim();
+        idNumber = String(row[8] || "").trim();
+        genderCounts = String(row[9] || "").trim();
+        mobile = String(row[10] || "").trim();
+        vehicleNo = String(row[11] || "").trim();
+        accompanying = String(row[12] || "").trim();
+        referredBy = String(row[13] || "").trim();
+        submitterName = String(row[14] || "").trim();
+        submitterEmail = String(row[15] || "").trim();
+        totalDevotees = row[16] || "";
+        maleCount = row[17] || "";
+        femaleCount = row[18] || "";
       }
 
       // Filter ghost rows that have no name, no visit date, and no mobile
