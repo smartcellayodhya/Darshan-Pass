@@ -82,7 +82,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=3.2">
+    <link rel="stylesheet" href="style.css?v=3.3">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -405,11 +405,19 @@
                             <div class="grid-2 devotee-count-grid">
                                 <div class="count-box">
                                     <label for="maleCount" class="count-label" id="lbl-male" data-i18n="lblMale">पुरुष</label>
-                                    <input type="number" id="maleCount" name="maleCount" min="0" max="8" placeholder="0" value="1" required>
+                                    <div class="stepper-wrapper">
+                                        <button type="button" class="stepper-btn minus-btn" data-target="maleCount" aria-label="कम करें"><i class="fa-solid fa-minus"></i></button>
+                                        <input type="number" id="maleCount" name="maleCount" min="0" max="8" placeholder="0" value="1" required>
+                                        <button type="button" class="stepper-btn plus-btn" data-target="maleCount" aria-label="बढ़ाएं"><i class="fa-solid fa-plus"></i></button>
+                                    </div>
                                 </div>
                                 <div class="count-box">
                                     <label for="femaleCount" class="count-label" id="lbl-female" data-i18n="lblFemale">महिला</label>
-                                    <input type="number" id="femaleCount" name="femaleCount" min="0" max="8" placeholder="0" value="0" required>
+                                    <div class="stepper-wrapper">
+                                        <button type="button" class="stepper-btn minus-btn" data-target="femaleCount" aria-label="कम करें"><i class="fa-solid fa-minus"></i></button>
+                                        <input type="number" id="femaleCount" name="femaleCount" min="0" max="8" placeholder="0" value="0" required>
+                                        <button type="button" class="stepper-btn plus-btn" data-target="femaleCount" aria-label="बढ़ाएं"><i class="fa-solid fa-plus"></i></button>
+                                    </div>
                                 </div>
                             </div>
                             <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें (अधिकतम 8 दर्शनार्थी)</span>
@@ -546,7 +554,7 @@
                     <div class="pass-token-strip">
                         <div class="pass-token-strip-left">
                             <i class="fa-solid fa-ticket"></i>
-                            <span class="pass-token-strip-label" data-i18n="slipLabelToken">टोकन ID:</span>
+                            <span class="pass-token-strip-label" data-i18n="slipLabelToken">Token ID:</span>
                             <span class="pass-token-code" id="slip-token-id">AYO-YYYYMMDD-ROW</span>
                         </div>
                         <button type="button" id="copy-token-btn" class="pass-copy-btn" title="टोकन कॉपी करें">
@@ -577,7 +585,7 @@
                             <span class="p-val" id="slip-mobile">--</span>
                         </div>
                         <div class="pass-detail-row">
-                            <span class="p-lbl"><i class="fa-solid fa-user-check"></i> <span id="slip-lbl-ref" data-i18n="slipLabelRef">रेफरेंस:</span></span>
+                            <span class="p-lbl"><i class="fa-solid fa-user-check"></i> <span id="slip-lbl-ref" data-i18n="slipLabelRef">Reference:</span></span>
                             <span class="p-val" id="slip-referred-by">--</span>
                         </div>
                     </div>
@@ -675,6 +683,6 @@
         </footer>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=3.4"></script>
+    <script src="script.js?v=3.5"></script>
 </body>
 </html>

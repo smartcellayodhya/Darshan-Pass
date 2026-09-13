@@ -1776,11 +1776,11 @@ Reference: ${referredBy}
             successSubtitle: 'आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।',
             receiptTitle: 'श्रीरामजन्मभूमि दर्शन पास',
             slipLabelDevotee: 'मुख्य दर्शनार्थी',
-            slipLabelToken: 'टोकन ID:',
+            slipLabelToken: 'Token ID:',
             slipLabelDatetime: 'दर्शन तिथि व स्लॉट:',
             slipLabelTotal: 'कुल दर्शनार्थी:',
             slipLabelMobile: 'मोबाइल नंबर:',
-            slipLabelRef: 'रेफरेंस:',
+            slipLabelRef: 'Reference:',
             slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है, इसको अन्तिम पास नही माना जायेगा। अंतिम पास सक्षम पुलिस अधिकारी के अनुमोदन के उपरांत जारी होगा।',
             whatsappShare: 'WhatsApp शेयर',
             downloadSlip: 'रसीद डाउनलोड',
@@ -1850,7 +1850,7 @@ Reference: ${referredBy}
             slipLabelDatetime: 'Visit Date & Slot:',
             slipLabelTotal: 'Total Devotees:',
             slipLabelMobile: 'Mobile Number:',
-            slipLabelRef: 'Reference / Recommended By:',
+            slipLabelRef: 'Reference:',
             slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> This is an online acknowledgement slip only and not the final pass. The final pass will be issued upon approval by the competent police officer.',
             whatsappShare: 'Share on WhatsApp',
             downloadSlip: 'Download Slip (Save PNG)',
@@ -2008,7 +2008,9 @@ Reference: ${referredBy}
                 btn.classList.add("listening");
                 btn.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat" style="color: #ef4444;"></i>';
 
-                recognition.start();
+                recognition.onstart = () => {
+                    showToast("🎙️ सुन रहा हूँ... बोलिए (Listening... speak now)", "info");
+                };
 
                 recognition.onresult = (event) => {
                     const speechResult = event.results[0][0].transcript;
@@ -2020,12 +2022,16 @@ Reference: ${referredBy}
                     targetInput.dispatchEvent(new Event("input"));
                     btn.classList.remove("listening");
                     btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    showToast("✅ आवाज़ दर्ज हो गई (Voice recorded)", "success");
                 };
 
                 recognition.onerror = (event) => {
                     console.error("Speech recognition error:", event.error);
                     btn.classList.remove("listening");
                     btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    if (event.error === "no-speech") {
+                        showToast("कोई आवाज़ नहीं पहचानी गई, कृपया पुनः बोलें", "warning");
+                    }
                 };
 
                 recognition.onend = () => {
@@ -2371,6 +2377,25 @@ Reference: ${referredBy}
         maleCountInput.addEventListener("change", handleMaleInput);
         femaleCountInput.addEventListener("input", handleFemaleInput);
         femaleCountInput.addEventListener("change", handleFemaleInput);
+
+        // Stepper button (+ / -) handler
+        document.querySelectorAll(".stepper-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const targetId = btn.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                let val = parseInt(input.value) || 0;
+                if (btn.classList.contains("plus-btn")) {
+                    val += 1;
+                } else if (btn.classList.contains("minus-btn")) {
+                    val = Math.max(0, val - 1);
+                }
+                input.value = val;
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+                input.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+        });
 
         // Run initially for current values (default: 1 Male + 0 Female = 1 Single Devotee)
         const initialTotal = (parseInt(maleCountInput.value) || 0) + (parseInt(femaleCountInput.value) || 0);
