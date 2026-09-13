@@ -182,6 +182,13 @@ function doPost(e) {
         .setAllowInvalid(false)
         .build();
       statusCell.setDataValidation(rule);
+
+      // 5. 24-HOUR DUPLICATE CHECK (आधार व मोबाइल नंबर चेक)
+      var dupCheck = checkFor24HourDuplicate(sheet, lastRow, idNumber, mobile);
+      if (dupCheck && dupCheck.isDuplicate) {
+        newRowRange.setBackground("#FEF3C7"); // Soft amber alert
+        sheet.getRange(lastRow, 1).setNote("⚠️ 24 घंटे के अंदर पुनरावृत्ति / Duplicate Submission!\n" + dupCheck.reason);
+      }
     }
 
     SpreadsheetApp.flush();
@@ -191,7 +198,9 @@ function doPost(e) {
       "rowNumber": lastRow,
       "row": lastRow,
       "name": nameAge,
-      "message": "Darshan Pass entry saved successfully with Status = Pending in Column B!"
+      "isDuplicate": dupCheck ? dupCheck.isDuplicate : false,
+      "duplicateWarning": dupCheck && dupCheck.isDuplicate ? dupCheck.reason : "",
+      "message": "Darshan Pass entry saved successfully with Status = Pending in Column C!"
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -209,6 +218,39 @@ function doGet(e) {
   var ss = getTargetSpreadsheet();
   var sheet = getMainDataSheet(ss);
   var lastRow = sheet ? sheet.getLastRow() : 0;
+
+  // DYNAMIC REFERENCE OFFICERS SYNC HANDLER
+  if (e && e.parameter && (e.parameter.action === 'get_officers' || e.parameter.action === 'officers')) {
+    try {
+      var officersList = getReferenceOfficersList(ss);
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "officers": officersList
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (oErr) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error",
+        "message": oErr.toString(),
+        "officers": DEFAULT_OFFICERS_LIST
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // 1-CLICK SETUP REFERENCE OFFICERS TAB
+  if (e && e.parameter && (e.parameter.action === 'setup_officers' || e.parameter.action === 'init_officers')) {
+    try {
+      getOrCreateReferenceOfficersSheet(ss);
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "message": "Reference_Officers tab successfully initialized and active!"
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (sErr) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error",
+        "message": sErr.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 
   // 1-CLICK AUTO REPAIR & FORMAT SHEET HANDLER
   if (e && e.parameter && (e.parameter.action === 'format' || e.parameter.action === 'fix' || e.parameter.action === 'realign')) {
@@ -490,6 +532,143 @@ function getMainDataSheet(ss) {
          ss.getSheetByName("Form Responses") ||
          ss.getSheets().filter(function (s) { return !s.getName().includes("Dashboard"); })[0] ||
          ss.getSheets()[0];
+}
+
+/**
+ * 24-HOUR DUPLICATE SUBMISSION DETECTOR (आधार व मोबाइल नंबर चेक)
+ * Checks previous submissions within the past 24 hours (86,400,000 ms).
+ * If matching Aadhaar or Mobile is found, returns isDuplicate: true with matched row.
+ */
+function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
+  try {
+    if (!sheet || currentRowIndex <= 2) return { isDuplicate: false };
+    var cleanId = String(idNumber || "").trim().toUpperCase();
+    var cleanMob = String(mobile || "").trim();
+
+    if (!cleanId && !cleanMob) return { isDuplicate: false };
+
+    var nowTime = new Date().getTime();
+    var oneDayMs = 24 * 60 * 60 * 1000; // Strictly 24 Hours
+
+    // Look back up to past 150 rows
+    var startRow = Math.max(2, currentRowIndex - 150);
+    var numRows = currentRowIndex - startRow;
+    if (numRows <= 0) return { isDuplicate: false };
+
+    var timestamps = sheet.getRange(startRow, 1, numRows, 1).getValues();
+    var idValues = sheet.getRange(startRow, 9, numRows, 1).getValues();
+    var mobValues = sheet.getRange(startRow, 11, numRows, 1).getValues();
+
+    for (var i = numRows - 1; i >= 0; i--) {
+      var prevDateVal = timestamps[i][0];
+      var prevTime = prevDateVal instanceof Date ? prevDateVal.getTime() : 0;
+      if (!prevTime && prevDateVal) {
+        prevTime = new Date(prevDateVal).getTime();
+      }
+
+      if (prevTime && (nowTime - prevTime) <= oneDayMs) {
+        var prevId = String(idValues[i][0] || "").trim().toUpperCase();
+        var prevMob = String(mobValues[i][0] || "").trim();
+
+        var idMatch = cleanId && prevId && (cleanId === prevId);
+        var mobMatch = cleanMob && prevMob && (cleanMob === prevMob);
+
+        if (idMatch || mobMatch) {
+          var matchedRow = startRow + i;
+          var reason = idMatch ? ("समान आधार/पहचान पत्र (Row " + matchedRow + ")") : ("समान मोबाइल नंबर (Row " + matchedRow + ")");
+          return {
+            isDuplicate: true,
+            matchedRow: matchedRow,
+            reason: reason
+          };
+        }
+      }
+    }
+    return { isDuplicate: false };
+  } catch (err) {
+    return { isDuplicate: false };
+  }
+}
+
+/**
+ * 🎖️ DYNAMIC REFERENCE OFFICERS MANAGEMENT
+ */
+var OFFICERS_SHEET_NAME = "Reference_Officers";
+
+var DEFAULT_OFFICERS_LIST = [
+  "Ref by SSP sir",
+  "ADG Zone sir/ADG Zone Pro",
+  "SP City Ayo",
+  "SPRA Ayo",
+  "SP Protocol Ayo",
+  "CO Ayodhya Ayo",
+  "CO City Ayo",
+  "CO Bikapur Ayo",
+  "CO Sadar Ayo",
+  "CO Milkipur Ayo",
+  "CO Rudauli Ayo",
+  "CO Vigilance",
+  "CO LIU Ayo",
+  "CFO Ayodhya",
+  "PRO SSP AYO",
+  "STENO SSP Ayo",
+  "ZO Intelligence",
+  "DCIO IB Ayo",
+  "STF Incharge Ayo",
+  "Darshan Cell"
+];
+
+function getOrCreateReferenceOfficersSheet(ss) {
+  if (!ss) ss = getTargetSpreadsheet();
+  var sheet = ss.getSheetByName(OFFICERS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(OFFICERS_SHEET_NAME);
+    // Header
+    sheet.getRange(1, 1, 1, 2).setValues([["Officer Name / Designation", "Status"]]);
+    sheet.getRange(1, 1, 1, 2).setBackground("#0F172A").setFontColor("#FFFFFF").setFontWeight("bold").setHorizontalAlignment("center");
+    sheet.setRowHeight(1, 40);
+
+    // Initial Officer List
+    var rows = DEFAULT_OFFICERS_LIST.map(function(name) {
+      return [name, "Active"];
+    });
+    sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+    sheet.getRange(2, 1, rows.length, 2).setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
+    sheet.setColumnWidth(1, 280);
+    sheet.setColumnWidth(2, 110);
+
+    // Status Dropdown
+    var statusRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(["Active", "Inactive"], true)
+      .build();
+    sheet.getRange(2, 2, rows.length + 50, 1).setDataValidation(statusRule);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getReferenceOfficersList(ss) {
+  try {
+    if (!ss) ss = getTargetSpreadsheet();
+    var sheet = ss.getSheetByName(OFFICERS_SHEET_NAME);
+    if (!sheet) return DEFAULT_OFFICERS_LIST;
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return DEFAULT_OFFICERS_LIST;
+
+    var data = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    var list = [];
+    for (var i = 0; i < data.length; i++) {
+      var name = String(data[i][0] || "").trim();
+      var status = String(data[i][1] || "Active").trim().toLowerCase();
+      if (name && (status === "active" || status === "")) {
+        list.push(name);
+      }
+    }
+    return list.length > 0 ? list : DEFAULT_OFFICERS_LIST;
+  } catch (e) {
+    return DEFAULT_OFFICERS_LIST;
+  }
 }
 
 /**
@@ -1233,6 +1412,7 @@ function onOpen() {
       .addItem('🔒 Safe-Lock Row 1 (सुरक्षित वार्निंग लॉक लगाएं)', 'lockAndProtectHeaderRow')
       .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
       .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
+      .addItem('🎖️ Setup Reference Officers Tab (रेफरेंस अधिकारी टैब बनाएं)', 'getOrCreateReferenceOfficersSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
       .addToUi();
   } catch (err) {

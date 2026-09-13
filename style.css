@@ -315,20 +315,23 @@ input[type="number"] {
 }
 
 .stepper-btn {
-    width: 38px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     background: #f1f5f9;
     border: none;
     color: var(--navy-dark);
-    font-size: 0.95rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    border-radius: 6px;
 }
 
 .stepper-btn:hover {
@@ -338,13 +341,13 @@ input[type="number"] {
 
 .stepper-btn:active {
     background: #cbd5e1;
-    transform: scale(0.96);
+    transform: scale(0.94);
 }
 
 .stepper-wrapper input[type="number"] {
     flex: 1;
     min-width: 0;
-    height: 42px;
+    height: 44px;
     border: none !important;
     text-align: center;
     font-size: 1.15rem !important;
@@ -1300,46 +1303,10 @@ body.modal-open .scroll-to-top-btn {
     padding-right: 2.8rem !important;
 }
 
-.voice-mic-btn {
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: var(--primary-blue);
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 0.92rem;
-    transition: all 0.2s ease;
-    z-index: 5;
-}
-
 .voice-mic-btn.textarea-mic-btn {
     top: 1.2rem;
     transform: none;
 }
-
-.voice-mic-btn:hover {
-    background: var(--primary-blue);
-    color: #ffffff;
-    border-color: var(--primary-blue);
-}
-
-.voice-mic-btn.listening {
-    background: #fef2f2;
-    border-color: #ef4444;
-    color: #ef4444;
-    animation: pulseMic 1.2s infinite;
-}
-
-@keyframes pulseMic {
-    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
     70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
@@ -2732,5 +2699,79 @@ body.modal-open .scroll-to-top-btn {
         gap: 0.5rem !important;
     }
 }
+
+/* -------------------------------------------------------------
+ * 6. MOBILE TOUCH & SEARCHABLE DROPDOWN ENHANCEMENTS (<640px)
+ * ------------------------------------------------------------- */
+@media (max-width: 640px) {
+    .custom-select-dropdown {
+        border-radius: 8px !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22) !important;
+        max-height: 260px !important;
+        z-index: 1000 !important;
+    }
+
+    .custom-options-list {
+        max-height: 200px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .custom-option-item {
+        padding: 0.85rem 1rem !important;
+        font-size: 0.96rem !important;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .custom-search-wrapper {
+        padding: 0.75rem 0.85rem !important;
+    }
+
+    .custom-search-wrapper .custom-search-input {
+        padding: 0.7rem 0.85rem 0.7rem 2.5rem !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+/* -------------------------------------------------------------
+ * 7. COMPACT SLIP MODAL BUTTONS 2x2 GRID (Mobile View)
+ * ------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .compact-action-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.65rem !important;
+        width: 100% !important;
+    }
+
+    .compact-action-grid .compact-btn {
+        width: 100% !important;
+        padding: 0.75rem 0.5rem !important;
+        font-size: 0.86rem !important;
+        min-height: 42px !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    .pass-details-compact {
+        padding: 0.6rem 0.75rem !important;
+    }
+
+    .pass-detail-row {
+        font-size: 0.85rem !important;
+        flex-wrap: wrap !important;
+        gap: 0.2rem !important;
+    }
+
+    .pass-token-strip {
+        padding: 0.65rem 0.85rem !important;
+    }
+
+    .pass-token-code {
+        font-size: 1.05rem !important;
+    }
+}
+
 
 

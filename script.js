@@ -666,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // DUPLICATE SUBMISSION CHECKER (ITEM 2)
+    // DUPLICATE SUBMISSION CHECKER (24-HOUR AADHAAR & MOBILE CHECK)
     // -------------------------------------------------------------
     function getSubmissionsHistory() {
         try {
@@ -676,24 +676,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function checkDuplicateSubmission(mobile, visitDate, visitSlot) {
-        if (!mobile || !visitDate || !visitSlot) return false;
+    function checkDuplicateSubmission(mobile, idNumber, visitDate, visitSlot) {
+        if ((!mobile && !idNumber) || !visitDate || !visitSlot) return null;
         const history = getSubmissionsHistory();
-        const oneDayMs = 24 * 60 * 60 * 1000;
+        const oneDayMs = 24 * 60 * 60 * 1000; // Strictly 24 hours
         const now = Date.now();
-        return history.some(item => {
-            return item.mobile === mobile &&
-                   item.visitDate === visitDate &&
-                   item.visitSlot === visitSlot &&
-                   (now - (item.timestamp || 0)) < oneDayMs;
-        });
+        const cleanMob = String(mobile || "").trim();
+        const cleanId = String(idNumber || "").trim().toUpperCase();
+
+        return history.find(item => {
+            const isRecent = (now - (item.timestamp || 0)) < oneDayMs;
+            const matchMobile = cleanMob && item.mobile && (item.mobile === cleanMob);
+            const matchId = cleanId && item.idNumber && (item.idNumber === cleanId);
+            return isRecent && (matchMobile || matchId);
+        }) || null;
     }
 
-    function recordSubmission(mobile, visitDate, visitSlot, token) {
+    function recordSubmission(mobile, idNumber, visitDate, visitSlot, token) {
         try {
             const history = getSubmissionsHistory();
             history.unshift({
-                mobile: mobile,
+                mobile: String(mobile || "").trim(),
+                idNumber: String(idNumber || "").trim().toUpperCase(),
                 visitDate: visitDate,
                 visitSlot: visitSlot,
                 token: token,
@@ -1033,11 +1037,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const slotVal = getVal("visitSlot");
             const formattedVisitDateTime = `${formattedDateStr} (${slotVal})`;
 
-            // DUPLICATE SUBMISSION CHECK (ITEM 2: Prevent duplicate within 24h)
-            if (checkDuplicateSubmission(mobVal, formattedDateStr, slotVal)) {
-                showToast("इस मोबाइल नंबर से आज इस स्लॉट के लिए आवेदन पहले से दर्ज है।", "warning");
+            // DUPLICATE SUBMISSION CHECK (24-Hour Duplicate Aadhaar / Mobile Guard)
+            const idValForDup = getVal("idNumber");
+            const dupRecord = checkDuplicateSubmission(mobVal, idValForDup, formattedDateStr, slotVal);
+            if (dupRecord) {
+                const dupField = (idValForDup && dupRecord.idNumber && dupRecord.idNumber === idValForDup.toUpperCase()) ? "आधार / पहचान पत्र" : "मोबाइल नंबर";
+                showToast(`चेतावनी: इस ${dupField} से पिछले 24 घंटे में आवेदन पहले ही दर्ज हो चुका है (टोकन: ${dupRecord.token || 'उपलब्ध'})।`, "warning");
                 const mobErr = document.getElementById("mobile-error");
-                if (mobErr) mobErr.textContent = "इस मोबाइल नंबर से इस तारीख व स्लॉट हेतु आवेदन पहले से दर्ज है";
+                if (mobErr) mobErr.textContent = `इस ${dupField} से पिछले 24 घंटे में आवेदन पहले से दर्ज है`;
                 if (mobileInput) {
                     markGroup(mobileInput, false);
                     mobileInput.focus();
@@ -1119,7 +1126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (slipReferredBy) slipReferredBy.textContent = finalReferredBy;
 
                 // Record submission & clear draft
-                recordSubmission(formData.mobile, formattedDateStr, slotVal, tokenNumber);
+                recordSubmission(formData.mobile, formData.idNumber, formattedDateStr, slotVal, tokenNumber);
                 clearFormDraft();
 
                 // Display Success Modal
@@ -2102,31 +2109,39 @@ Reference: ${referredBy}
                 if (arrow) arrow.style.display = "none";
             }
 
-            // Create custom container
+            // Create or reuse custom container
             let customContainer = parentWrapper.querySelector(`.custom-select-container[data-target="${id}"]`);
-            if (!customContainer) {
-                customContainer = document.createElement("div");
-                customContainer.className = "custom-select-container" + (selectEl.disabled ? " disabled" : "");
-                customContainer.setAttribute("data-target", id);
-
+            if (customContainer) {
+                const triggerText = customContainer.querySelector(".trigger-text");
                 const defaultText = selectEl.options[selectEl.selectedIndex] ? selectEl.options[selectEl.selectedIndex].textContent : "-- Select --";
-
-                customContainer.innerHTML = `
-                    <div class="custom-select-trigger" tabindex="0">
-                        <span class="trigger-text">${defaultText}</span>
-                        <i class="fa-solid fa-chevron-down trigger-arrow"></i>
-                    </div>
-                    <div class="custom-select-dropdown hidden">
-                        <div class="custom-search-wrapper">
-                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                            <input type="text" class="custom-search-input" placeholder="टाइप करके खोजें..." autocomplete="off">
-                        </div>
-                        <div class="custom-options-list"></div>
-                    </div>
-                `;
-
-                parentWrapper.appendChild(customContainer);
+                if (triggerText) triggerText.textContent = defaultText;
+                if (customContainer._populateOptions) {
+                    customContainer._populateOptions("");
+                }
+                return;
             }
+
+            customContainer = document.createElement("div");
+            customContainer.className = "custom-select-container" + (selectEl.disabled ? " disabled" : "");
+            customContainer.setAttribute("data-target", id);
+
+            const defaultText = selectEl.options[selectEl.selectedIndex] ? selectEl.options[selectEl.selectedIndex].textContent : "-- Select --";
+
+            customContainer.innerHTML = `
+                <div class="custom-select-trigger" tabindex="0">
+                    <span class="trigger-text">${defaultText}</span>
+                    <i class="fa-solid fa-chevron-down trigger-arrow"></i>
+                </div>
+                <div class="custom-select-dropdown hidden">
+                    <div class="custom-search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" class="custom-search-input" placeholder="टाइप करके खोजें..." autocomplete="off">
+                    </div>
+                    <div class="custom-options-list"></div>
+                </div>
+            `;
+
+            parentWrapper.appendChild(customContainer);
 
             const trigger = customContainer.querySelector(".custom-select-trigger");
             const dropdown = customContainer.querySelector(".custom-select-dropdown");
@@ -2167,6 +2182,9 @@ Reference: ${referredBy}
                     optionsList.appendChild(noResult);
                 }
             }
+
+            customContainer._populateOptions = populateOptions;
+            populateOptions("");
 
             selectEl.addEventListener("change", () => {
                 const selectedOpt = selectEl.options[selectEl.selectedIndex];
@@ -2216,6 +2234,86 @@ Reference: ${referredBy}
     }
 
     document.addEventListener("click", closeAllDropdowns);
+
+    // -------------------------------------------------------------
+    // DYNAMIC REFERENCE OFFICERS LOADER (Google Sheet Sync)
+    // -------------------------------------------------------------
+    const DEFAULT_REFERENCE_OFFICERS = [
+        "Ref by SSP sir",
+        "ADG Zone sir/ADG Zone Pro",
+        "SP City Ayo",
+        "SPRA Ayo",
+        "SP Protocol Ayo",
+        "CO Ayodhya Ayo",
+        "CO City Ayo",
+        "CO Bikapur Ayo",
+        "CO Sadar Ayo",
+        "CO Milkipur Ayo",
+        "CO Rudauli Ayo",
+        "CO Vigilance",
+        "CO LIU Ayo",
+        "CFO Ayodhya",
+        "PRO SSP AYO",
+        "STENO SSP Ayo",
+        "ZO Intelligence",
+        "DCIO IB Ayo",
+        "STF Incharge Ayo",
+        "Darshan Cell"
+    ];
+
+    function populateReferenceOfficersSelect(officersList) {
+        if (!referredBySelect) return;
+        const curVal = referredBySelect.value;
+        const curLang = localStorage.getItem("darshan_lang") || "hi";
+        const placeholderText = curLang === "en" ? "-- Select Reference Officer --" : "-- रेफरेंस अधिकारी चुनें --";
+
+        referredBySelect.innerHTML = `<option value="" data-i18n="optSelectRef">${placeholderText}</option>`;
+
+        officersList.forEach(officer => {
+            const opt = document.createElement("option");
+            opt.value = officer;
+            opt.textContent = officer;
+            referredBySelect.appendChild(opt);
+        });
+
+        // Always add Other option at the bottom
+        const otherOpt = document.createElement("option");
+        otherOpt.value = "Other";
+        otherOpt.textContent = curLang === "en" ? "Other (Senior Officer)" : "Other (अन्य अधिकारी)";
+        referredBySelect.appendChild(otherOpt);
+
+        if (curVal) {
+            referredBySelect.value = curVal;
+        }
+
+        initCustomSearchableSelects();
+    }
+
+    function loadDynamicReferenceOfficers() {
+        // 1. Instant load from local cache if available
+        try {
+            const cached = localStorage.getItem("darshan_officers_list");
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    populateReferenceOfficersSelect(parsed);
+                }
+            }
+        } catch (e) {}
+
+        // 2. Fetch fresh list from Google Apps Script
+        fetch(GOOGLE_APPS_SCRIPT_URL + "?action=get_officers")
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.status === "success" && Array.isArray(data.officers) && data.officers.length > 0) {
+                    localStorage.setItem("darshan_officers_list", JSON.stringify(data.officers));
+                    populateReferenceOfficersSelect(data.officers);
+                }
+            })
+            .catch(err => {
+                console.warn("Could not sync officers list from sheet:", err);
+            });
+    }
 
     // -------------------------------------------------------------
     // DYNAMIC ACCOMPANYING MEMBER ROWS & SYNC PIPELINE
@@ -2462,6 +2560,7 @@ Reference: ${referredBy}
     setupVoiceTyping();
     enforceDevoteeCountLimit();
     initCustomSearchableSelects();
+    loadDynamicReferenceOfficers();
 
     // -------------------------------------------------------------
     // PROGRESSIVE WEB APP (PWA) INSTALL & SERVICE WORKER
