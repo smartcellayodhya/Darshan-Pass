@@ -112,7 +112,7 @@ body.gov-minimal-theme {
 .gov-main-container {
     width: 100%;
     max-width: 840px;
-    margin: 2.5rem auto 3.5rem auto;
+    margin: 1.8rem auto 3.5rem auto;
     padding: 0 1rem;
     display: flex;
     flex-direction: column;
@@ -1448,53 +1448,121 @@ body.gov-minimal-theme {
         font-size: 1rem;
     }
 
-    .header-actions {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-        margin-top: 0.4rem;
-    }
 }
 
 /* -------------------------------------------------------------
- * HEADER ACTIONS: LANGUAGE TOGGLE & TRACK PASS BUTTON
+ * SUB-HEADER UTILITY STRIP (हेडिंग के नीचे अलग पट्टी)
  * ------------------------------------------------------------- */
+.portal-utility-strip {
+    width: 100%;
+    background: linear-gradient(90deg, #0b192c 0%, #0f2347 50%, #0b192c 100%);
+    border-bottom: 2.5px solid #2563eb;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 8;
+}
+
+.utility-strip-container {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 0.65rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.utility-strip-left {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.utility-strip-left i {
+    color: #38bdf8;
+    font-size: 1rem;
+}
+
+.utility-strip-actions,
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    flex-shrink: 0;
+    gap: 0.65rem;
 }
 
+.utility-action-btn,
 .header-action-btn {
-    background: rgba(255, 255, 255, 0.14);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #ffffff;
-    padding: 0.45rem 0.85rem;
+    padding: 0.44rem 1.05rem;
     border-radius: 9999px;
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     font-weight: 600;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(4px);
+    gap: 0.45rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    outline: none;
 }
 
-.header-action-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: #ffffff;
-    transform: translateY(-1px);
-}
-
+.utility-action-btn.track-btn,
 .header-action-btn.track-btn {
     background: #0284c7;
-    border-color: #38bdf8;
+    border: 1.5px solid #38bdf8;
+    color: #ffffff;
 }
 
+.utility-action-btn.track-btn:hover,
 .header-action-btn.track-btn:hover {
     background: #0369a1;
+    border-color: #7dd3fc;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.utility-action-btn.lang-btn,
+.header-action-btn.lang-btn {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+}
+
+.utility-action-btn.lang-btn:hover,
+.header-action-btn.lang-btn:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: #ffffff;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 640px) {
+    .utility-strip-container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .utility-strip-left {
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    .utility-strip-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .utility-action-btn {
+        padding: 0.4rem 0.85rem;
+        font-size: 0.82rem;
+    }
 }
 
 /* -------------------------------------------------------------

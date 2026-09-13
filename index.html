@@ -130,22 +130,30 @@
                 <h1 class="gov-header-title" id="main-portal-title">श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन</h1>
             </div>
 
-            <!-- Right Header Actions (Track Pass & Language Switcher) -->
-            <div class="header-actions">
-                <button type="button" id="track-pass-nav-btn" class="header-action-btn track-btn" title="पास स्थिति जांचें">
-                    <i class="fa-solid fa-magnifying-glass"></i> <span id="track-nav-label">स्थिति देखें</span>
-                </button>
-                <button type="button" id="lang-toggle-btn" class="header-action-btn lang-btn" title="Change Language">
-                    <i class="fa-solid fa-language"></i> <span id="lang-btn-text">English</span>
-                </button>
-            </div>
-
             <!-- Right Circular White Badge with UP Police Logo -->
             <div class="logo-circle-badge right-badge">
                 <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
             </div>
         </div>
     </header>
+
+    <!-- Sub-Header Utility Strip (हेडिंग के नीचे अलग पट्टी) -->
+    <nav class="portal-utility-strip" aria-label="Portal Navigation Actions">
+        <div class="utility-strip-container">
+            <div class="utility-strip-left">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span class="utility-strip-tagline" id="strip-tagline" data-i18n="stripTagline">श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा</span>
+            </div>
+            <div class="utility-strip-actions">
+                <button type="button" id="track-pass-nav-btn" class="utility-action-btn track-btn" title="पास स्थिति जांचें">
+                    <i class="fa-solid fa-magnifying-glass"></i> <span id="track-nav-label" data-i18n="trackBtn">स्थिति देखें</span>
+                </button>
+                <button type="button" id="lang-toggle-btn" class="utility-action-btn lang-btn" title="Change Language">
+                    <i class="fa-solid fa-language"></i> <span id="lang-btn-text">English</span>
+                </button>
+            </div>
+        </div>
+    </nav>
 
     <!-- Main Content Container -->
     <main class="gov-main-container">

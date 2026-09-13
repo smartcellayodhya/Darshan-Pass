@@ -1411,11 +1411,13 @@ https://darshan-pass.vercel.app
             closedDesc: 'आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।',
             reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)',
             footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).',
-            footerLine2: 'Designed & Developed by Smart Cell Ayodhya'
+            footerLine2: 'Designed & Developed by Smart Cell Ayodhya',
+            stripTagline: 'श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा'
         },
         en: {
             langBtn: "हिन्दी",
             trackBtn: "Track Status",
+            stripTagline: 'Shri Ram Janmabhoomi | Official Darshan Pass Portal',
             portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",
             secVisit: '<i class="fa-solid fa-calendar-day"></i> Visit Date & Time Schedule',
             lblVisitDate: 'Visit Date <span class="required">*</span>',
