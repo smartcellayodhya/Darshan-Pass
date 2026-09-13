@@ -322,8 +322,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (districtSelect) districtSelect.required = true;
                 if (countrySelect) countrySelect.required = false;
 
-                if (idLabelText) idLabelText.textContent = "Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0";
-                if (idNumberInput) idNumberInput.placeholder = "Enter 12-digit Aadhaar No. or Passport No.";
+                const curLang = localStorage.getItem("darshan_lang") || "hi";
+                if (idLabelText) idLabelText.textContent = curLang === "en" ? "Aadhaar / Passport No" : "आधार नं0 / पासपोर्ट नं0";
+                if (idNumberInput) idNumberInput.placeholder = curLang === "en" ? "Enter 12-digit Aadhaar No. or Passport No." : "12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें";
             } else {
                 if (indiaLocationGrid) indiaLocationGrid.classList.add("hidden");
                 if (countryGroup) countryGroup.classList.remove("hidden");
@@ -332,8 +333,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (districtSelect) districtSelect.required = false;
                 if (countrySelect) countrySelect.required = true;
 
-                if (idLabelText) idLabelText.textContent = "Passport Number (Mandatory for International)";
-                if (idNumberInput) idNumberInput.placeholder = "Enter Passport Number (E.g. Z1234567)";
+                const curLang = localStorage.getItem("darshan_lang") || "hi";
+                if (idLabelText) idLabelText.textContent = curLang === "en" ? "Passport Number (Mandatory for International)" : "पासपोर्ट नंबर (अंतर्राष्ट्रीय श्रद्धालु हेतु अनिवार्य)";
+                if (idNumberInput) idNumberInput.placeholder = curLang === "en" ? "Enter Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)";
             }
         });
     }
@@ -1243,6 +1245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
+    // -------------------------------------------------------------
     // LANGUAGE SWITCHER (HINDI / ENGLISH - ITEM 8)
     // -------------------------------------------------------------
     const translations = {
@@ -1250,29 +1253,129 @@ document.addEventListener("DOMContentLoaded", () => {
             langBtn: "English",
             trackBtn: "स्थिति देखें",
             portalTitle: "श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन",
-            downloadSlip: "रसीद डाउनलोड करें (Save PNG)",
-            printSlip: "रसीद प्रिंट करें / PDF",
-            submitAnother: "दूसरा फॉर्म भरें",
-            closeModal: "बंद करें",
-            trackModalTitle: "आवेदन स्थिति जांचें (Track Pass)",
-            trackModalDesc: "अपने आवेदन का टोकन ID (उदा: AYO-20260913-145) या 10-अंकों का मोबाइल नंबर दर्ज करें:",
-            trackSearchBtn: "खोजें (Search)",
-            submitBtn: "सबमिट करें (Submit)",
-            noVehicle: "पैदल / कोई वाहन नहीं (On Foot / No Vehicle)"
+            secVisit: '<i class="fa-solid fa-calendar-day"></i> दर्शन तिथि व स्थान विवरण',
+            lblVisitDate: 'दर्शन तिथि <span class="required">*</span>',
+            lblVisitSlot: 'समय स्लॉट <span class="required">*</span>',
+            optSelectSlot: '-- समय स्लॉट चुनें --',
+            lblNationality: 'श्रद्धालु का देश <span class="required">*</span>',
+            optIndia: 'भारत (India)',
+            optOtherCountry: 'अन्य देश (अंतर्राष्ट्रीय श्रद्धालु)',
+            lblCountry: 'देश का नाम <span class="required">*</span>',
+            optSelectCountry: '-- देश चुनें --',
+            lblState: 'राज्य चुनें <span class="required">*</span>',
+            optSelectState: '-- राज्य चुनें --',
+            lblDistrict: 'जनपद / जिला चुनें <span class="required">*</span>',
+            optSelectDistrict: '-- पहले राज्य चुनें --',
+            secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
+            lblNameAge: 'मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>',
+            phNameAge: 'उदा: Rahul 35 Yrs',
+            lblMobile: 'मोबाइल नंबर (10 अंक) <span class="required">*</span>',
+            phMobile: '10 अंकों का मोबाइल नंबर दर्ज करें',
+            lblVehicle: 'गाड़ी नं0 <span class="optional-tag">(ऐच्छिक / Optional)</span>',
+            phVehicle: 'उदा: UP42AB1234 (बिना किसी सिंबल के)',
+            noVehicle: 'पैदल / कोई वाहन नहीं (On Foot / No Vehicle)',
+            secCount: '<i class="fa-solid fa-users"></i> दर्शनार्थी संख्या व साथी विवरण',
+            lblDevoteeCount: 'पुरुषों व महिलाओं की संख्या <span class="optional-tag">(अधिकतम 8 दर्शनार्थी)</span> <span class="required">*</span>',
+            lblMale: 'पुरुष (Male)',
+            lblFemale: 'महिला (Female)',
+            lblAccompanying: 'साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र',
+            phAccompanying: '1. Rahul 32 Yrs\n2. Ashwani 35 Yrs',
+            secRef: '<i class="fa-solid fa-user-check"></i> संस्तुति / रेफरेंस विवरण',
+            lblReferredBy: 'किसके संदर्भ से <span class="required">*</span>',
+            optSelectRef: '-- रेफरेंस चुनें --',
+            lblOtherRef: 'वरिष्ठ अधिकारी का नाम <span class="required">*</span>',
+            phOtherRef: 'अधिकारी का नाम व पद दर्ज करें',
+            submitBtn: 'सबमिट करें (Submit Application)',
+            
+            // Modal & Slip
+            successHeading: 'आवेदन सफलतापूर्वक दर्ज हुआ',
+            successSubtitle: 'आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।',
+            receiptTitle: 'श्रीरामजन्मभूमि दर्शन पास - पावती रसीद',
+            receiptSubtitle: 'अयोध्या पुलिस (Ayodhya Police) • Smart Cell Ayodhya',
+            slipLabelDevotee: '<i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी का नाम',
+            slipLabelToken: '<i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)',
+            slipLabelDatetime: 'दर्शन तिथि व स्लॉट:',
+            slipLabelTotal: 'कुल दर्शनार्थी:',
+            slipLabelMobile: 'मोबाइल नंबर:',
+            slipLabelRef: 'रेफरेंस / संदर्भ:',
+            slipFooterNote: '<i class="fa-solid fa-circle-info"></i> यह केवल ऑनलाइन आवेदन की पावती है। अंतिम दर्शन पास सक्षम पुलिस अधिकारी की अनुमति के उपरांत जारी किया जाएगा।',
+            downloadSlip: 'रसीद डाउनलोड करें (Save PNG)',
+            printSlip: 'रसीद प्रिंट करें / PDF',
+            submitAnother: 'दूसरा फॉर्म भरें',
+            closeModal: 'बंद करें',
+            trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> आवेदन स्थिति जांचें (Track Pass)',
+            trackModalDesc: 'अपने आवेदन का टोकन ID (उदा: AYO-20260913-145) या 10-अंकों का मोबाइल नंबर दर्ज करें:',
+            trackSearchBtn: 'खोजें (Search)',
+            trackPlaceholder: 'टोकन ID या 10-अंकों का मोबाइल नंबर...',
+            closedTitle: 'आवेदन सत्र समाप्त (Application Closed)',
+            closedDesc: 'आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।',
+            reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)',
+            footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).',
+            footerLine2: 'Designed & Developed by Smart Cell Ayodhya'
         },
         en: {
             langBtn: "हिन्दी",
             trackBtn: "Track Status",
             portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",
-            downloadSlip: "Download Slip (Save PNG)",
-            printSlip: "Print Slip / PDF",
-            submitAnother: "Submit Another Form",
-            closeModal: "Close",
-            trackModalTitle: "Track Application Status",
-            trackModalDesc: "Enter your Application Token ID (e.g. AYO-20260913-145) or 10-digit Mobile Number:",
-            trackSearchBtn: "Search Status",
-            submitBtn: "Submit Application",
-            noVehicle: "On Foot / No Vehicle"
+            secVisit: '<i class="fa-solid fa-calendar-day"></i> Visit Date & Time Schedule',
+            lblVisitDate: 'Visit Date <span class="required">*</span>',
+            lblVisitSlot: 'Time Slot <span class="required">*</span>',
+            optSelectSlot: '-- Select Time Slot --',
+            lblNationality: 'Devotee Country <span class="required">*</span>',
+            optIndia: 'India',
+            optOtherCountry: 'Other Country (International Devotee)',
+            lblCountry: 'Select Country <span class="required">*</span>',
+            optSelectCountry: '-- Select Country --',
+            lblState: 'Select State <span class="required">*</span>',
+            optSelectState: '-- Select State --',
+            lblDistrict: 'Select District <span class="required">*</span>',
+            optSelectDistrict: '-- Select State First --',
+            secPrimary: '<i class="fa-solid fa-id-card"></i> Primary Devotee Information',
+            lblNameAge: 'Devotee Full Name & Age <span class="required">*</span>',
+            phNameAge: 'E.g. Rahul 35 Yrs',
+            lblMobile: 'Mobile Number (10 Digits) <span class="required">*</span>',
+            phMobile: 'Enter 10-digit Mobile Number',
+            lblVehicle: 'Vehicle Number <span class="optional-tag">(Optional)</span>',
+            phVehicle: 'E.g. UP42AB1234 (Alphanumeric only)',
+            noVehicle: 'On Foot / No Vehicle',
+            secCount: '<i class="fa-solid fa-users"></i> Devotee Count & Accompanying Details',
+            lblDevoteeCount: 'Devotee Count (Male / Female) <span class="optional-tag">(Max 8 Devotees)</span> <span class="required">*</span>',
+            lblMale: 'Male',
+            lblFemale: 'Female',
+            lblAccompanying: 'Accompanying Members (Name & Age)',
+            phAccompanying: '1. Rahul 32 Yrs\n2. Ashwani 35 Yrs',
+            secRef: '<i class="fa-solid fa-user-check"></i> Reference & Recommendation',
+            lblReferredBy: 'Referred By / Recommendation Officer <span class="required">*</span>',
+            optSelectRef: '-- Select Reference Officer --',
+            lblOtherRef: 'Senior Officer Name & Designation <span class="required">*</span>',
+            phOtherRef: 'Enter Senior Officer Name / Designation',
+            submitBtn: 'Submit Application',
+            
+            // Modal & Slip
+            successHeading: 'Application Submitted Successfully',
+            successSubtitle: 'Your Shri Ram Janmabhoomi Darshan Pass details have been safely recorded.',
+            receiptTitle: 'Shri Ram Janmabhoomi Darshan Pass - Slip',
+            receiptSubtitle: 'Ayodhya Police • Smart Cell Ayodhya',
+            slipLabelDevotee: '<i class="fa-solid fa-user"></i> Primary Devotee Name',
+            slipLabelToken: '<i class="fa-solid fa-ticket"></i> Token ID',
+            slipLabelDatetime: 'Visit Date & Slot:',
+            slipLabelTotal: 'Total Devotees:',
+            slipLabelMobile: 'Mobile Number:',
+            slipLabelRef: 'Reference / Recommended By:',
+            slipFooterNote: '<i class="fa-solid fa-circle-info"></i> This is an online acknowledgement slip only. Final Darshan Pass is subject to official police verification.',
+            downloadSlip: 'Download Slip (Save PNG)',
+            printSlip: 'Print Slip / Save PDF',
+            submitAnother: 'Submit Another Application',
+            closeModal: 'Close',
+            trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> Track Application Status',
+            trackModalDesc: 'Enter your Token ID (e.g. AYO-20260913-145) or 10-digit Mobile Number:',
+            trackSearchBtn: 'Search Status',
+            trackPlaceholder: 'Token ID or 10-digit Mobile Number...',
+            closedTitle: 'Application Session Closed',
+            closedDesc: 'Your Darshan Pass application has been recorded successfully. Click below to open a new form.',
+            reopenBtn: '<i class="fa-solid fa-rotate-left"></i> Open New Form',
+            footerLine1: '© 2026 Ayodhya Police. All Rights Reserved.',
+            footerLine2: 'Designed & Developed by Smart Cell Ayodhya'
         }
     };
 
@@ -1289,31 +1392,63 @@ document.addEventListener("DOMContentLoaded", () => {
         const mainTitle = document.getElementById("main-portal-title");
         if (mainTitle) mainTitle.textContent = t.portalTitle;
 
-        const downloadSlipText = document.getElementById("download-slip-text");
-        if (downloadSlipText) downloadSlipText.textContent = t.downloadSlip;
+        // Update all data-i18n elements
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const key = el.getAttribute("data-i18n");
+            if (t[key]) {
+                el.innerHTML = t[key];
+            }
+        });
 
-        const printSlipText = document.getElementById("print-slip-text");
-        if (printSlipText) printSlipText.textContent = t.printSlip;
+        // Update all data-i18n-ph (placeholder) elements
+        document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+            const key = el.getAttribute("data-i18n-ph");
+            if (t[key]) {
+                el.placeholder = t[key];
+            }
+        });
 
-        const submitAnotherText = document.getElementById("submit-another-text");
-        if (submitAnotherText) submitAnotherText.textContent = t.submitAnother;
+        // Update ID Label and Placeholder dynamically based on nationality
+        const isIndia = !nationalitySelect || nationalitySelect.value === "India";
+        if (idLabelText) {
+            idLabelText.textContent = isIndia 
+                ? (lang === "en" ? "Aadhaar / Passport No" : "आधार नं0 / पासपोर्ट नं0") 
+                : (lang === "en" ? "Passport Number (Mandatory for International)" : "पासपोर्ट नंबर (अंतर्राष्ट्रीय श्रद्धालु हेतु अनिवार्य)");
+        }
+        if (idNumberInput) {
+            idNumberInput.placeholder = isIndia 
+                ? (lang === "en" ? "Enter 12-digit Aadhaar No. or Passport No." : "12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें")
+                : (lang === "en" ? "Enter Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)");
+        }
 
-        const closeModalText = document.getElementById("close-modal-text");
-        if (closeModalText) closeModalText.textContent = t.closeModal;
+        // Update Searchable select triggers if they are on default/empty selection
+        const stateContainer = document.querySelector('.custom-select-container[data-target="stateSelect"]');
+        if (stateContainer && (!stateSelect || !stateSelect.value)) {
+            const trText = stateContainer.querySelector(".trigger-text");
+            if (trText) trText.textContent = t.optSelectState;
+        }
 
-        const trackModalTitle = document.getElementById("track-modal-title");
-        if (trackModalTitle) trackModalTitle.innerHTML = `<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> ${t.trackModalTitle}`;
+        const districtContainer = document.querySelector('.custom-select-container[data-target="districtSelect"]');
+        if (districtContainer && (!districtSelect || !districtSelect.value)) {
+            const trText = districtContainer.querySelector(".trigger-text");
+            if (trText) trText.textContent = t.optSelectDistrict;
+        }
 
-        const trackModalDesc = document.getElementById("track-modal-desc");
-        if (trackModalDesc) trackModalDesc.textContent = t.trackModalDesc;
+        const refContainer = document.querySelector('.custom-select-container[data-target="referredBySelect"]');
+        if (refContainer && (!referredBySelect || !referredBySelect.value)) {
+            const trText = refContainer.querySelector(".trigger-text");
+            if (trText) trText.textContent = t.optSelectRef;
+        }
 
-        const trackSubmitText = document.getElementById("track-submit-text");
-        if (trackSubmitText) trackSubmitText.textContent = t.trackSearchBtn;
+        // Update custom dropdown search input placeholders
+        document.querySelectorAll(".custom-search-input").forEach(si => {
+            si.placeholder = lang === "en" ? "🔍 Type to search..." : "🔍 टाइप करके खोजें (Search)...";
+        });
 
-        if (btnText) btnText.textContent = t.submitBtn;
-
-        const noVehicleText = document.getElementById("no-vehicle-text");
-        if (noVehicleText) noVehicleText.textContent = t.noVehicle;
+        // Refresh accompanying note based on current devotee counts
+        const m = parseInt(maleCountInput ? maleCountInput.value : 1) || 1;
+        const f = parseInt(femaleCountInput ? femaleCountInput.value : 0) || 0;
+        updateAccompanyingRequirement(m + f);
     }
 
     const langToggleBtn = document.getElementById("lang-toggle-btn");
@@ -1539,12 +1674,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const accReq = document.getElementById("accompanying-required");
         const accError = document.getElementById("accompanying-error");
 
+        const curLang = localStorage.getItem("darshan_lang") || "hi";
         if (totalCount <= 1) {
             if (accompanyingInput) {
                 accompanyingInput.required = false;
             }
             if (accReq) accReq.style.display = "none";
-            if (accNote) accNote.textContent = "(अकेले दर्शनार्थी हेतु लागू नहीं / Not Applicable for Single Devotee)";
+            if (accNote) accNote.textContent = curLang === "en" ? "(Not Applicable for Single Devotee)" : "(अकेले दर्शनार्थी हेतु लागू नहीं)";
             if (accGroup) {
                 accGroup.classList.remove("invalid");
                 accGroup.classList.add("single-devotee");
@@ -1556,7 +1692,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (accReq) accReq.style.display = "inline";
             const extra = totalCount - 1;
-            if (accNote) accNote.textContent = `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
+            if (accNote) accNote.textContent = curLang === "en" ? `(Please write name & age of remaining ${extra} accompanying members)` : `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
             if (accGroup) {
                 accGroup.classList.remove("single-devotee");
             }

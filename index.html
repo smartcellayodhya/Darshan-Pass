@@ -160,7 +160,7 @@
             <form id="darshan-form" novalidate>
                 <!-- SUB-SECTION 1: VISIT DETAILS -->
                 <div class="gov-section">
-                    <h2 class="gov-section-title">
+                    <h2 class="gov-section-title" id="sec-visit-title" data-i18n="secVisit">
                         <i class="fa-solid fa-calendar-day"></i> Visit Date & Time (दर्शन तिथि व स्थान विवरण)
                     </h2>
 
@@ -168,7 +168,7 @@
                         <!-- Date & Time Slot Grid -->
                         <div class="grid-2">
                             <div class="input-group">
-                                <label for="visitDate" class="input-label">
+                                <label for="visitDate" class="input-label" id="lbl-visit-date" data-i18n="lblVisitDate">
                                     Visit Date / दर्शन तिथि <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper">
@@ -178,12 +178,12 @@
                             </div>
 
                             <div class="input-group">
-                                <label for="visitSlot" class="input-label">
+                                <label for="visitSlot" class="input-label" id="lbl-visit-slot" data-i18n="lblVisitSlot">
                                     Time Slot / दर्शन समय स्लॉट <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper select-wrapper">
                                     <select id="visitSlot" name="visitSlot" required>
-                                        <option value="">-- Select Time Slot / समय स्लॉट चुनें --</option>
+                                        <option value="" data-i18n="optSelectSlot">-- Select Time Slot / समय स्लॉट चुनें --</option>
                                         <option value="07:00 AM - 09:00 AM">07:00 AM - 09:00 AM</option>
                                         <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM</option>
                                         <option value="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</option>
@@ -200,13 +200,13 @@
 
                         <!-- Devotee Country -->
                         <div class="input-group">
-                            <label for="nationality" class="input-label">
+                            <label for="nationality" class="input-label" id="lbl-nationality" data-i18n="lblNationality">
                                 Devotee Country / श्रद्धालु का देश <span class="required">*</span>
                             </label>
                             <div class="input-wrapper select-wrapper">
                                 <select id="nationality" name="nationality" required>
-                                    <option value="India" selected>India (भारत)</option>
-                                    <option value="Other">Other Country (अंतर्राष्ट्रीय श्रद्धालु / International Devotee)</option>
+                                    <option value="India" selected data-i18n="optIndia">India (भारत)</option>
+                                    <option value="Other" data-i18n="optOtherCountry">Other Country (अंतर्राष्ट्रीय श्रद्धालु / International Devotee)</option>
                                 </select>
                                 <i class="fa-solid fa-chevron-down select-arrow"></i>
                             </div>
@@ -214,12 +214,12 @@
 
                         <!-- International Country Dropdown -->
                         <div class="input-group hidden" id="country-group">
-                            <label for="countrySelect" class="input-label">
+                            <label for="countrySelect" class="input-label" id="lbl-country" data-i18n="lblCountry">
                                 Select Country / देश का नाम <span class="required">*</span>
                             </label>
                             <div class="input-wrapper select-wrapper">
                                 <select id="countrySelect" name="countrySelect">
-                                    <option value="">-- Select Country --</option>
+                                    <option value="" data-i18n="optSelectCountry">-- Select Country --</option>
                                 </select>
                                 <i class="fa-solid fa-chevron-down select-arrow"></i>
                             </div>
@@ -229,12 +229,12 @@
                         <!-- State & District (For India) -->
                         <div class="grid-2" id="india-location-grid">
                             <div class="input-group">
-                                <label for="stateSelect" class="input-label">
+                                <label for="stateSelect" class="input-label" id="lbl-state" data-i18n="lblState">
                                     Select State / राज्य <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper select-wrapper">
                                     <select id="stateSelect" name="stateSelect" required>
-                                        <option value="">-- Select State --</option>
+                                        <option value="" data-i18n="optSelectState">-- Select State --</option>
                                     </select>
                                     <i class="fa-solid fa-chevron-down select-arrow"></i>
                                 </div>
@@ -242,12 +242,12 @@
                             </div>
 
                             <div class="input-group">
-                                <label for="districtSelect" class="input-label">
+                                <label for="districtSelect" class="input-label" id="lbl-district" data-i18n="lblDistrict">
                                     Select District / जिला <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper select-wrapper">
                                     <select id="districtSelect" name="districtSelect" required disabled>
-                                        <option value="">-- Select State First --</option>
+                                        <option value="" data-i18n="optSelectDistrict">-- Select State First --</option>
                                     </select>
                                     <i class="fa-solid fa-chevron-down select-arrow"></i>
                                 </div>
@@ -259,18 +259,18 @@
 
                 <!-- SUB-SECTION 2: PRIMARY DEVOTEE INFO -->
                 <div class="gov-section">
-                    <h2 class="gov-section-title">
+                    <h2 class="gov-section-title" id="sec-primary-title" data-i18n="secPrimary">
                         <i class="fa-solid fa-id-card"></i> Primary Devotee Info (मुख्य दर्शनार्थी विवरण)
                     </h2>
 
                     <div class="gov-section-body">
                         <!-- Primary Devotee Name & Age -->
                         <div class="input-group">
-                            <label for="nameAge" class="input-label">
+                            <label for="nameAge" class="input-label" id="lbl-name-age" data-i18n="lblNameAge">
                                 Name & Age / मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <input type="text" id="nameAge" name="nameAge" placeholder="उदा: Rahul 35 Yrs" required>
+                                <input type="text" id="nameAge" name="nameAge" placeholder="उदा: Rahul 35 Yrs" data-i18n-ph="phNameAge" required>
                                 <button type="button" class="voice-mic-btn" data-target="nameAge" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
@@ -285,7 +285,7 @@
                                     <span id="id-label-text">Aadhaar / Passport No / आधार नं0 / पासपोर्ट नं0</span> <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." maxlength="12" required>
+                                    <input type="text" id="idNumber" name="idNumber" placeholder="Enter 12-digit Aadhaar No. or Passport No." data-i18n-ph="phId" maxlength="12" required>
                                     <button type="button" class="voice-mic-btn" data-target="idNumber" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
@@ -294,11 +294,11 @@
                             </div>
 
                             <div class="input-group">
-                                <label for="mobile" class="input-label">
+                                <label for="mobile" class="input-label" id="lbl-mobile" data-i18n="lblMobile">
                                     Mobile No / मो0नं0 <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="tel" id="mobile" name="mobile" placeholder="Enter 10-digit Mobile Number" maxlength="10" inputmode="numeric" required>
+                                    <input type="tel" id="mobile" name="mobile" placeholder="Enter 10-digit Mobile Number" data-i18n-ph="phMobile" maxlength="10" inputmode="numeric" required>
                                     <button type="button" class="voice-mic-btn" data-target="mobile" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
@@ -309,11 +309,11 @@
 
                         <!-- Vehicle No (Optional) -->
                         <div class="input-group" id="vehicle-group">
-                            <label for="vehicleNo" class="input-label" id="vehicleNo-label">
+                            <label for="vehicleNo" class="input-label" id="vehicleNo-label" data-i18n="lblVehicle">
                                 Vehicle No / गाडी नं0 <span class="optional-tag">(Optional / ऐच्छिक)</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP42AB1234 (बिना किसी सिंबल के)">
+                                <input type="text" id="vehicleNo" name="vehicleNo" placeholder="E.g. UP42AB1234 (बिना किसी सिंबल के)" data-i18n-ph="phVehicle">
                                 <button type="button" class="voice-mic-btn" data-target="vehicleNo" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
@@ -321,7 +321,7 @@
                             <div class="no-vehicle-box">
                                 <label class="no-vehicle-label" for="noVehicleCheck">
                                     <input type="checkbox" id="noVehicleCheck">
-                                    <span id="no-vehicle-text">पैदल / कोई वाहन नहीं (On Foot / No Vehicle)</span>
+                                    <span id="no-vehicle-text" data-i18n="noVehicle">पैदल / कोई वाहन नहीं (On Foot / No Vehicle)</span>
                                 </label>
                             </div>
                             <span class="error-msg" id="vehicleNo-error">कृपया सही गाड़ी नंबर दर्ज करें (उदा: UP42AB1234)</span>
@@ -331,23 +331,23 @@
 
                 <!-- SUB-SECTION 3: DEVOTEE COUNT & ACCOMPANYING -->
                 <div class="gov-section">
-                    <h2 class="gov-section-title">
+                    <h2 class="gov-section-title" id="sec-count-title" data-i18n="secCount">
                         <i class="fa-solid fa-users"></i> Devotee Count & Accompanying (साथी दर्शनार्थी विवरण)
                     </h2>
 
                     <div class="gov-section-body">
                         <!-- Visitor Counts (Male / Female) -->
                         <div class="input-group">
-                            <label class="input-label">
+                            <label class="input-label" id="lbl-devotee-count" data-i18n="lblDevoteeCount">
                                 Devotee Count (Male/Female) / पुरुषों व महिलाओं की संख्या <span class="optional-tag">(अधिकतम कुल 8 दर्शनार्थी)</span> <span class="required">*</span>
                             </label>
                             <div class="grid-2">
                                 <div class="count-box">
-                                    <label for="maleCount" class="count-label">Male (पुरुष)</label>
+                                    <label for="maleCount" class="count-label" id="lbl-male" data-i18n="lblMale">Male (पुरुष)</label>
                                     <input type="number" id="maleCount" name="maleCount" min="0" max="8" placeholder="0" value="1" required>
                                 </div>
                                 <div class="count-box">
-                                    <label for="femaleCount" class="count-label">Female (महिला)</label>
+                                    <label for="femaleCount" class="count-label" id="lbl-female" data-i18n="lblFemale">Female (महिला)</label>
                                     <input type="number" id="femaleCount" name="femaleCount" min="0" max="8" placeholder="0" value="0" required>
                                 </div>
                             </div>
@@ -357,12 +357,12 @@
                         <!-- Accompanying Members Details Area -->
                         <div class="input-group" id="accompanying-group">
                             <label for="accompanying" class="input-label" id="accompanying-label">
-                                Accompanying Devotees / साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र 
+                                <span id="accompanying-title-text" data-i18n="lblAccompanying">Accompanying Devotees / साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र</span> 
                                 <span class="sub-label-note" id="accompanying-note">(कृपया 10 साल से नीचे के बच्चों का नाम न लिखें क्योंकि उनका पास नहीं बनता है)</span> 
                                 <span class="required" id="accompanying-required">*</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Rahul 32 Yrs&#10;2. Ashwani 35 Yrs"></textarea>
+                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Rahul 32 Yrs&#10;2. Ashwani 35 Yrs" data-i18n-ph="phAccompanying"></textarea>
                                 <button type="button" class="voice-mic-btn textarea-mic-btn" data-target="accompanying" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
@@ -374,19 +374,19 @@
 
                 <!-- SUB-SECTION 4: REFERRED BY -->
                 <div class="gov-section">
-                    <h2 class="gov-section-title">
+                    <h2 class="gov-section-title" id="sec-ref-title" data-i18n="secRef">
                         <i class="fa-solid fa-user-check"></i> Referred By (संदर्भ / रेफरेंस)
                     </h2>
 
                     <div class="gov-section-body">
                         <!-- Referred By Dropdown -->
                         <div class="input-group">
-                            <label for="referredBySelect" class="input-label">
+                            <label for="referredBySelect" class="input-label" id="lbl-referred-by" data-i18n="lblReferredBy">
                                 Referred By / किसके संदर्भ से <span class="required">*</span>
                             </label>
                             <div class="input-wrapper select-wrapper">
                                 <select id="referredBySelect" name="referredBySelect" required>
-                                    <option value="">-- Select Reference Officer / रेफरेंस चुनें --</option>
+                                    <option value="" data-i18n="optSelectRef">-- Select Reference Officer / रेफरेंस चुनें --</option>
                                     <option value="Ref by SSP sir">Ref by SSP sir</option>
                                     <option value="ADG Zone sir/ADG Zone Pro">ADG Zone sir/ADG Zone Pro</option>
                                     <option value="SP City Ayo">SP City Ayo</option>
@@ -416,11 +416,11 @@
 
                         <!-- Dynamic Text Field for "Other" Selection -->
                         <div class="input-group hidden" id="other-ref-group">
-                            <label for="otherRefName" class="input-label">
+                            <label for="otherRefName" class="input-label" id="lbl-other-ref" data-i18n="lblOtherRef">
                                 Senior Officer Name / अधिकारी का नाम <span class="required">*</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <input type="text" id="otherRefName" name="otherRefName" placeholder="Enter Senior Officer Name / Designation">
+                                <input type="text" id="otherRefName" name="otherRefName" placeholder="Enter Senior Officer Name / Designation" data-i18n-ph="phOtherRef">
                                 <button type="button" class="voice-mic-btn" data-target="otherRefName" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
@@ -432,7 +432,7 @@
 
                 <!-- Submit Button -->
                 <button type="submit" id="submit-btn" class="gov-btn-primary">
-                    <span class="btn-text">सबमिट करें (Submit)</span>
+                    <span class="btn-text" data-i18n="submitBtn">सबमिट करें (Submit)</span>
                     <span class="btn-loader hidden">
                         <i class="fa-solid fa-spinner fa-spin"></i> Submitting Request...
                     </span>
@@ -445,13 +445,13 @@
             <div class="gov-closed-icon" style="color: #64748b; font-size: 3.6rem; margin-bottom: 1rem;">
                 <i class="fa-solid fa-folder-closed"></i>
             </div>
-            <h2 style="font-family: 'Tiro Devanagari Hindi', serif; font-size: 1.8rem; color: var(--navy-dark); margin-bottom: 0.5rem;">
+            <h2 id="closed-title" data-i18n="closedTitle" style="font-family: 'Tiro Devanagari Hindi', serif; font-size: 1.8rem; color: var(--navy-dark); margin-bottom: 0.5rem;">
                 आवेदन सत्र समाप्त (Application Closed)
             </h2>
-            <p style="color: var(--text-secondary); font-size: 0.98rem; max-width: 480px; margin: 0 auto 1.8rem auto; line-height: 1.5;">
+            <p id="closed-desc" data-i18n="closedDesc" style="color: var(--text-secondary); font-size: 0.98rem; max-width: 480px; margin: 0 auto 1.8rem auto; line-height: 1.5;">
                 आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।
             </p>
-            <button type="button" id="reopen-form-btn" class="gov-btn-primary" style="max-width: 320px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 0.6rem;">
+            <button type="button" id="reopen-form-btn" data-i18n="reopenBtn" class="gov-btn-primary" style="max-width: 320px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 0.6rem;">
                 <i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)
             </button>
         </section>
@@ -462,29 +462,29 @@
                 <div class="gov-success-icon">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-                <h2>आवेदन सफलतापूर्वक दर्ज हुआ</h2>
-                <p class="success-subtitle">आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।</p>
+                <h2 id="success-modal-heading" data-i18n="successHeading">आवेदन सफलतापूर्वक दर्ज हुआ</h2>
+                <p class="success-subtitle" id="success-modal-subtitle" data-i18n="successSubtitle">आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।</p>
                 
                 <!-- Printable Acknowledgement Slip Card -->
                 <div id="printable-slip" class="receipt-card">
                     <div class="receipt-header">
                         <img src="assets/up_police_logo.png" alt="UP Police" class="receipt-logo">
                         <div class="receipt-header-text">
-                            <h3>श्रीरामजन्मभूमि दर्शन पास - पावती रसीद</h3>
-                            <p>अयोध्या पुलिस (Ayodhya Police) • Smart Cell Ayodhya</p>
+                            <h3 id="slip-title" data-i18n="receiptTitle">श्रीरामजन्मभूमि दर्शन पास - पावती रसीद</h3>
+                            <p id="slip-subtitle" data-i18n="receiptSubtitle">अयोध्या पुलिस (Ayodhya Police) • Smart Cell Ayodhya</p>
                         </div>
                     </div>
 
                     <div class="receipt-highlight-box">
                         <!-- Primary Devotee Name -->
                         <div class="highlight-item devotee-highlight">
-                            <span class="highlight-label"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी का नाम</span>
+                            <span class="highlight-label" id="slip-lbl-devotee" data-i18n="slipLabelDevotee"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी का नाम</span>
                             <span class="highlight-value" id="slip-devotee-name">--</span>
                         </div>
 
                         <!-- Application / Token ID (with Google Sheet Row Number) -->
                         <div class="highlight-item token-highlight">
-                            <span class="highlight-label"><i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)</span>
+                            <span class="highlight-label" id="slip-lbl-token" data-i18n="slipLabelToken"><i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)</span>
                             <div class="token-copy-wrapper">
                                 <span class="highlight-value token-code" id="slip-token-id">AYO-YYYYMMDD-ROW</span>
                                 <button type="button" id="copy-token-btn" class="token-copy-btn" title="टोकन कॉपी करें">
@@ -496,40 +496,40 @@
 
                     <div class="receipt-details-grid">
                         <div class="receipt-detail-item">
-                            <span class="detail-label">दर्शन तिथि व स्लॉट:</span>
+                            <span class="detail-label" id="slip-lbl-datetime" data-i18n="slipLabelDatetime">दर्शन तिथि व स्लॉट:</span>
                             <span class="detail-value" id="slip-visit-datetime">--</span>
                         </div>
                         <div class="receipt-detail-item">
-                            <span class="detail-label">कुल दर्शनार्थी:</span>
+                            <span class="detail-label" id="slip-lbl-total" data-i18n="slipLabelTotal">कुल दर्शनार्थी:</span>
                             <span class="detail-value" id="slip-total-devotees">--</span>
                         </div>
                         <div class="receipt-detail-item">
-                            <span class="detail-label">मोबाइल नंबर:</span>
+                            <span class="detail-label" id="slip-lbl-mobile" data-i18n="slipLabelMobile">मोबाइल नंबर:</span>
                             <span class="detail-value" id="slip-mobile">--</span>
                         </div>
                         <div class="receipt-detail-item">
-                            <span class="detail-label">रेफरेंस / संदर्भ:</span>
+                            <span class="detail-label" id="slip-lbl-ref" data-i18n="slipLabelRef">रेफरेंस / संदर्भ:</span>
                             <span class="detail-value" id="slip-referred-by">--</span>
                         </div>
                     </div>
 
-                    <div class="receipt-footer-note">
+                    <div class="receipt-footer-note" id="slip-footer-note" data-i18n="slipFooterNote">
                         <i class="fa-solid fa-circle-info"></i> यह केवल ऑनलाइन आवेदन की पावती है। अंतिम दर्शन पास सक्षम पुलिस अधिकारी की अनुमति के उपरांत जारी किया जाएगा।
                     </div>
                 </div>
 
                 <div class="modal-action-buttons">
                     <button id="download-slip-btn" type="button" class="modal-btn gov-modal-btn download-btn">
-                        <i class="fa-solid fa-circle-down"></i> <span id="download-slip-text">रसीद डाउनलोड करें (Save PNG)</span>
+                        <i class="fa-solid fa-circle-down"></i> <span id="download-slip-text" data-i18n="downloadSlip">रसीद डाउनलोड करें (Save PNG)</span>
                     </button>
                     <button id="print-slip-btn" type="button" class="modal-btn gov-btn-secondary">
-                        <i class="fa-solid fa-print"></i> <span id="print-slip-text">रसीद प्रिंट करें / PDF</span>
+                        <i class="fa-solid fa-print"></i> <span id="print-slip-text" data-i18n="printSlip">रसीद प्रिंट करें / PDF</span>
                     </button>
                     <button id="submit-another-btn" type="button" class="modal-btn gov-btn-outline">
-                        <i class="fa-solid fa-rotate-left"></i> <span id="submit-another-text">दूसरा फॉर्म भरें</span>
+                        <i class="fa-solid fa-rotate-left"></i> <span id="submit-another-text" data-i18n="submitAnother">दूसरा फॉर्म भरें</span>
                     </button>
                     <button id="modal-close-btn" type="button" class="modal-btn gov-btn-outline">
-                        <i class="fa-solid fa-xmark"></i> <span id="close-modal-text">बंद करें</span>
+                        <i class="fa-solid fa-xmark"></i> <span id="close-modal-text" data-i18n="closeModal">बंद करें</span>
                     </button>
                 </div>
             </div>
@@ -547,7 +547,7 @@
                 <div class="track-modal-body">
                     <p class="track-modal-desc" id="track-modal-desc">अपने आवेदन का टोकन ID (उदा: <code>AYO-20260913-145</code>) या 10-अंकों का मोबाइल नंबर दर्ज करें:</p>
                     <div class="track-search-row">
-                        <input type="text" id="track-query-input" placeholder="टोकन ID या 10-अंकों का मोबाइल नंबर..." autocomplete="off">
+                        <input type="text" id="track-query-input" placeholder="टोकन ID या 10-अंकों का मोबाइल नंबर..." data-i18n-ph="trackPlaceholder" autocomplete="off">
                         <button type="button" id="submit-track-btn" class="gov-btn-primary track-submit-btn">
                             <span id="track-submit-text">खोजें (Search)</span>
                             <span id="track-submit-loader" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i></span>
@@ -568,8 +568,8 @@
 
         <!-- Official Footer -->
         <footer class="gov-footer">
-            <p class="footer-line-1">© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).</p>
-            <p class="footer-line-2">Designed & Developed by Smart Cell Ayodhya</p>
+            <p class="footer-line-1" id="footer-line-1" data-i18n="footerLine1">© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).</p>
+            <p class="footer-line-2" id="footer-line-2" data-i18n="footerLine2">Designed & Developed by Smart Cell Ayodhya</p>
         </footer>
     </main>
 
