@@ -1422,16 +1422,16 @@ function onOpen() {
 
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
-      .addItem('🔧 1-Click Fix: Unfreeze Col B & Fix Cell B3 Error (कॉलम B अनफ्रीज व B3 एरर ठीक करें)', 'repairColumnsAndUnfreeze')
-      .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
+      .addItem('🛠️ 1-Click All-in-One Sheet Repair (मास्टर रिपेयर - कॉलम व क्रम ठीक करें)', 'fixAndRealignAllSheetColumns')
+      .addItem('🎨 Re-apply Status Colors (स्टेटस अनुसार सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
       .addItem('🛡️ Restore Pass Status Dropdowns (कॉलम C ड्रॉपडाउन रीस्टोर करें)', 'restoreStatusDropdowns')
-      .addItem('🔓 Unlock Row 1 Headers (कठोर लॉक हटाएं / अनलॉक करें)', 'unlockRow1Headers')
-      .addItem('🔒 Safe-Lock Row 1 (सुरक्षित वार्निंग लॉक लगाएं)', 'lockAndProtectHeaderRow')
-      .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
-      .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
-      .addItem('🎖️ Setup Reference Officers Tab (रेफरेंस अधिकारी टैब बनाएं)', 'getOrCreateReferenceOfficersSheet')
+      .addSeparator()
+      .addItem('🎖️ Setup Reference Officers Tab (रेफरेंस अधिकारी टैब बनाएं / लोड करें)', 'getOrCreateReferenceOfficersSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
+      .addSeparator()
+      .addItem('🔒 Safe-Lock Row 1 (पहली हेडिंग रो को लॉक व सुरक्षित करें)', 'lockAndProtectHeaderRow')
+      .addItem('🔓 Unlock Row 1 Headers (कठोर लॉक हटाएं / अनलॉक करें)', 'unlockRow1Headers')
       .addToUi();
   } catch (err) {
     console.warn("onOpen UI creation warning:", err);
