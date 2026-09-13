@@ -1284,13 +1284,56 @@ https://darshan-pass.vercel.app
                         statusHindi = "निरस्त (Rejected)";
                     }
 
+                    function formatTrackDate(raw) {
+                        if (!raw) return '--';
+                        const str = String(raw).trim();
+                        if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                            const p = str.split('-');
+                            return `${p[2]}/${p[1]}/${p[0]}`;
+                        }
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) {
+                            const dd = String(d.getDate()).padStart(2, '0');
+                            const mm = String(d.getMonth() + 1).padStart(2, '0');
+                            const yyyy = d.getFullYear();
+                            return `${dd}/${mm}/${yyyy}`;
+                        }
+                        return str;
+                    }
+
+                    function formatTrackToken(rawDate, rowNumber) {
+                        let ymd = 'AYO';
+                        if (rawDate) {
+                            const str = String(rawDate).trim();
+                            if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
+                                const p = str.split('/');
+                                ymd = `${p[2]}${p[1]}${p[0]}`;
+                            } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                                ymd = str.replace(/-/g, '');
+                            } else {
+                                const d = new Date(str);
+                                if (!isNaN(d.getTime())) {
+                                    const dd = String(d.getDate()).padStart(2, '0');
+                                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                    const yyyy = d.getFullYear();
+                                    ymd = `${yyyy}${mm}${dd}`;
+                                }
+                            }
+                        }
+                        return `AYO-${ymd}-${rowNumber || ''}`;
+                    }
+
+                    const cleanDate = formatTrackDate(item.visitDate);
+                    const cleanToken = formatTrackToken(item.visitDate, item.rowNumber);
+
                     trackResultBox.innerHTML = `
                         <div class="track-status-pill ${statusClass}">
                             <i class="fa-solid fa-circle-dot"></i> ${statusHindi}
                         </div>
                         <div class="track-info-row">
                             <span class="track-info-label">टोकन ID:</span>
-                            <span class="track-info-val">AYO-${item.visitDate ? item.visitDate.replace(/\//g,'') : 'AYO'}-${item.rowNumber}</span>
+                            <span class="track-info-val">${cleanToken}</span>
                         </div>
                         <div class="track-info-row">
                             <span class="track-info-label">मुख्य दर्शनार्थी:</span>
@@ -1298,7 +1341,7 @@ https://darshan-pass.vercel.app
                         </div>
                         <div class="track-info-row">
                             <span class="track-info-label">दर्शन तिथि व समय:</span>
-                            <span class="track-info-val">${item.visitDate || '--'} (${item.visitSlot || '--'})</span>
+                            <span class="track-info-val">${cleanDate} (${item.visitSlot || '--'})</span>
                         </div>
                         <div class="track-info-row">
                             <span class="track-info-label">कुल दर्शनार्थी:</span>

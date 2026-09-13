@@ -201,8 +201,8 @@ function doGet(e) {
       var rowData = data[r];
       var rowNum = r + 1;
       var status = String(rowData[1] || 'Pending').trim();
-      var passDate = String(rowData[2] || '').trim();
-      var vDate = String(rowData[3] || '').trim();
+      var passDate = formatSheetDateToDDMMYYYY(rowData[2]);
+      var vDate = formatSheetDateToDDMMYYYY(rowData[3]);
       var vSlot = String(rowData[4] || '').trim();
       var name = String(rowData[5] || '').trim();
       var mob = String(rowData[10] || '').trim();
@@ -246,6 +246,27 @@ function doGet(e) {
     "lastRow": lastRow,
     "message": "Darshan Pass Apps Script API is active."
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function formatSheetDateToDDMMYYYY(val) {
+  if (!val) return '';
+  if (val instanceof Date) {
+    var day = ('0' + val.getDate()).slice(-2);
+    var month = ('0' + (val.getMonth() + 1)).slice(-2);
+    var year = val.getFullYear();
+    return day + '/' + month + '/' + year;
+  }
+  var str = String(val).trim();
+  if (str.includes('GMT') || str.includes('T00:')) {
+    var d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      var dd = ('0' + d.getDate()).slice(-2);
+      var mm = ('0' + (d.getMonth() + 1)).slice(-2);
+      var yyyy = d.getFullYear();
+      return dd + '/' + mm + '/' + yyyy;
+    }
+  }
+  return str;
 }
 
 function getTargetSpreadsheet() {

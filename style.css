@@ -1646,6 +1646,7 @@ body.gov-minimal-theme {
 
 .track-search-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.6rem;
     margin-bottom: 1.2rem;
     width: 100%;
@@ -1653,7 +1654,7 @@ body.gov-minimal-theme {
 }
 
 .track-search-row input {
-    flex: 1;
+    flex: 1 1 180px;
     min-width: 0;
     width: 100%;
     padding: 0.75rem 0.9rem;
@@ -1670,17 +1671,17 @@ body.gov-minimal-theme {
 }
 
 .track-submit-btn {
+    flex: 0 0 auto;
     padding: 0.75rem 1.15rem !important;
     white-space: nowrap;
     border-radius: var(--radius-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     font-weight: 600;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
     .modal-overlay {
         padding: 0.75rem !important;
     }
@@ -1697,13 +1698,14 @@ body.gov-minimal-theme {
     }
 
     .track-search-row {
-        flex-direction: column;
+        flex-direction: column !important;
         gap: 0.65rem;
         margin-bottom: 1rem;
     }
 
     .track-search-row input {
         width: 100% !important;
+        flex: 1 1 auto !important;
         min-width: 0;
         padding: 0.75rem 0.85rem;
         font-size: 0.9rem;
@@ -1711,6 +1713,7 @@ body.gov-minimal-theme {
 
     .track-submit-btn {
         width: 100% !important;
+        flex: 1 1 auto !important;
         padding: 0.8rem 1rem !important;
         font-size: 0.95rem;
         justify-content: center;
