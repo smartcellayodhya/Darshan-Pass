@@ -31,7 +31,7 @@ function doPost(e) {
 
   try {
     var ss = getTargetSpreadsheet();
-    var sheet = ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0];
+    var sheet = getMainDataSheet(ss);
     var data = {};
 
     // 1. Extract payload from JSON or Form Parameters
@@ -156,16 +156,17 @@ function doPost(e) {
 
 function doGet(e) {
   var ss = getTargetSpreadsheet();
-  var sheet = ss ? (ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0]) : null;
+  var sheet = getMainDataSheet(ss);
   var lastRow = sheet ? sheet.getLastRow() : 0;
 
-  if (e && e.parameter && e.parameter.action === 'format') {
+  // 1-CLICK AUTO REPAIR & FORMAT SHEET HANDLER
+  if (e && e.parameter && (e.parameter.action === 'format' || e.parameter.action === 'fix' || e.parameter.action === 'realign')) {
     try {
-      formatEntireSheet();
+      var result = fixAndRealignAllSheetColumns();
       return ContentService.createTextOutput(JSON.stringify({
         "status": "success",
-        "lastRow": lastRow,
-        "message": "Google Sheet Formatted! Pass Status is now in Column B right after Timestamp!"
+        "result": result,
+        "message": "Google Sheet columns and rows successfully repaired and 100% realigned!"
       })).setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({
@@ -251,6 +252,15 @@ function getTargetSpreadsheet() {
   }
 }
 
+function getMainDataSheet(ss) {
+  if (!ss) return null;
+  return ss.getSheetByName("Darshan Pass") ||
+         ss.getSheetByName("Form Responses 1") ||
+         ss.getSheetByName("Form Responses") ||
+         ss.getSheets().filter(function (s) { return !s.getName().includes("Dashboard"); })[0] ||
+         ss.getSheets()[0];
+}
+
 /**
  * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST OPTIMIZED
  * When status in Column 2 (B) is changed to "Pass Created":
@@ -317,7 +327,8 @@ function onOpen() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
-      .addItem('🎯 Setup Status in Column B & Apply Highlighting (कॉलम B में स्टेटस सेट करें)', 'formatEntireSheet')
+      .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
+      .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
       .addToUi();
   } catch (err) {
@@ -326,159 +337,392 @@ function onOpen() {
 }
 
 /**
- * UTILITY 1: SAFELY SETUP HEADERS, DROPDOWNS & CONDITIONAL GREEN HIGHLIGHTING
- * Inserts Pass Status & Pass Created Date as Column B & C right after Timestamp (Col A)
+ * 1-CLICK COLUMN REPAIR & DATA REALIGNMENT
+ * Automatically unhides hidden columns, detects shifted cells (e.g. +2 column shift),
+ * realigns all data under the proper 19 headers, preserves existing pass statuses,
+ * deletes duplicate/empty shift columns, sets dropdowns & sage green highlighting.
  */
-function formatEntireSheet() {
+function fixAndRealignAllSheetColumns() {
   var ss = getTargetSpreadsheet();
-  if (!ss) return;
+  if (!ss) {
+    throw new Error("Spreadsheet could not be opened. Check ID or active sheet permissions.");
+  }
 
   var sheets = ss.getSheets();
+  var fixedSheetsCount = 0;
+  var totalRowsRepaired = 0;
+
+  var standardHeaders = [
+    "Timestamp",
+    "पास स्थिति (Pass Status)",
+    "पास बनने की तिथि (Pass Created Date)",
+    "दर्शन तिथि",
+    "दर्शन समय स्लॉट",
+    "नाम व उम्र",
+    "राज्य",
+    "जिला",
+    "आधार नं0/पासपोर्ट नं0",
+    "पुरूषो व महिलाओं की संख्या",
+    "मो0नं0",
+    "गाडी नं0",
+    "साथ में आने वाले सदस्यों के नाम व उम्र",
+    "Referred by",
+    "आवेदनकर्ता गूगल नाम",
+    "आवेदनकर्ता ईमेल ID",
+    "कुल दर्शनार्थी संख्या",
+    "पुरुष संख्या",
+    "महिला संख्या"
+  ];
+
+  function isStatusVal(v) {
+    if (!v) return false;
+    var s = String(v).trim().toLowerCase();
+    return s.includes("pending") || s.includes("pass created") || s.includes("already") || s.includes("अन्य काउंटर") || s.includes("rejected") || s.includes("approved");
+  }
+
+  function isDatePattern(v) {
+    if (!v) return false;
+    if (v instanceof Date) return true;
+    var s = String(v).trim();
+    return /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/.test(s) || /^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/.test(s);
+  }
+
+  function isSlotPattern(v) {
+    if (!v) return false;
+    var s = String(v).toUpperCase();
+    return s.includes("AM") || s.includes("PM") || s.includes("स्लॉट") || s.includes("SLOT") || s.includes("07:00") || s.includes("09:00");
+  }
+
+  function formatDateVal(v) {
+    if (!v) return "";
+    if (v instanceof Date) {
+      return Utilities.formatDate(v, Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
+    }
+    var s = String(v).trim();
+    if (s.includes("-")) {
+      var parts = s.split("-");
+      if (parts.length === 3 && parts[0].length === 4) {
+        return parts[2] + "/" + parts[1] + "/" + parts[0];
+      }
+    }
+    return s;
+  }
+
+  function cleanStatusVal(s) {
+    if (!s) return "Pending";
+    var str = String(s).trim();
+    var low = str.toLowerCase();
+    if (low.includes("pass created") || low === "approved") return "Pass Created";
+    if (low.includes("already") || low.includes("अन्य काउंटर")) return "Already Created (अन्य काउंटर से)";
+    if (low.includes("rejected")) return "Rejected";
+    return "Pending";
+  }
 
   sheets.forEach(function (sheet) {
     if (!sheet || sheet.getName().includes("Dashboard")) return;
 
     var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
     if (lastRow < 1) return;
 
-    // 1. Check if Column 2 is already "पास स्थिति"
-    var col2Header = String(sheet.getRange(1, 2).getValue() || '');
-    if (!col2Header.includes("स्थिति") && !col2Header.includes("Status")) {
-      // Safely insert 2 new columns after Timestamp (Col A)
-      sheet.insertColumnsAfter(1, 2);
+    // 1. Unhide any hidden columns (e.g. Column E)
+    try {
+      sheet.showColumns(1, Math.max(lastCol, 25));
+    } catch (e) {
+      console.warn("Unhide columns notice:", e);
     }
 
-    // 2. Set Row 1 Headers explicitly
-    var headers = [
-      "Timestamp",
-      "पास स्थिति (Pass Status)",
-      "पास बनने की तिथि (Pass Created Date)",
-      "दर्शन तिथि",
-      "दर्शन समय स्लॉट",
-      "नाम व उम्र",
-      "राज्य",
-      "जिला",
-      "आधार नं0/पासपोर्ट नं0",
-      "पुरूषो व महिलाओं की संख्या",
-      "मो0नं0",
-      "गाडी नं0",
-      "साथ में आने वाले सदस्यों के नाम व उम्र",
-      "Referred by",
-      "आवेदनकर्ता गूगल नाम",
-      "आवेदनकर्ता ईमेल ID",
-      "कुल दर्शनार्थी संख्या",
-      "पुरुष संख्या",
-      "महिला संख्या"
-    ];
+    // 2. Read entire existing data grid
+    var readCols = Math.max(lastCol, 25);
+    var allData = sheet.getRange(1, 1, lastRow, readCols).getValues();
+    if (!allData || allData.length === 0) return;
 
-    for (var h = 0; h < headers.length; h++) {
-      sheet.getRange(1, h + 1).setValue(headers[h]);
+    var cleanedRows = [];
+
+    for (var r = 1; r < allData.length; r++) {
+      var row = allData[r];
+      // Skip empty blank rows
+      var hasData = row.some(function (cell) { return cell !== "" && cell !== null && cell !== undefined; });
+      if (!hasData) continue;
+
+      var timestamp = row[0] || "";
+      var status = "Pending";
+      var createdDate = "";
+      var visitDate = "";
+      var visitSlot = "";
+      var nameAge = "";
+      var state = "";
+      var district = "";
+      var idNumber = "";
+      var genderCounts = "";
+      var mobile = "";
+      var vehicleNo = "";
+      var accompanying = "";
+      var referredBy = "";
+      var submitterName = "";
+      var submitterEmail = "";
+      var totalDevotees = 0;
+      var maleCount = 0;
+      var femaleCount = 0;
+
+      // Detection condition for +2 column shift (where Col D has Status and Col F has Visit Date):
+      var isColDStatus = isStatusVal(row[3]); // Col D (index 3)
+      var isColFDate = isDatePattern(row[5]);  // Col F (index 5)
+      var isColGSlot = isSlotPattern(row[6]);  // Col G (index 6)
+
+      if (isColDStatus || isColFDate || isColGSlot) {
+        // === SHIFTED BY +2 COLUMNS CASE ===
+        status = cleanStatusVal(row[3] || row[1] || "Pending");
+        createdDate = formatDateVal(row[4] || row[2] || "");
+        visitDate = formatDateVal(row[5]);
+        visitSlot = String(row[6] || '').trim();
+        nameAge = String(row[7] || '').trim();
+        state = String(row[8] || '').trim();
+        district = String(row[9] || '').trim();
+        idNumber = String(row[10] || '').trim();
+        genderCounts = String(row[11] || '').trim();
+        mobile = String(row[12] || '').trim();
+        vehicleNo = String(row[13] || '').trim();
+        accompanying = String(row[14] || '').trim();
+        referredBy = String(row[15] || '').trim();
+        submitterName = String(row[16] || '').trim();
+        submitterEmail = String(row[17] || '').trim();
+        totalDevotees = row[18] || '';
+        maleCount = row[19] || '';
+        femaleCount = row[20] || '';
+
+      } else if (isDatePattern(row[3]) && isSlotPattern(row[4])) {
+        // === NORMAL 19-COLUMN CASE (Col D is Visit Date, Col E is Slot) ===
+        status = cleanStatusVal(row[1] || "Pending");
+        createdDate = formatDateVal(row[2] || "");
+        visitDate = formatDateVal(row[3]);
+        visitSlot = String(row[4] || '').trim();
+        nameAge = String(row[5] || '').trim();
+        state = String(row[6] || '').trim();
+        district = String(row[7] || '').trim();
+        idNumber = String(row[8] || '').trim();
+        genderCounts = String(row[9] || '').trim();
+        mobile = String(row[10] || '').trim();
+        vehicleNo = String(row[11] || '').trim();
+        accompanying = String(row[12] || '').trim();
+        referredBy = String(row[13] || '').trim();
+        submitterName = String(row[14] || '').trim();
+        submitterEmail = String(row[15] || '').trim();
+        totalDevotees = row[16] || '';
+        maleCount = row[17] || '';
+        femaleCount = row[18] || '';
+
+      } else if (isDatePattern(row[1]) && isSlotPattern(row[2])) {
+        // === LEGACY 14-COLUMN GOOGLE FORM CASE ===
+        status = "Pending";
+        createdDate = "";
+        visitDate = formatDateVal(row[1]);
+        visitSlot = String(row[2] || '').trim();
+        nameAge = String(row[3] || '').trim();
+        state = String(row[4] || '').trim();
+        district = String(row[5] || '').trim();
+        idNumber = String(row[6] || '').trim();
+        genderCounts = String(row[7] || '').trim();
+        mobile = String(row[8] || '').trim();
+        vehicleNo = String(row[9] || '').trim();
+        accompanying = String(row[10] || '').trim();
+        referredBy = String(row[11] || '').trim();
+        submitterName = String(row[12] || '').trim();
+        submitterEmail = String(row[13] || '').trim();
+        totalDevotees = row[14] || '';
+        maleCount = row[15] || '';
+        femaleCount = row[16] || '';
+
+      } else {
+        // Fallback Mapping
+        status = isStatusVal(row[1]) ? cleanStatusVal(row[1]) : "Pending";
+        createdDate = formatDateVal(row[2] || "");
+        visitDate = formatDateVal(row[3] || row[5] || "");
+        visitSlot = String(row[4] || row[6] || "");
+        nameAge = String(row[5] || row[7] || "");
+        state = String(row[6] || row[8] || "");
+        district = String(row[7] || row[9] || "");
+        idNumber = String(row[8] || row[10] || "");
+        genderCounts = String(row[9] || row[11] || "");
+        mobile = String(row[10] || row[12] || "");
+        vehicleNo = String(row[11] || row[13] || "");
+        accompanying = String(row[12] || row[14] || "");
+        referredBy = String(row[13] || row[15] || "");
+        submitterName = String(row[14] || row[16] || "");
+        submitterEmail = String(row[15] || row[17] || "");
+        totalDevotees = row[16] || row[18] || "";
+        maleCount = row[17] || row[19] || "";
+        femaleCount = row[18] || row[20] || "";
+      }
+
+      // If status is Pass Created and createdDate is empty, fill with row's timestamp date or today
+      if (status === "Pass Created" && !createdDate) {
+        createdDate = formatDateVal(timestamp) || Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
+      }
+
+      cleanedRows.push([
+        timestamp,
+        status,
+        createdDate,
+        visitDate,
+        visitSlot,
+        nameAge,
+        state,
+        district,
+        idNumber,
+        genderCounts,
+        mobile,
+        vehicleNo,
+        accompanying,
+        referredBy,
+        submitterName,
+        submitterEmail,
+        totalDevotees,
+        maleCount,
+        femaleCount
+      ]);
     }
 
-    var lastCol = Math.max(sheet.getLastColumn(), 19);
+    // 3. Clear sheet contents & validations cleanly
+    sheet.clearContents();
+    sheet.clearDataValidations();
+    sheet.clearFormats();
 
-    // 3. Format grid alignment & fonts
-    var maxR = Math.max(lastRow, 100);
-    var fullRange = sheet.getRange(1, 1, maxR, lastCol);
-    fullRange.setHorizontalAlignment("center");
-    fullRange.setVerticalAlignment("middle");
-    fullRange.setWrap(true);
-    fullRange.setFontFamily("Roboto");
+    // 4. Write standard Row 1 Headers
+    sheet.getRange(1, 1, 1, standardHeaders.length).setValues([standardHeaders]);
 
-    // Header Styling (Row 1)
-    var headerRange = sheet.getRange(1, 1, 1, lastCol);
+    // 5. Write realigned clean data rows
+    if (cleanedRows.length > 0) {
+      sheet.getRange(2, 1, cleanedRows.length, standardHeaders.length).setValues(cleanedRows);
+      totalRowsRepaired += cleanedRows.length;
+    }
+
+    // 6. Delete extra columns beyond Column 19
+    var currentMaxCols = sheet.getMaxColumns();
+    if (currentMaxCols > 19) {
+      try {
+        sheet.deleteColumns(20, currentMaxCols - 19);
+      } catch (colDelErr) {
+        console.warn("Column trimming notice:", colDelErr);
+      }
+    }
+
+    // 7. Styling: Row 1 Header Banner (Navy Blue)
+    var headerRange = sheet.getRange(1, 1, 1, 19);
     headerRange.setBackground("#1e3a8a"); // Navy Blue
     headerRange.setFontColor("#ffffff"); // White
     headerRange.setFontWeight("bold");
     headerRange.setFontSize(11);
     sheet.setRowHeight(1, 45);
 
-    // Data Rows Styling
-    if (maxR > 1) {
-      var dataRange = sheet.getRange(2, 1, maxR - 1, lastCol);
-      dataRange.setFontSize(10);
-      sheet.getRange(2, 1, maxR - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
+    // 8. Grid Formatting for Data Rows
+    var totalRows = Math.max(sheet.getLastRow(), 50);
+    var dataRange = sheet.getRange(1, 1, totalRows, 19);
+    dataRange.setHorizontalAlignment("center");
+    dataRange.setVerticalAlignment("middle");
+    dataRange.setWrap(true);
+    dataRange.setFontFamily("Roboto");
 
-      // Add Dropdown to Column 2 (B2:B1000)
-      var statusRange = sheet.getRange(2, 2, maxR - 1, 1);
-      var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
-        .setAllowInvalid(false)
-        .build();
-      statusRange.setDataValidation(rule);
-
-      // Fill default "Pending" for empty status cells
-      var statusValues = statusRange.getValues();
-      for (var i = 0; i < statusValues.length; i++) {
-        if (i < lastRow - 1 && !statusValues[i][0]) {
-          sheet.getRange(i + 2, 2).setValue("Pending");
-        }
-      }
+    // Format Timestamp Column A
+    if (sheet.getLastRow() > 1) {
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
 
-    // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created & Yellow for Already Created)
+    // 9. Dropdown Validation on Column B (Pass Status)
+    var statusRange = sheet.getRange(2, 2, totalRows - 1, 1);
+    var statusRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
+      .setAllowInvalid(false)
+      .build();
+    statusRange.setDataValidation(statusRule);
+
+    // 10. Conditional Formatting (Sage Green for Pass Created, Soft Yellow for Already Created)
     sheet.clearConditionalFormatRules();
+    var formatRange = sheet.getRange("A2:S" + Math.max(totalRows, 2500));
 
-    var targetMaxRows = Math.max(maxR, 2500);
-    var rangeToApply = sheet.getRange("A2:S" + targetMaxRows);
-
-    // Rule 1: Pass Created -> Custom Sage Green (#9fc48a) - Instant 0ms Native Formula
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=OR(LOWER(TRIM($B2))="pass created", LOWER(TRIM($B2))="approved")')
       .setBackground("#9fc48a")
       .setFontColor("#000000")
-      .setRanges([rangeToApply])
+      .setRanges([formatRange])
       .build();
 
-    // Rule 2: Already Created (अन्य काउंटर से) -> Warm Soft Yellow (#fef08a)
     var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=OR(REGEXMATCH(LOWER(TO_TEXT($B2)), "already created"), REGEXMATCH(TO_TEXT($B2), "अन्य काउंटर"))')
       .setBackground("#fef08a")
       .setFontColor("#854d0e")
-      .setRanges([rangeToApply])
+      .setRanges([formatRange])
       .build();
 
-    // Rule 3: Rejected -> Light Red (#fee2e2)
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=LOWER(TRIM($B2))="rejected"')
       .setBackground("#fee2e2")
       .setFontColor("#991b1b")
-      .setRanges([rangeToApply])
+      .setRanges([formatRange])
       .build();
 
-    // Rule 4: Pending -> Clean White (#ffffff)
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=LOWER(TRIM($B2))="pending"')
       .setBackground("#ffffff")
       .setFontColor("#000000")
-      .setRanges([rangeToApply])
+      .setRanges([formatRange])
       .build();
 
     sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
 
-    // Set Column Widths
-    sheet.setColumnWidth(1, 150); // 1. Timestamp
-    sheet.setColumnWidth(2, 160); // 2. Pass Status (B)
-    sheet.setColumnWidth(3, 170); // 3. Pass Created Date (C)
-    sheet.setColumnWidth(4, 130); // 4. Visit Date (D)
-    sheet.setColumnWidth(5, 170); // 5. Visit Time Slot (E)
-    sheet.setColumnWidth(6, 160); // 6. Name Age (F)
-    sheet.setColumnWidth(7, 130); // 7. State (G)
-    sheet.setColumnWidth(8, 130); // 8. District (H)
-    sheet.setColumnWidth(9, 160); // 9. ID (I)
-    sheet.setColumnWidth(10, 180); // 10. Gender Count (J)
-    sheet.setColumnWidth(11, 130); // 11. Mobile (K)
-    sheet.setColumnWidth(12, 130); // 12. Vehicle (L)
-    sheet.setColumnWidth(13, 240); // 13. Accompanying (M)
-    sheet.setColumnWidth(14, 160); // 14. Referred By (N)
-    sheet.setColumnWidth(15, 150); // 15. Submitter Name (O)
-    sheet.setColumnWidth(16, 200); // 16. Submitter Email (P)
-    sheet.setColumnWidth(17, 130); // 17. Total Devotees (Q)
-    sheet.setColumnWidth(18, 110); // 18. Male Count (R)
-    sheet.setColumnWidth(19, 110); // 19. Female Count (S)
+    // 11. Column Widths
+    var colWidths = [
+      150, // 1. Timestamp
+      165, // 2. Pass Status (B)
+      165, // 3. Pass Created Date (C)
+      130, // 4. Visit Date (D)
+      170, // 5. Visit Time Slot (E)
+      160, // 6. Name Age (F)
+      130, // 7. State (G)
+      130, // 8. District (H)
+      160, // 9. ID (I)
+      180, // 10. Gender Count (J)
+      130, // 11. Mobile (K)
+      130, // 12. Vehicle (L)
+      240, // 13. Accompanying (M)
+      160, // 14. Referred By (N)
+      150, // 15. Submitter Name (O)
+      200, // 16. Submitter Email (P)
+      130, // 17. Total Devotees (Q)
+      110, // 18. Male Count (R)
+      110  // 19. Female Count (S)
+    ];
+
+    for (var c = 0; c < colWidths.length; c++) {
+      sheet.setColumnWidth(c + 1, colWidths[c]);
+    }
+
+    fixedSheetsCount++;
   });
 
+  // Re-generate VIP Dashboard so it connects to repaired columns
+  try {
+    setupVipDashboard();
+  } catch (dashErr) {
+    console.warn("VIP Dashboard refresh warning:", dashErr);
+  }
+
   SpreadsheetApp.flush();
+
+  return {
+    success: true,
+    sheetsFixed: fixedSheetsCount,
+    rowsRepaired: totalRowsRepaired,
+    message: "Google Sheet columns and rows successfully repaired and 100% realigned!"
+  };
+}
+
+/**
+ * UTILITY 1: SAFELY SETUP HEADERS, DROPDOWNS & CONDITIONAL GREEN HIGHLIGHTING
+ * (Now safely calls fixAndRealignAllSheetColumns so it NEVER duplicates or shifts columns!)
+ */
+function formatEntireSheet() {
+  return fixAndRealignAllSheetColumns();
 }
 
 /**
@@ -488,7 +732,7 @@ function setupVipDashboard() {
   var ss = getTargetSpreadsheet();
   if (!ss) return;
 
-  var dataSheet = ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0];
+  var dataSheet = getMainDataSheet(ss);
   var dashSheet = ss.getSheetByName("📊 VIP Dashboard");
 
   if (!dashSheet) {
