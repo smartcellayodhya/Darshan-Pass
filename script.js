@@ -1273,7 +1273,10 @@ https://darshan-pass.vercel.app
                     let statusClass = "status-pending";
                     let statusHindi = "प्रक्रियाधीन (Pending)";
 
-                    if (statusStr.toLowerCase().includes("pass") || statusStr.toLowerCase().includes("created") || statusStr === "स्वीकृत") {
+                    if (statusStr.toLowerCase().includes("already") || statusStr.includes("अन्य काउंटर")) {
+                        statusClass = "status-already-created";
+                        statusHindi = "अन्य काउंटर से बना (Already Created)";
+                    } else if (statusStr.toLowerCase().includes("pass") || statusStr.toLowerCase().includes("created") || statusStr === "स्वीकृत") {
                         statusClass = "status-pass-created";
                         statusHindi = "पास जारी (Pass Created)";
                     } else if (statusStr.toLowerCase().includes("reject") || statusStr === "निरस्त") {

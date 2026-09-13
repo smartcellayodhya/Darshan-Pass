@@ -127,7 +127,7 @@ function doPost(e) {
       // Add Dropdown to Pass Status cell (Column 2 / B)
       var statusCell = sheet.getRange(lastRow, 2);
       var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(["Pending", "Pass Created", "Rejected"], true)
+        .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
         .setAllowInvalid(false)
         .build();
       statusCell.setDataValidation(rule);
@@ -283,6 +283,17 @@ function onEdit(e) {
         dateCell.setValue(todayStr);
       }
 
+    } else if (statusVal.indexOf("already created") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
+      // Warm Soft Yellow / Amber Row Background (#fef08a) for passes created from another counter
+      rowRange.setBackground("#fef08a");
+      rowRange.setFontColor("#854d0e");
+
+      // Auto-fill Pass Created Date in Col C if empty
+      if (!dateCell.getValue()) {
+        var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
+        dateCell.setValue(todayStr);
+      }
+
     } else if (statusVal === "rejected") {
       // Light Red Row Background (#fee2e2)
       rowRange.setBackground("#fee2e2");
@@ -391,7 +402,7 @@ function formatEntireSheet() {
       // Add Dropdown to Column 2 (B2:B1000)
       var statusRange = sheet.getRange(2, 2, maxR - 1, 1);
       var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(["Pending", "Pass Created", "Rejected"], true)
+        .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
         .setAllowInvalid(false)
         .build();
       statusRange.setDataValidation(rule);
@@ -405,7 +416,7 @@ function formatEntireSheet() {
       }
     }
 
-    // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created)
+    // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created & Yellow for Already Created)
     sheet.clearConditionalFormatRules();
 
     var targetMaxRows = Math.max(maxR, 2500);
@@ -419,7 +430,15 @@ function formatEntireSheet() {
       .setRanges([rangeToApply])
       .build();
 
-    // Rule 2: Rejected -> Light Red (#fee2e2)
+    // Rule 2: Already Created (अन्य काउंटर से) -> Warm Soft Yellow (#fef08a)
+    var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=OR(REGEXMATCH(LOWER(TO_TEXT($B2)), "already created"), REGEXMATCH(TO_TEXT($B2), "अन्य काउंटर"))')
+      .setBackground("#fef08a")
+      .setFontColor("#854d0e")
+      .setRanges([rangeToApply])
+      .build();
+
+    // Rule 3: Rejected -> Light Red (#fee2e2)
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=LOWER(TRIM($B2))="rejected"')
       .setBackground("#fee2e2")
@@ -427,7 +446,7 @@ function formatEntireSheet() {
       .setRanges([rangeToApply])
       .build();
 
-    // Rule 3: Pending -> Clean White (#ffffff)
+    // Rule 4: Pending -> Clean White (#ffffff)
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=LOWER(TRIM($B2))="pending"')
       .setBackground("#ffffff")
@@ -435,7 +454,7 @@ function formatEntireSheet() {
       .setRanges([rangeToApply])
       .build();
 
-    sheet.setConditionalFormatRules([passCreatedRule, rejectedRule, pendingRule]);
+    sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
 
     // Set Column Widths
     sheet.setColumnWidth(1, 150); // 1. Timestamp
