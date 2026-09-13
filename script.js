@@ -7,60 +7,79 @@
 const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCRSyNuq_QvPcURMaaXVhqFIcxX5Bdxrf-nDvjhVLGw7wyuB1D-oM6lSVdeG-g7ZiCBQ/exec";
 
 // -------------------------------------------------------------
-// 1. DATA DICTIONARY: INDIAN STATES & DISTRICTS
+// 1. DATA DICTIONARY: INDIAN STATES & DISTRICTS (COMPLETE 36 STATES & UTs)
 // -------------------------------------------------------------
 const indiaLocationData = {
-    "Uttar Pradesh": ["Ayodhya", "Mathura", "Varanasi", "Lucknow", "Kanpur Nagar", "Agra", "Prayagraj", "Gorakhpur", "Ghaziabad", "Gautam Buddha Nagar (Noida)", "Aligarh", "Jhansi", "Meerut", "Bareilly", "Moradabad", "Saharanpur", "Muzaffarnagar", "Bijnor", "Rampur", "Shahjahanpur", "Firozabad", "Mainpuri", "Etah", "Hathras", "Kasganj", "Bulandshahr", "Sambhal", "Amroha", "Budaun", "Pilibhit", "Lakhimpur Kheri", "Sitapur", "Hardoi", "Unnao", "Rae Bareli", "Amethi", "Sultanpur", "Pratapgarh", "Fatehpur", "Kaushambi", "Chitrakoot", "Banda", "Hamirpur", "Mahoba", "Jalaun", "Lalitpur", "Farrukhabad", "Kannauj", "Etawah", "Auraiya", "Kanpur Dehat", "Barabanki", "Ambedkar Nagar", "Gonda", "Bahraich", "Shravasti", "Balrampur", "Basti", "Sant Kabir Nagar", "Siddharthnagar", "Maharajganj", "Deoria", "Kushinagar", "Azamgarh", "Mau", "Ballia", "Jaunpur", "Ghazipur", "Chandauli", "Bhadohi", "Mirzapur", "Sonbhadra"],
-    "Delhi (NCT)": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi", "North West Delhi", "Shahdara", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"],
-    "Bihar": ["Patna", "Gaya", "Muzaffarpur", "Bhagalpur", "Darbhanga", "Purnia", "Rohtas", "Saran", "Nalanda", "Begusarai", "Samastipur", "Madhubani", "Vaishali", "East Champaran", "West Champaran", "Sitamarhi", "Gopalganj", "Siwan", "Bhojpur", "Buxar", "Kaimur", "Jehanabad", "Arwal", "Nawada", "Aurangabad", "Jamui", "Banka", "Munger", "Lakhisarai", "Sheikhpura", "Khagaria", "Saharsa", "Madhepura", "Supaul", "Araria", "Kishanganj", "Katihar"],
-    "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Ajmer", "Bikaner", "Alwar", "Bharatpur", "Bhilwara", "Sikar", "Pali", "Sri Ganganagar", "Jaisalmer", "Barmer", "Jhunjhunu", "Churu", "Chittorgarh", "Nagaur", "Tonk", "Sawai Madhopur", "Dholpur", "Bundi", "Jhalawar", "Banswara", "Dungarpur", "Rajsamand", "Sirohi", "Pratapgarh", "Hanumangarh", "Karauli", "Dausa"],
-    "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Satna", "Rewa", "Ratlam", "Chhindwara", "Burhanpur", "Khandwa", "Dewas", "Dhar", "Khargone", "Katni", "Singrauli", "Morena", "Bhind", "Shivpuri", "Vidisha", "Chhatarpur", "Damoh", "Mandsaur", "Neemuch", "Sehore", "Hoshangabad", "Betul", "Balaghat", "Seoni", "Narsinghpur", "Raisen", "Rajgarh"],
-    "Maharashtra": ["Mumbai City", "Mumbai Suburban", "Thane", "Pune", "Nagpur", "Nashik", "Aurangabad", "Solapur", "Amravati", "Kolhapur", "Navi Mumbai", "Sangli", "Jalgaon", "Akola", "Latur", "Dhule", "Ahmednagar", "Chandrapur", "Parbhani", "Nanded", "Satara", "Ratnagiri", "Sindhudurg", "Raigad", "Palghar", "Beed", "Jalna", "Yavatmal", "Buldhana", "Bhandara", "Gondia", "Gadchiroli", "Wardha", "Hingoli", "Washim"],
-    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Nadiad", "Morbi", "Mehsana", "Bharuch", "Navsari", "Valsad", "Porbandar", "Amreli", "Surendranagar", "Patan", "Banaskantha", "Sabarkantha", "Panchmahal", "Dahod", "Kheda", "Botad", "Gir Somnath", "Chhota Udaipur", "Devbhumi Dwarka", "Kutch"],
-    "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar", "Karnal", "Sonipat", "Panchkula", "Bhiwani", "Sirsa", "Jind", "Jhajjar", "Rewari", "Palwal", "Kaithal", "Kurukshetra", "Fatehabad", "Nuh", "Charkhi Dadri", "Mahendragarh"],
-    "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Hoshiarpur", "Pathankot", "Moga", "Firozpur", "Phagwara", "Kapurthala", "Sangrur", "Barnala", "Faridkot", "Muktsar", "Gurdaspur", "Ropar", "Fatehgarh Sahib", "Mansa", "Fazilka", "Tarn Taran", "Malerkotla"],
-    "West Bengal": ["Kolkata", "Howrah", "North 24 Parganas", "South 24 Parganas", "Hooghly", "Darjeeling", "Siliguri", "Asansol", "Durgapur", "Bardhaman", "Murshidabad", "Nadia", "Malda", "Paschim Medinipur", "Purba Medinipur", "Bankura", "Birbhum", "Purulia", "Jalpaiguri", "Cooch Behar", "Kalimpong", "Alipurduar", "Jhargram"],
-    "Uttarakhand": ["Dehradun", "Haridwar", "Nainital", "Udham Singh Nagar", "Roorkee", "Rishikesh", "Haldwani", "Almora", "Pauri Garhwal", "Tehri Garhwal", "Pithoragarh", "Chamoli", "Uttarkashi", "Rudraprayag", "Champawat"],
-    "Himachal Pradesh": ["Shimla", "Dharamshala", "Manali", "Kullu", "Mandi", "Solan", "Kangra", "Hamirpur", "Una", "Bilaspur", "Sirmaur", "Chamba", "Lahaul & Spiti", "Kinnaur"],
-    "Jammu & Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Udhampur", "Rajouri", "Kathua", "Pulwama", "Kupwara", "Budgam", "Ganderbal", "Kulgam", "Bandipora", "Shopian", "Samba", "Reasi", "Poonch", "Doda", "Ramban", "Kishtwar"],
-    "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh", "Deoghar", "Giridih", "Ramgarh", "Phusro", "Chirkunda", "Medininagar", "Chaibasa", "Dumka"],
-    "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba", "Rajnandgaon", "Durg", "Raigarh", "Jagdalpur", "Ambikapur", "Dhamtari", "Mahasamund"],
-    "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri", "Sambalpur", "Berhampur", "Balasore", "Bhadrak", "Baripada", "Jharsuguda", "Bargarh"],
-    "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Ramagundam", "Khammam", "Mahbubnagar", "Nalgonda", "Adilabad", "Suryapet"],
-    "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Kakinada", "Rajamahendravaram", "Tirupati", "Kadapa", "Anantapur", "Eluru", "Vizianagaram", "Machilipatnam", "Chittoor"],
-    "Karnataka": ["Bengaluru Urban", "Bengaluru Rural", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi", "Kalaburagi", "Davanagere", "Ballari", "Vijayapura", "Shivamogga", "Tumakuru", "Hassan", "Udupi"],
-    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tiruppur", "Erode", "Vellore", "Tirunelveli", "Thoothukudi", "Nagercoil", "Thanjavur", "Dindigul", "Kanchipuram"],
-    "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Kollam", "Thrissur", "Kannur", "Alappuzha", "Kottayam", "Palakkad", "Malappuram", "Pathanamthitta", "Idukki", "Wayanad", "Kasaragod"],
-    "Goa": ["North Goa", "South Goa", "Panaji", "Margao", "Vasco da Gama"],
-    "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur"],
+    "Andaman & Nicobar Islands": ["Nicobar", "North & Middle Andaman", "South Andaman"],
+    "Andhra Pradesh": ["Alluri Sitharama Raju", "Anakapalli", "Ananthapuramu", "Annamayya", "Bapatla", "Chittoor", "Dr. B.R. Ambedkar Konaseema", "East Godavari", "Eluru", "Guntur", "Kakinada", "Krishna", "Kurnool", "Nandyal", "NTR", "Palnadu", "Parvathipuram Manyam", "Prakasam", "Srikakulam", "Sri Potti Sriramulu Nellore", "Sri Sathya Sai", "Tirupati", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
+    "Arunachal Pradesh": ["Anjaw", "Changlang", "Dibang Valley", "East Kameng", "East Siang", "Itanagar Capital Complex", "Kamle", "Kra Daadi", "Kurung Kumey", "Leparada", "Lohit", "Longding", "Lower Dibang Valley", "Lower Siang", "Lower Subansiri", "Namsai", "Pakke Kessang", "Papum Pare", "Shi Yomi", "Siang", "Tawang", "Tirap", "Upper Dibang Valley", "Upper Siang", "Upper Subansiri", "West Kameng", "West Siang"],
+    "Assam": ["Baksa", "Bajali", "Barpeta", "Biswanath", "Bongaigaon", "Cachar", "Charaideo", "Chirang", "Darrang", "Dhemaji", "Dhubri", "Dibrugarh", "Dima Hasao", "Goalpara", "Golaghat", "Hailakandi", "Hojai", "Jorhat", "Kamrup", "Kamrup Metropolitan", "Karbi Anglong", "Karimganj", "Kokrajhar", "Lakhimpur", "Majuli", "Morigaon", "Nagaon", "Nalbari", "Sivasagar", "Sonitpur", "South Salmara-Mankachar", "Tamulpur", "Tinsukia", "Udalguri", "West Karbi Anglong"],
+    "Bihar": ["Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar", "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj", "Jamui", "Jehanabad", "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura", "Madhubani", "Munger", "Muzaffarpur", "Nalanda (Bihar Sharif)", "Nawada", "Patna", "Purnia", "Rohtas (Sasaram)", "Saharsa", "Samastipur", "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi", "Siwan", "Supaul", "Vaishali (Hajipur)", "West Champaran (Bettiah)"],
     "Chandigarh": ["Chandigarh"],
-    "Ladakh": ["Leh", "Kargil"],
-    "Tripura": ["Agartala", "West Tripura", "South Tripura", "North Tripura"],
-    "Meghalaya": ["Shillong", "East Khasi Hills", "West Khasi Hills", "Garo Hills"],
-    "Manipur": ["Imphal East", "Imphal West", "Churachandpur", "Thoubal"],
-    "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang"],
-    "Mizoram": ["Aizawl", "Lunglei", "Champhai"],
-    "Arunachal Pradesh": ["Itanagar", "Tawang", "East Siang", "West Kameng"],
-    "Sikkim": ["Gangtok", "Namchi", "Gyalshing", "Mangan"],
-    "Puducherry": ["Puducherry", "Karaikal", "Mahe", "Yanam"],
-    "Andaman & Nicobar Islands": ["Port Blair", "South Andaman", "North & Middle Andaman", "Nicobar"],
-    "Dadra & Nagar Haveli and Daman & Diu": ["Daman", "Diu", "Silvassa"],
-    "Lakshadweep": ["Kavaratti", "Agatti", "Amini"]
+    "Chhattisgarh": ["Balod", "Baloda Bazar", "Balrampur", "Bastar (Jagdalpur)", "Bemetara", "Bijapur", "Bilaspur", "Dantewada", "Dhamtari", "Durg", "Gariaband", "Gaurela-Pendra-Marwahi", "Janjgir-Champa", "Jashpur", "Kabirdham (Kawardha)", "Kanker", "Khairagarh-Chhuikhadan-Gandai", "Kondagaon", "Korba", "Koriya", "Mahasamund", "Manendragarh-Chirmiri-Bharatpur", "Mohla-Manpur-Ambagarh Chowki", "Mungeli", "Narayanpur", "Raigarh", "Raipur", "Rajnandgaon", "Sakti", "Sarangarh-Bilaigarh", "Sukma", "Surajpur", "Surguja (Ambikapur)"],
+    "Dadra & Nagar Haveli and Daman & Diu": ["Dadra and Nagar Haveli", "Daman", "Diu"],
+    "Delhi (NCT)": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi", "North West Delhi", "Shahdara", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"],
+    "Goa": ["North Goa", "South Goa"],
+    "Gujarat": ["Ahmedabad", "Amreli", "Anand", "Aravalli", "Banaskantha", "Bharuch", "Bhavnagar", "Botad", "Chhota Udaipur", "Dahod", "Dang", "Devbhumi Dwarka", "Gandhinagar", "Gir Somnath", "Jamnagar", "Junagadh", "Kheda", "Kutch", "Mahisagar", "Mehsana", "Morbi", "Narmada", "Navsari", "Panchmahal", "Patan", "Porbandar", "Rajkot", "Sabarkantha", "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"],
+    "Haryana": ["Ambala", "Bhiwani", "Charkhi Dadri", "Faridabad", "Fatehabad", "Gurugram", "Hisar", "Jhajjar", "Jind", "Kaithal", "Karnal", "Kurukshetra", "Mahendragarh", "Nuh", "Palwal", "Panchkula", "Panipat", "Rewari", "Rohtak", "Sirsa", "Sonipat", "Yamunanagar"],
+    "Himachal Pradesh": ["Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Lahaul and Spiti", "Mandi", "Shimla", "Sirmaur", "Solan", "Una"],
+    "Jammu & Kashmir": ["Anantnag", "Bandipora", "Baramulla", "Budgam", "Doda", "Ganderbal", "Jammu", "Kathua", "Kishtwar", "Kulgam", "Kupwara", "Poonch", "Pulwama", "Rajouri", "Ramban", "Reasi", "Samba", "Shopian", "Srinagar", "Udhampur"],
+    "Jharkhand": ["Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum (Jamshedpur)", "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu (Medininagar)", "Ramgarh", "Ranchi", "Sahebganj", "Seraikela Kharsawan", "Simdega", "West Singhbhum (Chaibasa)"],
+    "Karnataka": ["Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar", "Chamarajanagar", "Chikkaballapur", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada (Mangaluru)", "Davanagere", "Dharwad (Hubballi)", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar", "Koppal", "Mandya", "Mysuru", "Raichur", "Ramanagara", "Shivamogga", "Tumakuru", "Udupi", "Uttara Kannada (Karwar)", "Vijayanagara", "Vijayapura", "Yadgir"],
+    "Kerala": ["Alappuzha", "Ernakulam (Kochi)", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur", "Wayanad"],
+    "Ladakh": ["Kargil", "Leh"],
+    "Lakshadweep": ["Lakshadweep"],
+    "Madhya Pradesh": ["Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda", "Hoshangabad (Narmadapuram)", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Maihar", "Mandla", "Mandsaur", "Mauganj", "Morena", "Narsinghpur", "Neemuch", "Niwari", "Pandhurna", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"],
+    "Maharashtra": ["Ahmednagar (Ahilyanagar)", "Akola", "Amravati", "Beed", "Bhandara", "Buldhana", "Chandrapur", "Chhatrapati Sambhajinagar (Aurangabad)", "Dharashiv (Osmanabad)", "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur", "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Palghar", "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha", "Washim", "Yavatmal"],
+    "Manipur": ["Bishnupur", "Chandel", "Churachandpur", "Imphal East", "Imphal West", "Jiribam", "Kakching", "Kamjong", "Kangpokpi", "Noney", "Pherzawl", "Senapati", "Tamenglong", "Tengnoupal", "Thoubal", "Ukhrul"],
+    "Meghalaya": ["Eastern West Khasi Hills", "East Garo Hills", "East Jaintia Hills", "East Khasi Hills (Shillong)", "North Garo Hills", "Ri Bhoi", "South Garo Hills", "South West Garo Hills", "South West Khasi Hills", "West Garo Hills", "West Jaintia Hills", "West Khasi Hills"],
+    "Mizoram": ["Aizawl", "Champhai", "Hnahthial", "Khawzawl", "Kolasib", "Lawngtlai", "Lunglei", "Mamit", "Saiha", "Saitual", "Serchhip"],
+    "Nagaland": ["Chümoukedima", "Dimapur", "Kiphire", "Kohima", "Longleng", "Mokokchung", "Mon", "Niuland", "Noklak", "Peren", "Phek", "Shamator", "Tseminyü", "Tuensang", "Wokha", "Zünheboto"],
+    "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Boudh", "Cuttack", "Deogarh", "Dhenkanal", "Gajapati", "Ganjam (Berhampur)", "Jagatsinghpur", "Jajpur", "Jharsuguda", "Kalahandi", "Kandhamal", "Kendrapara", "Kendujhar (Keonjhar)", "Khordha (Bhubaneswar)", "Koraput", "Malkangiri", "Mayurbhanj (Baripada)", "Nabarangpur", "Nayagarh", "Nuapada", "Puri", "Rayagada", "Sambalpur", "Subarnapur (Sonepur)", "Sundargarh (Rourkela)"],
+    "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"],
+    "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Fatehgarh Sahib", "Fazilka", "Firozpur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Kapurthala", "Ludhiana", "Malerkotla", "Mansa", "Moga", "Pathankot", "Patiala", "Rupnagar (Ropar)", "Sahibzada Ajit Singh Nagar (Mohali)", "Sangrur", "Shahid Bhagat Singh Nagar (Nawanshahr)", "Sri Muktsar Sahib", "Tarn Taran"],
+    "Rajasthan": ["Ajmer", "Alwar", "Anupgarh", "Balotra", "Banswara", "Baran", "Barmer", "Beawar", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Deeg", "Didwana-Kuchaman", "Dholpur", "Dudu", "Dungarpur", "Gangapur City", "Hanumangarh", "Jaipur", "Jaipur Rural", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Jodhpur Rural", "Karauli", "Kekri", "Khairthal-Tijara", "Kota", "Kotputli-Behror", "Nagaur", "Neem Ka Thana", "Pali", "Phalodi", "Pratapgarh", "Rajsamand", "Salumbar", "Sanchore", "Sawai Madhopur", "Shahpura", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
+    "Sikkim": ["Gangtok", "Gyalshing", "Mangan", "Namchi", "Pakyong", "Soreng"],
+    "Tamil Nadu": ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari (Nagercoil)", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris (Ooty)", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"],
+    "Telangana": ["Adilabad", "Bhadradri Kothagudem", "Hanumakonda", "Hyderabad", "Jagtial", "Jangaon", "Jayashankar Bhupalpally", "Jogulamba Gadwal", "Kamareddy", "Karimnagar", "Khammam", "Kumuram Bheem Asifabad", "Mahabubabad", "Mahbubnagar", "Mancherial", "Medak", "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda", "Narayanpet", "Nirmal", "Nizamabad", "Peddapalli", "Rajanna Sircilla", "Ranga Reddy", "Sangareddy", "Siddipet", "Suryapet", "Vikarabad", "Wanaparthy", "Warangal", "Yadadri Bhuvanagiri"],
+    "Tripura": ["Dhalai", "Gomati", "Khowai", "North Tripura", "Sepahijala", "South Tripura", "Unakoti", "West Tripura (Agartala)"],
+    "Uttar Pradesh": ["Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", "Baghpat", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar (Noida)", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", "Kushinagar", "Lakhimpur Kheri", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri", "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Prayagraj", "Rae Bareli", "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti", "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"],
+    "Uttarakhand": ["Almora", "Bageshwar", "Chamoli", "Champawat", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Pithoragarh", "Rudraprayag", "Tehri Garhwal", "Udham Singh Nagar (Rudrapur)", "Uttarkashi"],
+    "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Bardhaman (Asansol/Durgapur)", "Paschim Medinipur", "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"]
 };
 
 // -------------------------------------------------------------
-// 2. WORLD COUNTRIES LIST
+// 2. WORLD COUNTRIES LIST (ALL 195+ SOVEREIGN NATIONS)
 // -------------------------------------------------------------
 const worldCountries = [
-    "Nepal", "United States", "United Kingdom", "Canada", "Australia", "Mauritius", 
-    "Singapore", "Malaysia", "United Arab Emirates", "Sri Lanka", "Fiji", "New Zealand", 
-    "Germany", "France", "Japan", "South Africa", "Thailand", "Netherlands", "Switzerland", 
-    "Italy", "Spain", "Russia", "Indonesia", "Myanmar", "Bhutan", "Bangladesh", "Kenya", 
-    "Tanzania", "Oman", "Qatar", "Kuwait", "Bahrain", "Saudi Arabia", "Guyana", 
-    "Trinidad and Tobago", "Suriname", "South Korea", "Vietnam", "Philippines", "Brazil", 
-    "Argentina", "Mexico", "Egypt", "Nigeria", "Sweden", "Norway", "Denmark", "Finland", 
-    "Austria", "Belgium", "Greece", "Ireland", "Portugal", "Poland", "Czech Republic", 
-    "Hungary", "Romania", "Israel", "Jordan", "Turkey", "Ukraine", "Kazakhstan", "Other"
+    "Nepal", "Mauritius", "United States", "United Kingdom", "Canada", "Australia", 
+    "Singapore", "Malaysia", "United Arab Emirates", "Fiji", "Sri Lanka", "New Zealand", 
+    "South Africa", "Trinidad and Tobago", "Guyana", "Suriname", "Netherlands", "Germany", 
+    "France", "Japan", "Thailand", "Indonesia", "Myanmar", "Bhutan", "Kenya", "Tanzania", 
+    "Oman", "Qatar", "Kuwait", "Bahrain", "Saudi Arabia", "Switzerland", "Italy", "Spain", 
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", 
+    "Armenia", "Austria", "Azerbaijan", "Bahamas", "Bangladesh", "Barbados", "Belarus", 
+    "Belgium", "Belize", "Benin", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", 
+    "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", 
+    "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", 
+    "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", 
+    "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", 
+    "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Finland", "Gabon", "Gambia", "Georgia", 
+    "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Haiti", "Honduras", 
+    "Hungary", "Iceland", "Iran", "Iraq", "Ireland", "Israel", "Ivory Coast", "Jamaica", 
+    "Jordan", "Kazakhstan", "Kiribati", "Kosovo", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", 
+    "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", 
+    "Malawi", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mexico", 
+    "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", 
+    "Namibia", "Nauru", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", 
+    "Norway", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", 
+    "Peru", "Philippines", "Poland", "Portugal", "Romania", "Russia", "Rwanda", 
+    "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", 
+    "San Marino", "Sao Tome and Principe", "Senegal", "Serbia", "Seychelles", "Sierra Leone", 
+    "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Korea", "South Sudan", 
+    "Sudan", "Sweden", "Syria", "Taiwan", "Tajikistan", "Timor-Leste", "Togo", "Tonga", 
+    "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "Uruguay", 
+    "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe", "Other"
 ];
 
 // SAFE ELEMENT GETTER HELPER
@@ -1281,17 +1300,17 @@ https://darshan-pass.vercel.app
                     const item = data.data;
                     const statusStr = (item.status || "Pending").trim();
                     let statusClass = "status-pending";
-                    let statusHindi = "प्रक्रियाधीन (Pending)";
+                    let statusHindi = "प्रक्रियाधीन";
 
                     if (statusStr.toLowerCase().includes("already") || statusStr.includes("अन्य काउंटर")) {
                         statusClass = "status-already-created";
-                        statusHindi = "अन्य काउंटर से बना (Already Created)";
+                        statusHindi = "अन्य काउंटर से जारी";
                     } else if (statusStr.toLowerCase().includes("pass") || statusStr.toLowerCase().includes("created") || statusStr === "स्वीकृत") {
                         statusClass = "status-pass-created";
-                        statusHindi = "पास जारी (Pass Created)";
+                        statusHindi = "पास जारी";
                     } else if (statusStr.toLowerCase().includes("reject") || statusStr === "निरस्त") {
                         statusClass = "status-rejected";
-                        statusHindi = "निरस्त (Rejected)";
+                        statusHindi = "निरस्त";
                     }
 
                     function formatTrackDate(raw) {
@@ -1341,10 +1360,10 @@ https://darshan-pass.vercel.app
                     let statusSub = "आवेदन पर विचार चल रहा है";
                     if (statusClass === "status-pass-created") {
                         statusIcon = "fa-circle-check";
-                        statusSub = "आपका दर्शन पास स्वीकृत एवं तैयार है";
+                        statusSub = "पास स्वीकृत एवं तैयार है";
                     } else if (statusClass === "status-already-created") {
                         statusIcon = "fa-id-card-clip";
-                        statusSub = "पास अन्य काउंटर से पहले ही जारी है";
+                        statusSub = "पास अन्य काउंटर से जारी है";
                     } else if (statusClass === "status-rejected") {
                         statusIcon = "fa-circle-xmark";
                         statusSub = "आवेदन निरस्त कर दिया गया है";
@@ -1363,7 +1382,7 @@ https://darshan-pass.vercel.app
                             </div>
 
                             <div class="track-token-banner">
-                                <div class="token-banner-label"><i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)</div>
+                                <div class="token-banner-label"><i class="fa-solid fa-ticket"></i> टोकन नंबर</div>
                                 <div class="token-banner-code">${cleanToken}</div>
                             </div>
 
@@ -1385,7 +1404,7 @@ https://darshan-pass.vercel.app
                                     <span class="cell-val">${item.totalDevotees || '1'} व्यक्ति</span>
                                 </div>
                                 <div class="track-cell">
-                                    <span class="cell-lbl"><i class="fa-solid fa-handshake"></i> संदर्भ / Ref</span>
+                                    <span class="cell-lbl"><i class="fa-solid fa-handshake"></i> संदर्भ (रेफरेंस)</span>
                                     <span class="cell-val">${item.referredBy || '--'}</span>
                                 </div>
                             </div>
@@ -1433,66 +1452,66 @@ https://darshan-pass.vercel.app
             langBtn: "English",
             trackBtn: "स्थिति देखें",
             portalTitle: "श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन",
-            secVisit: '<i class="fa-solid fa-calendar-day"></i> दर्शन तिथि व स्थान विवरण',
+            secVisit: '<i class="fa-solid fa-calendar-day"></i> दर्शन तिथि व स्लॉट',
             lblVisitDate: 'दर्शन तिथि <span class="required">*</span>',
             lblVisitSlot: 'समय स्लॉट <span class="required">*</span>',
             optSelectSlot: '-- समय स्लॉट चुनें --',
             lblNationality: 'श्रद्धालु का देश <span class="required">*</span>',
-            optIndia: 'भारत (India)',
-            optOtherCountry: 'अन्य देश (अंतर्राष्ट्रीय श्रद्धालु)',
-            lblCountry: 'देश का नाम <span class="required">*</span>',
+            optIndia: 'भारत',
+            optOtherCountry: 'अन्य देश',
+            lblCountry: 'देश चुनें <span class="required">*</span>',
             optSelectCountry: '-- देश चुनें --',
             lblState: 'राज्य चुनें <span class="required">*</span>',
             optSelectState: '-- राज्य चुनें --',
-            lblDistrict: 'जनपद / जिला चुनें <span class="required">*</span>',
+            lblDistrict: 'जनपद चुनें <span class="required">*</span>',
             optSelectDistrict: '-- पहले राज्य चुनें --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
             lblNameAge: 'मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>',
             phNameAge: 'उदा: Rahul 35 Yrs',
-            lblMobile: 'मोबाइल नंबर (10 अंक) <span class="required">*</span>',
+            lblMobile: 'मोबाइल नंबर <span class="required">*</span>',
             phMobile: '10 अंकों का मोबाइल नंबर दर्ज करें',
-            lblVehicle: 'गाड़ी नं0 <span class="optional-tag">(ऐच्छिक / Optional)</span>',
-            phVehicle: 'उदा: UP42AB1234 (बिना किसी सिंबल के)',
-            noVehicle: 'पैदल / कोई वाहन नहीं (On Foot / No Vehicle)',
+            lblVehicle: 'गाड़ी नं0 <span class="optional-tag">(ऐच्छिक)</span>',
+            phVehicle: 'उदा: UP42AB1234',
+            noVehicle: 'पैदल / कोई वाहन नहीं',
             secCount: '<i class="fa-solid fa-users"></i> दर्शनार्थी संख्या व साथी विवरण',
-            lblDevoteeCount: 'पुरुषों व महिलाओं की संख्या <span class="optional-tag">(अधिकतम 8 दर्शनार्थी)</span> <span class="required">*</span>',
-            lblMale: 'पुरुष (Male)',
-            lblFemale: 'महिला (Female)',
-            lblAccompanying: 'साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र',
+            lblDevoteeCount: 'श्रद्धालु संख्या (पुरुष / महिला) <span class="optional-tag">(अधिकतम 8)</span> <span class="required">*</span>',
+            lblMale: 'पुरुष',
+            lblFemale: 'महिला',
+            lblAccompanying: 'साथ में आने वाले सदस्यों के नाम व उम्र',
             phAccompanying: '1. Rahul 32 Yrs\n2. Ashwani 35 Yrs',
-            secRef: '<i class="fa-solid fa-user-check"></i> संस्तुति / रेफरेंस विवरण',
-            lblReferredBy: 'किसके संदर्भ से <span class="required">*</span>',
-            optSelectRef: '-- रेफरेंस चुनें --',
+            secRef: '<i class="fa-solid fa-user-check"></i> संदर्भ (रेफरेंस)',
+            lblReferredBy: 'रेफरेंस अधिकारी <span class="required">*</span>',
+            optSelectRef: '-- रेफरेंस अधिकारी चुनें --',
             lblOtherRef: 'वरिष्ठ अधिकारी का नाम <span class="required">*</span>',
             phOtherRef: 'अधिकारी का नाम व पद दर्ज करें',
-            submitBtn: 'सबमिट करें (Submit Application)',
+            submitBtn: 'आवेदन जमा करें',
             
             // Modal & Slip
             successHeading: 'आवेदन सफलतापूर्वक दर्ज हुआ',
             successSubtitle: 'आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।',
-            receiptTitle: 'श्रीरामजन्मभूमि दर्शन पास - पावती रसीद',
-            receiptSubtitle: 'अयोध्या पुलिस (Ayodhya Police) • Smart Cell Ayodhya',
-            slipLabelDevotee: '<i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी का नाम',
-            slipLabelToken: '<i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)',
+            receiptTitle: 'श्रीरामजन्मभूमि दर्शन पास',
+            receiptSubtitle: 'अयोध्या पुलिस • Smart Cell',
+            slipLabelDevotee: '<i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी',
+            slipLabelToken: '<i class="fa-solid fa-ticket"></i> टोकन ID',
             slipLabelDatetime: 'दर्शन तिथि व स्लॉट:',
             slipLabelTotal: 'कुल दर्शनार्थी:',
             slipLabelMobile: 'मोबाइल नंबर:',
-            slipLabelRef: 'रेफरेंस / संदर्भ:',
-            slipFooterNote: '<i class="fa-solid fa-circle-info"></i> यह केवल ऑनलाइन आवेदन की पावती है। अंतिम दर्शन पास सक्षम पुलिस अधिकारी की अनुमति के उपरांत जारी किया जाएगा।',
-            whatsappShare: 'WhatsApp पर भेजें',
-            downloadSlip: 'रसीद डाउनलोड करें (Save PNG)',
-            printSlip: 'रसीद प्रिंट करें / PDF',
-            submitAnother: 'दूसरा फॉर्म भरें',
+            slipLabelRef: 'रेफरेंस:',
+            slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है। अंतिम पास पुलिस सत्यापन उपरांत जारी होगा।',
+            whatsappShare: 'WhatsApp शेयर',
+            downloadSlip: 'रसीद डाउनलोड',
+            printSlip: 'प्रिंट / PDF',
+            submitAnother: 'दूसरा फॉर्म',
             closeModal: 'बंद करें',
             singleDevoteeNotice: 'अकेले दर्शनार्थी हैं - अतिरिक्त साथी विवरण की आवश्यकता नहीं है।',
-            trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> आवेदन स्थिति जांचें (Track Pass)',
-            trackModalDesc: 'अपने आवेदन का टोकन ID (उदा: AYO-20260913-145) या 10-अंकों का मोबाइल नंबर दर्ज करें:',
-            trackSearchBtn: 'खोजें (Search)',
-            trackPlaceholder: 'टोकन ID या 10-अंकों का मोबाइल नंबर...',
-            closedTitle: 'आवेदन सत्र समाप्त (Application Closed)',
+            trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> आवेदन स्थिति जांचें',
+            trackModalDesc: 'टोकन ID या 10-अंकों का मोबाइल नंबर दर्ज करें:',
+            trackSearchBtn: 'खोजें',
+            trackPlaceholder: 'टोकन ID या मोबाइल नंबर...',
+            closedTitle: 'आवेदन सत्र समाप्त',
             closedDesc: 'आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।',
-            reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)',
-            footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).',
+            reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें',
+            footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित.',
             footerLine2: 'Designed & Developed by Smart Cell Ayodhya',
             installAppBtn: 'ऐप इंस्टॉल करें',
             iosInstallTitle: 'iPhone / iPad पर ऐप जोड़ें'
@@ -1643,7 +1662,7 @@ https://darshan-pass.vercel.app
 
         // Update custom dropdown search input placeholders
         document.querySelectorAll(".custom-search-input").forEach(si => {
-            si.placeholder = lang === "en" ? "🔍 Type to search..." : "🔍 टाइप करके खोजें (Search)...";
+            si.placeholder = lang === "en" ? "Type to search..." : "टाइप करके खोजें...";
         });
 
         // Refresh accompanying note based on current devotee counts
@@ -1769,7 +1788,7 @@ https://darshan-pass.vercel.app
                     <div class="custom-select-dropdown hidden">
                         <div class="custom-search-wrapper">
                             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                            <input type="text" class="custom-search-input" placeholder="🔍 टाइप करके खोजें (Search)..." autocomplete="off">
+                            <input type="text" class="custom-search-input" placeholder="टाइप करके खोजें..." autocomplete="off">
                         </div>
                         <div class="custom-options-list"></div>
                     </div>
