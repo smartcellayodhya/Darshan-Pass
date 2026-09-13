@@ -186,12 +186,24 @@ function doGet(e) {
 
   // PASS APPLICATION TRACKING HANDLER
   if (e && e.parameter && e.parameter.action === 'track') {
-    var query = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim().toLowerCase();
-    if (!query || !sheet) {
+    var rawQuery = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim();
+    if (!rawQuery || !sheet) {
       return ContentService.createTextOutput(JSON.stringify({
         "result": "not_found",
         "message": "कृपया टोकन या मोबाइल नंबर दर्ज करें"
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var query = rawQuery.toLowerCase();
+
+    // Extract exact target row if searching by Token (e.g. AYO-20260830-1140 -> "1140")
+    var targetTokenRow = "";
+    var cleanTokenStr = query.replace(/^ayo-/i, "");
+    var lastDash = cleanTokenStr.lastIndexOf("-");
+    if (lastDash !== -1) {
+      targetTokenRow = cleanTokenStr.substring(lastDash + 1).trim();
+    } else if (/^\d+$/.test(query) && query.length < 10) {
+      targetTokenRow = query;
     }
 
     var data = sheet.getDataRange().getValues();
@@ -209,8 +221,11 @@ function doGet(e) {
       var ref = String(rowData[13] || '').trim();
       var total = String(rowData[16] || '').trim();
 
-      var isMobileMatch = (query.length >= 10 && mob.includes(query));
-      var isRowMatch = (query === String(rowNum) || query.endsWith("-" + rowNum));
+      // Skip ghost or blank rows
+      if (!name && !mob && !vDate) continue;
+
+      var isMobileMatch = (query.length >= 10 && (mob === query || mob.includes(query) || query.includes(mob)));
+      var isRowMatch = (targetTokenRow !== "" && String(rowNum) === targetTokenRow);
 
       if (isMobileMatch || isRowMatch) {
         match = {

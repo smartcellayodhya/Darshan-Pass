@@ -965,8 +965,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitterEmail: subEmail
             };
 
-            // Generate immediate accurate token ID
-            const currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "101", 10) + 1;
+            // Generate accurate token ID synced with Google Sheet row count
+            let currentCounter = null;
+            try {
+                const rowSyncRes = await fetch(GOOGLE_APPS_SCRIPT_URL);
+                const rowSyncData = await rowSyncRes.json();
+                if (rowSyncData && rowSyncData.lastRow) {
+                    currentCounter = parseInt(rowSyncData.lastRow, 10) + 1;
+                }
+            } catch (e) {}
+            if (!currentCounter) {
+                currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "1542", 10) + 1;
+            }
             localStorage.setItem("darshan_last_row", String(currentCounter));
             const tokenNumber = generateTokenId(currentCounter);
             formData.token = tokenNumber;
@@ -1327,29 +1337,58 @@ https://darshan-pass.vercel.app
                     const cleanDate = formatTrackDate(item.visitDate);
                     const cleanToken = formatTrackToken(item.visitDate, item.rowNumber);
 
+                    let statusIcon = "fa-clock";
+                    let statusSub = "आवेदन पर विचार चल रहा है";
+                    if (statusClass === "status-pass-created") {
+                        statusIcon = "fa-circle-check";
+                        statusSub = "आपका दर्शन पास स्वीकृत एवं तैयार है";
+                    } else if (statusClass === "status-already-created") {
+                        statusIcon = "fa-id-card-clip";
+                        statusSub = "पास अन्य काउंटर से पहले ही जारी है";
+                    } else if (statusClass === "status-rejected") {
+                        statusIcon = "fa-circle-xmark";
+                        statusSub = "आवेदन निरस्त कर दिया गया है";
+                    }
+
                     trackResultBox.innerHTML = `
-                        <div class="track-status-pill ${statusClass}">
-                            <i class="fa-solid fa-circle-dot"></i> ${statusHindi}
-                        </div>
-                        <div class="track-info-row">
-                            <span class="track-info-label">टोकन ID:</span>
-                            <span class="track-info-val">${cleanToken}</span>
-                        </div>
-                        <div class="track-info-row">
-                            <span class="track-info-label">मुख्य दर्शनार्थी:</span>
-                            <span class="track-info-val">${item.name || '--'}</span>
-                        </div>
-                        <div class="track-info-row">
-                            <span class="track-info-label">दर्शन तिथि व समय:</span>
-                            <span class="track-info-val">${cleanDate} (${item.visitSlot || '--'})</span>
-                        </div>
-                        <div class="track-info-row">
-                            <span class="track-info-label">कुल दर्शनार्थी:</span>
-                            <span class="track-info-val">${item.totalDevotees || '1'}</span>
-                        </div>
-                        <div class="track-info-row">
-                            <span class="track-info-label">रेफरेंस / संदर्भ:</span>
-                            <span class="track-info-val">${item.referredBy || '--'}</span>
+                        <div class="track-status-card">
+                            <div class="track-status-banner ${statusClass}">
+                                <div class="status-banner-left">
+                                    <i class="fa-solid ${statusIcon}"></i>
+                                    <div>
+                                        <div class="status-banner-title">${statusHindi}</div>
+                                        <div class="status-banner-sub">${statusSub}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="track-token-banner">
+                                <div class="token-banner-label"><i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)</div>
+                                <div class="token-banner-code">${cleanToken}</div>
+                            </div>
+
+                            <div class="track-grid-details">
+                                <div class="track-cell full-col">
+                                    <span class="cell-lbl"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी</span>
+                                    <span class="cell-val text-primary">${item.name || '--'}</span>
+                                </div>
+                                <div class="track-cell">
+                                    <span class="cell-lbl"><i class="fa-regular fa-calendar-check"></i> दर्शन तिथि</span>
+                                    <span class="cell-val">${cleanDate}</span>
+                                </div>
+                                <div class="track-cell">
+                                    <span class="cell-lbl"><i class="fa-regular fa-clock"></i> समय स्लॉट</span>
+                                    <span class="cell-val">${item.visitSlot || '--'}</span>
+                                </div>
+                                <div class="track-cell">
+                                    <span class="cell-lbl"><i class="fa-solid fa-users"></i> कुल दर्शनार्थी</span>
+                                    <span class="cell-val">${item.totalDevotees || '1'} व्यक्ति</span>
+                                </div>
+                                <div class="track-cell">
+                                    <span class="cell-lbl"><i class="fa-solid fa-handshake"></i> संदर्भ / Ref</span>
+                                    <span class="cell-val">${item.referredBy || '--'}</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                 } else {
