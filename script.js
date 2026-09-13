@@ -284,6 +284,21 @@ document.addEventListener("DOMContentLoaded", () => {
         "07:00 PM - 09:00 PM": 21
     };
 
+    // Check if all slots for today have ended (after 21:00 / 9:00 PM)
+    const initCheckTime = new Date();
+    const currentDecimalHourInit = initCheckTime.getHours() + (initCheckTime.getMinutes() / 60);
+    const isPastAllSlotsToday = currentDecimalHourInit >= 21;
+
+    let defaultSelectedDateStr = todayStr;
+    if (isPastAllSlotsToday) {
+        const tomorrowObj = new Date();
+        tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+        const tomYear = tomorrowObj.getFullYear();
+        const tomMonth = String(tomorrowObj.getMonth() + 1).padStart(2, '0');
+        const tomDay = String(tomorrowObj.getDate()).padStart(2, '0');
+        defaultSelectedDateStr = `${tomYear}-${tomMonth}-${tomDay}`;
+    }
+
     function updateAvailableSlots() {
         if (!visitSlotSelect || !visitDateInput) return;
         const selectedDate = visitDateInput.value;
@@ -318,7 +333,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (visitDateInput) {
         visitDateInput.setAttribute("min", todayStr);
         visitDateInput.setAttribute("max", maxDateStr);
-        visitDateInput.value = todayStr; // Pre-select today's date by default
+        visitDateInput.value = defaultSelectedDateStr; // Pre-select today or tomorrow if past 9 PM
+
+        if (isPastAllSlotsToday) {
+            setTimeout(() => {
+                showToast("आज के सभी दर्शन स्लॉट समाप्त हो चुके हैं। कल की तिथि स्वतः चुन ली गई है।", "info");
+            }, 800);
+        }
 
         // Dynamically block past dates or dates beyond 6 days
         visitDateInput.addEventListener("change", () => {
@@ -783,7 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (form) form.reset();
         if (visitDateInput) {
             visitDateInput.setAttribute("min", todayStr);
-            visitDateInput.value = todayStr;
+            visitDateInput.value = defaultSelectedDateStr;
         }
         if (noVehicleCheck) {
             noVehicleCheck.checked = false;
