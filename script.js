@@ -208,6 +208,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 googleAuthLock.classList.remove("hidden");
             }
         }
+        syncBodyModalLock();
+    }
+
+    function syncBodyModalLock() {
+        const anyVisible = document.querySelector(".modal-overlay:not(.hidden), .auth-modal-overlay:not(.hidden)");
+        if (anyVisible) {
+            document.body.classList.add("modal-open");
+        } else {
+            document.body.classList.remove("modal-open");
+        }
     }
 
     window.updateGoogleAccountUI = function() {
@@ -229,6 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 googleAuthLock.classList.remove("hidden");
             }
         }
+        syncBodyModalLock();
     };
     const updateGoogleAccountUI = window.updateGoogleAccountUI;
 
@@ -241,13 +252,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 googleAuthLock.style.display = "flex";
                 googleAuthLock.classList.remove("hidden");
             }
+            syncBodyModalLock();
         });
     }
 
     checkAuthLock();
     updateGoogleAccountUI();
 
-    // Calculate local today and max 30-day date string (ITEM 3)
+    // Calculate local today and max 6-day date string (Total 7-day rolling window)
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -255,28 +267,73 @@ document.addEventListener("DOMContentLoaded", () => {
     const todayStr = `${year}-${month}-${day}`;
 
     const maxDateObj = new Date();
-    maxDateObj.setDate(maxDateObj.getDate() + 30);
+    maxDateObj.setDate(maxDateObj.getDate() + 6); // Today + 6 days
     const maxYear = maxDateObj.getFullYear();
     const maxMonth = String(maxDateObj.getMonth() + 1).padStart(2, '0');
     const maxDay = String(maxDateObj.getDate()).padStart(2, '0');
     const maxDateStr = `${maxYear}-${maxMonth}-${maxDay}`;
+
+    // Slot end-time mapping in 24-hour decimal time
+    const slotEndHours = {
+        "07:00 AM - 09:00 AM": 9,
+        "09:00 AM - 11:00 AM": 11,
+        "11:00 AM - 12:00 PM": 12,
+        "01:00 PM - 03:00 PM": 15,
+        "03:00 PM - 05:00 PM": 17,
+        "05:00 PM - 07:00 PM": 19,
+        "07:00 PM - 09:00 PM": 21
+    };
+
+    function updateAvailableSlots() {
+        if (!visitSlotSelect || !visitDateInput) return;
+        const selectedDate = visitDateInput.value;
+        const isToday = (selectedDate === todayStr);
+        const checkNow = new Date();
+        const currentDecimalHour = checkNow.getHours() + (checkNow.getMinutes() / 60);
+
+        let currentSelectedExpired = false;
+
+        Array.from(visitSlotSelect.options).forEach(opt => {
+            if (!opt.value) return; // skip placeholder
+            const endHour = slotEndHours[opt.value];
+            if (isToday && endHour !== undefined && currentDecimalHour >= endHour) {
+                opt.disabled = true;
+                if (!opt.textContent.includes("समय समाप्त")) {
+                    opt.textContent = `${opt.value} (समय समाप्त / Expired)`;
+                }
+                if (visitSlotSelect.value === opt.value) {
+                    currentSelectedExpired = true;
+                }
+            } else {
+                opt.disabled = false;
+                opt.textContent = opt.value;
+            }
+        });
+
+        if (currentSelectedExpired) {
+            visitSlotSelect.value = "";
+        }
+    }
 
     if (visitDateInput) {
         visitDateInput.setAttribute("min", todayStr);
         visitDateInput.setAttribute("max", maxDateStr);
         visitDateInput.value = todayStr; // Pre-select today's date by default
 
-        // Dynamically block past dates or dates beyond 30 days
+        // Dynamically block past dates or dates beyond 6 days
         visitDateInput.addEventListener("change", () => {
             if (visitDateInput.value < todayStr) {
                 visitDateInput.value = todayStr;
                 showToast("पिछली तिथि नहीं चुनी जा सकती।", "warning");
             } else if (visitDateInput.value > maxDateStr) {
                 visitDateInput.value = maxDateStr;
-                showToast("दर्शन पास अधिकतम 30 दिन आगे तक ही बुक किया जा सकता है।", "warning");
+                showToast("दर्शन पास केवल आज और अगले 6 दिन तक ही बुक किया जा सकता है।", "warning");
             }
+            updateAvailableSlots();
         });
     }
+
+    updateAvailableSlots();
 
     // -------------------------------------------------------------
     // POPULATE INITIAL DROPDOWNS
@@ -769,6 +826,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (maleCountInput) maleCountInput.value = "1";
         if (femaleCountInput) femaleCountInput.value = "0";
         updateAccompanyingRequirement(1);
+        updateAvailableSlots();
         clearFormDraft();
     }
 
@@ -784,7 +842,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Safe validation checks
             const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
-            const isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
+            let isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
+            if (isSlotValid && visitSlotSelect && visitDateInput && visitDateInput.value === todayStr) {
+                const checkNow = new Date();
+                const curHour = checkNow.getHours() + (checkNow.getMinutes() / 60);
+                const endH = slotEndHours[visitSlotSelect.value];
+                if (endH !== undefined && curHour >= endH) {
+                    isSlotValid = false;
+                    markGroup(visitSlotSelect, false);
+                    const slotErr = document.getElementById("visitSlot-error");
+                    if (slotErr) slotErr.textContent = "चयनित समय स्लॉट समाप्त हो चुका है, कृपया आगामी स्लॉट चुनें।";
+                    showToast("चयनित समय स्लॉट समाप्त हो चुका है, कृपया आगामी स्लॉट चुनें।", "error");
+                }
+            }
             
             // Primary Devotee Name & Age validation (Must contain at least 1 number/digit for Age)
             let isNameAgeValid = false;
@@ -1064,6 +1134,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Display Success Modal
                 if (successModal) {
                     successModal.classList.remove("hidden");
+                    syncBodyModalLock();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                 }
 
@@ -1096,6 +1167,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openNewForm() {
         if (successModal) successModal.classList.add("hidden");
+        syncBodyModalLock();
         if (formClosedCard) formClosedCard.classList.add("hidden");
         if (govFormCard) govFormCard.classList.remove("hidden");
         resetFormState();
@@ -1105,6 +1177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function closeFormSession() {
         if (successModal) successModal.classList.add("hidden");
+        syncBodyModalLock();
         if (govFormCard) govFormCard.classList.add("hidden");
         if (formClosedCard) formClosedCard.classList.remove("hidden");
         resetFormState();
@@ -1389,6 +1462,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (trackPassNavBtn && trackPassModal) {
         trackPassNavBtn.addEventListener("click", () => {
             trackPassModal.classList.remove("hidden");
+            syncBodyModalLock();
             if (trackQueryInput) {
                 trackQueryInput.value = "";
                 setTimeout(() => trackQueryInput.focus(), 80);
@@ -1403,6 +1477,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (closeTrackModalBtn && trackPassModal) {
         closeTrackModalBtn.addEventListener("click", () => {
             trackPassModal.classList.add("hidden");
+            syncBodyModalLock();
         });
     }
 
@@ -1410,6 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
         trackPassModal.addEventListener("click", (e) => {
             if (e.target === trackPassModal) {
                 trackPassModal.classList.add("hidden");
+                syncBodyModalLock();
             }
         });
     }
@@ -2325,7 +2401,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS) {
-                if (iosInstallModal) iosInstallModal.classList.remove("hidden");
+                if (iosInstallModal) {
+                    iosInstallModal.classList.remove("hidden");
+                    syncBodyModalLock();
+                }
                 return;
             }
 
@@ -2344,16 +2423,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (closeIosModalBtn && iosInstallModal) {
-        closeIosModalBtn.addEventListener('click', () => iosInstallModal.classList.add("hidden"));
+        closeIosModalBtn.addEventListener('click', () => {
+            iosInstallModal.classList.add("hidden");
+            syncBodyModalLock();
+        });
     }
     if (iosGotItBtn && iosInstallModal) {
-        iosGotItBtn.addEventListener('click', () => iosInstallModal.classList.add("hidden"));
+        iosGotItBtn.addEventListener('click', () => {
+            iosInstallModal.classList.add("hidden");
+            syncBodyModalLock();
+        });
     }
     if (iosInstallModal) {
         iosInstallModal.addEventListener('click', (e) => {
-            if (e.target === iosInstallModal) iosInstallModal.classList.add("hidden");
+            if (e.target === iosInstallModal) {
+                iosInstallModal.classList.add("hidden");
+                syncBodyModalLock();
+            }
         });
     }
+
+    // Global Escape key listener to dismiss open modals smoothly
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if (trackPassModal && !trackPassModal.classList.contains("hidden")) {
+                trackPassModal.classList.add("hidden");
+            }
+            if (iosInstallModal && !iosInstallModal.classList.contains("hidden")) {
+                iosInstallModal.classList.add("hidden");
+            }
+            if (successModal && !successModal.classList.contains("hidden")) {
+                closeFormSession();
+            }
+            syncBodyModalLock();
+        }
+    });
 
     // Background silent sync of latest sheet row for instant token generator
     function silentSyncSheetRow() {
