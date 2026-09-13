@@ -1232,16 +1232,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const referredBy = (document.getElementById("slip-referred-by")?.textContent || "").trim();
 
             const messageText = 
-`🚩 *श्री राम जन्मभूमि दर्शन पास - अयोध्या पुलिस पावती* 🚩
-━━━━━━━━━━━━━━━━━━━━
-🎫 *टोकन ID:* ${tokenId}
-👤 *मुख्य दर्शनार्थी:* ${devoteeName}
-📅 *दर्शन तिथि व समय:* ${visitDatetime}
-👥 *कुल दर्शनार्थी:* ${totalDevotees}
-📱 *मोबाइल नंबर:* ${mobile}
-🏛️ *रेफरेंस:* ${referredBy}
-━━━━━━━━━━━━━━━━━━━━
-🙏 *जय श्री राम* 🙏`;
+`*श्री राम जन्मभूमि दर्शन पास - अयोध्या पुलिस पावती*
+
+टोकन ID: ${tokenId}
+मुख्य दर्शनार्थी: ${devoteeName}
+दर्शन तिथि व समय: ${visitDatetime}
+कुल दर्शनार्थी: ${totalDevotees}
+मोबाइल नंबर: ${mobile}
+रेफरेंस: ${referredBy}
+
+जय श्री राम`;
 
             const printableSlip = document.getElementById("printable-slip");
             const cleanTokenStr = tokenId.replace(/[^a-zA-Z0-9_-]/g, '') || "pass";
@@ -1651,9 +1651,8 @@ document.addEventListener("DOMContentLoaded", () => {
             successHeading: 'आवेदन सफलतापूर्वक दर्ज हुआ',
             successSubtitle: 'आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।',
             receiptTitle: 'श्रीरामजन्मभूमि दर्शन पास',
-            receiptSubtitle: 'अयोध्या पुलिस • Smart Cell',
-            slipLabelDevotee: '<i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी',
-            slipLabelToken: '<i class="fa-solid fa-ticket"></i> टोकन ID',
+            slipLabelDevotee: 'मुख्य दर्शनार्थी',
+            slipLabelToken: 'टोकन ID:',
             slipLabelDatetime: 'दर्शन तिथि व स्लॉट:',
             slipLabelTotal: 'कुल दर्शनार्थी:',
             slipLabelMobile: 'मोबाइल नंबर:',
@@ -1722,8 +1721,8 @@ document.addEventListener("DOMContentLoaded", () => {
             successSubtitle: 'Your Shri Ram Janmabhoomi Darshan Pass details have been safely recorded.',
             receiptTitle: 'Shri Ram Janmabhoomi Darshan Pass - Slip',
             receiptSubtitle: 'Ayodhya Police • Smart Cell Ayodhya',
-            slipLabelDevotee: '<i class="fa-solid fa-user"></i> Primary Devotee Name',
-            slipLabelToken: '<i class="fa-solid fa-ticket"></i> Token ID',
+            slipLabelDevotee: 'Primary Devotee Name',
+            slipLabelToken: 'Token ID:',
             slipLabelDatetime: 'Visit Date & Slot:',
             slipLabelTotal: 'Total Devotees:',
             slipLabelMobile: 'Mobile Number:',
