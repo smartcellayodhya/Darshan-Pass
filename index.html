@@ -82,7 +82,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.2">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -232,7 +232,10 @@
                                 <div class="input-wrapper">
                                     <input type="date" id="visitDate" name="visitDate" required>
                                 </div>
-                                <span class="error-msg" id="visitDate-error">कृपया दर्शन की दिनांक चुनें</span>
+                                <small class="field-hint" style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: block;">
+                                    <i class="fa-regular fa-calendar-check" style="color: var(--primary-blue);"></i> केवल आज से अगले 6 दिन तक (Today to +6 Days only)
+                                </small>
+                                <span class="error-msg" id="visitDate-error">कृपया दर्शन की दिनांक चुनें (आज से अगले 6 दिन)</span>
                             </div>
 
                             <div class="input-group">
@@ -672,6 +675,6 @@
         </footer>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=3.3"></script>
+    <script src="script.js?v=3.4"></script>
 </body>
 </html>

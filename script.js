@@ -342,16 +342,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Dynamically block past dates or dates beyond 6 days
-        visitDateInput.addEventListener("change", () => {
+        const enforceDateBounds = () => {
+            if (!visitDateInput.value) return;
             if (visitDateInput.value < todayStr) {
                 visitDateInput.value = todayStr;
-                showToast("पिछली तिथि नहीं चुनी जा सकती।", "warning");
+                showToast("पिछली तिथि नहीं चुनी जा सकती। केवल आज से अगले 6 दिन की तिथि चुनें।", "warning");
             } else if (visitDateInput.value > maxDateStr) {
                 visitDateInput.value = maxDateStr;
                 showToast("दर्शन पास केवल आज और अगले 6 दिन तक ही बुक किया जा सकता है।", "warning");
             }
             updateAvailableSlots();
-        });
+        };
+        visitDateInput.addEventListener("change", enforceDateBounds);
+        visitDateInput.addEventListener("input", enforceDateBounds);
     }
 
     updateAvailableSlots();
@@ -804,6 +807,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (form) form.reset();
         if (visitDateInput) {
             visitDateInput.setAttribute("min", todayStr);
+            visitDateInput.setAttribute("max", maxDateStr);
             visitDateInput.value = defaultSelectedDateStr;
         }
         if (noVehicleCheck) {
@@ -861,8 +865,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const natVal = getVal("nationality") || "India";
             const isIndia = natVal === "India";
 
-            // Safe validation checks
-            const isDateValid = visitDateInput ? markGroup(visitDateInput, visitDateInput.value !== "") : true;
+            // Safe validation checks (Date strictly between today and today+6)
+            const isDateWithinAllowedRange = visitDateInput ? (visitDateInput.value !== "" && visitDateInput.value >= todayStr && visitDateInput.value <= maxDateStr) : true;
+            const isDateValid = visitDateInput ? markGroup(visitDateInput, isDateWithinAllowedRange) : true;
             let isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
             if (isSlotValid && visitSlotSelect && visitDateInput && visitDateInput.value === todayStr) {
                 const checkNow = new Date();
@@ -1350,12 +1355,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const messageText = 
 `*श्री राम जन्मभूमि दर्शन पास - अयोध्या पुलिस पावती*
 
-टोकन ID: ${tokenId}
+Token ID: ${tokenId}
 मुख्य दर्शनार्थी: ${devoteeName}
 दर्शन तिथि व समय: ${visitDatetime}
 कुल दर्शनार्थी: ${totalDevotees}
 मोबाइल नंबर: ${mobile}
-रेफरेंस: ${referredBy}
+Reference: ${referredBy}
 
 जय श्री राम`;
 
