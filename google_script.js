@@ -583,19 +583,25 @@ function fixAndRealignAllSheetColumns() {
       ]);
     }
 
-    // 3. Clear sheet contents & validations cleanly
-    sheet.clearContents();
-    sheet.clearDataValidations();
-    sheet.clearFormats();
+    // Safety Check: If no rows with data were found, do not overwrite anything!
+    if (cleanedRows.length === 0) {
+      console.warn("No data rows found in sheet: " + sheet.getName());
+      return;
+    }
+
+    // 3. Clear old validations and formats safely via Range methods (NOT invalid sheet methods)
+    try {
+      sheet.getDataRange().clearDataValidations();
+    } catch (valErr) {
+      console.warn("Validation clear notice:", valErr);
+    }
 
     // 4. Write standard Row 1 Headers
     sheet.getRange(1, 1, 1, standardHeaders.length).setValues([standardHeaders]);
 
-    // 5. Write realigned clean data rows
-    if (cleanedRows.length > 0) {
-      sheet.getRange(2, 1, cleanedRows.length, standardHeaders.length).setValues(cleanedRows);
-      totalRowsRepaired += cleanedRows.length;
-    }
+    // 5. Write realigned clean data rows directly
+    sheet.getRange(2, 1, cleanedRows.length, standardHeaders.length).setValues(cleanedRows);
+    totalRowsRepaired += cleanedRows.length;
 
     // 6. Delete extra columns beyond Column 19
     var currentMaxCols = sheet.getMaxColumns();
