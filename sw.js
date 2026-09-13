@@ -3,14 +3,19 @@
  * Ayodhya Police - Smart Cell Ayodhya
  */
 
-const CACHE_NAME = 'darshan-pass-v1.2';
+const CACHE_NAME = 'darshan-pass-v1.3';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './script.js',
   './manifest.json',
-  './assets/up_police_logo.png'
+  './assets/up_police_logo.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/icon-maskable-192.png',
+  './assets/icon-maskable-512.png',
+  './assets/apple-touch-icon.png'
 ];
 
 // 1. Install Event: Cache essential shell assets

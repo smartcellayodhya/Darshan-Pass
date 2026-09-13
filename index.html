@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="assets/up_police_logo.png">
-    <link rel="shortcut icon" type="image/png" href="assets/up_police_logo.png">
-    <link rel="apple-touch-icon" href="assets/up_police_logo.png">
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+    <link rel="shortcut icon" type="image/png" href="assets/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     
     <!-- PWA & Mobile Web App Meta Tags -->
     <link rel="manifest" href="manifest.json">
@@ -85,11 +85,53 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="gov-minimal-theme">
+    <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
+    <div id="app-splash-screen" class="app-splash-screen" aria-label="लोड हो रहा है...">
+        <div class="splash-content">
+            <div class="splash-logo-wrapper">
+                <div class="splash-logo-glow"></div>
+                <img src="assets/icon-512.png" alt="श्रीरामजन्मभूमि दर्शन पास - अयोध्या पुलिस" class="splash-logo-img">
+            </div>
+            <div class="splash-text-group">
+                <div class="splash-title">श्रीरामजन्मभूमि दर्शन पास सेवा</div>
+                <div class="splash-subtitle">
+                    <i class="fa-solid fa-shield-halved"></i> अयोध्या पुलिस (Ayodhya Police)
+                </div>
+            </div>
+            <div class="splash-loader-bar">
+                <div class="splash-loader-progress"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            var splash = document.getElementById('app-splash-screen');
+            if (!splash) return;
+            var dismissed = false;
+            function hideSplash() {
+                if (dismissed) return;
+                dismissed = true;
+                splash.classList.add('splash-hidden');
+                setTimeout(function() {
+                    if (splash && splash.parentNode) {
+                        splash.parentNode.removeChild(splash);
+                    }
+                }, 450);
+            }
+            splash.addEventListener('click', hideSplash);
+            splash.addEventListener('touchstart', hideSplash, { passive: true });
+            setTimeout(hideSplash, 1100);
+            window.addEventListener('load', function() {
+                setTimeout(hideSplash, 750);
+            });
+        })();
+    </script>
+
     <!-- MANDATORY GOOGLE SIGN-IN LOCK OVERLAY -->
     <div id="google-auth-lock" class="auth-modal-overlay">
         <div class="auth-modal-card">
             <div class="auth-header-badge">
-                <img src="assets/up_police_logo.png" alt="UP Police Logo" class="auth-police-logo">
+                <img src="assets/icon-512.png" alt="UP Police Logo" class="auth-police-logo">
             </div>
             <h2 class="auth-title">श्रीरामजन्मभूमि दर्शन पास पोर्टल</h2>
             <div class="auth-subtitle"><i class="fa-brands fa-google" style="color: #ea4335;"></i> गूगल खाते से साइन इन करें</div>
@@ -131,7 +173,7 @@
         <div class="gov-header-container">
             <!-- Left Circular White Badge with UP Police Logo -->
             <div class="logo-circle-badge left-badge">
-                <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
+                <img src="assets/icon-512.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
             </div>
 
             <!-- Center Header Title -->
@@ -141,7 +183,7 @@
 
             <!-- Right Circular White Badge with UP Police Logo -->
             <div class="logo-circle-badge right-badge">
-                <img src="assets/up_police_logo.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
+                <img src="assets/icon-512.png" alt="Uttar Pradesh Police Emblem" class="gov-police-logo">
             </div>
         </div>
     </header>
