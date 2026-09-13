@@ -220,6 +220,23 @@ function doGet(e) {
     }
   }
 
+  // 1-CLICK UNLOCK ROW 1 HEADERS (To clear any blocking locks instantly)
+  if (e && e.parameter && (e.parameter.action === 'unlock' || e.parameter.action === 'unprotect')) {
+    try {
+      var unlockResult = unlockRow1Headers();
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "result": unlockResult,
+        "message": "Row 1 headers successfully unlocked!"
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (uErr) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error",
+        "message": uErr.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // PASS APPLICATION TRACKING HANDLER
   if (e && e.parameter && e.parameter.action === 'track') {
     var rawQuery = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim();
@@ -808,10 +825,50 @@ function syncAllDevoteeCounts(optSheet) {
 }
 
 /**
- * LOCK & PROTECT HEADER ROW (ROW 1) (पहली हेडिंग रो को हमेशा के लिए सुरक्षित / लॉक करें)
+ * UNLOCK ROW 1 HEADERS (पहली रो से लॉक हटाएं ताकि कोई एरर न आए)
+ * Removes all strict range protections on Row 1 so scripts run smoothly with full permissions.
+ */
+function unlockRow1Headers(optSheet) {
+  var ss = getTargetSpreadsheet();
+  var sheet = optSheet || getMainDataSheet(ss);
+  if (!sheet) return { success: false, message: "Sheet not found" };
+
+  try {
+    var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
+    var removedCount = 0;
+    for (var i = 0; i < protections.length; i++) {
+      var p = protections[i];
+      var r = p.getRange();
+      if (r && r.getRow() === 1) {
+        p.remove();
+        removedCount++;
+      }
+    }
+
+    try {
+      SpreadsheetApp.getActiveSpreadsheet().toast("🔓 पहली रो से लॉक हटा दिया गया है! सभी स्क्रिप्ट्स अब पूरी तरह काम करेंगी।", "Row 1 Unlocked", 5);
+    } catch (tErr) {}
+
+    SpreadsheetApp.flush();
+    return {
+      success: true,
+      removed: removedCount,
+      message: "Row 1 successfully unlocked!"
+    };
+  } catch (err) {
+    console.warn("Unlock notice:", err);
+    return {
+      success: false,
+      error: err.toString()
+    };
+  }
+}
+
+/**
+ * SAFE SOFT-LOCK ROW 1 (पहली हेडिंग रो को सुरक्षित व फ़्रीज़ करें - बिना किसी एरर के)
  * 1. Freezes Row 1 so it stays permanently pinned at the top when scrolling
- * 2. Applies Google Sheets Range Protection on Row 1 (A1:S1) so no user can edit or delete headers accidentally
- * 3. Removes other editors from the range so only owner/admin can edit, or sets warning-only fallback
+ * 2. Sets Warning-Only protection so human editors get an accidental edit warning,
+ *    while Apps Script background functions continue to run with 100% full speed and zero permission errors!
  */
 function lockAndProtectHeaderRow(optSheet) {
   var ss = getTargetSpreadsheet();
@@ -825,44 +882,31 @@ function lockAndProtectHeaderRow(optSheet) {
     var maxCols = Math.max(sheet.getLastColumn() || 19, sheet.getMaxColumns() || 19);
     var headerRange = sheet.getRange(1, 1, 1, maxCols);
 
-    // 2. Remove existing protections on Row 1 to avoid duplicate protection rules
+    // 2. Remove any previous duplicate protections on Row 1
     var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
     for (var i = 0; i < protections.length; i++) {
       var p = protections[i];
       var r = p.getRange();
-      if (r && r.getRow() === 1 && r.getNumRows() === 1) {
+      if (r && r.getRow() === 1) {
         p.remove();
       }
     }
 
-    // 3. Create fresh Range Protection on Row 1
-    var protection = headerRange.protect().setDescription("🔒 सुरक्षित Row 1 हेडर्स (Protected Header Row - Do Not Edit)");
+    // 3. Create Safe Warning-Only Range Protection (Never restricts script write permissions!)
+    var protection = headerRange.protect().setDescription("🔒 सुरक्षित Row 1 हेडर्स (Protected Header Row)");
+    protection.setWarningOnly(true);
 
-    // Restrict editing so only effective user / owner can edit, locking for all other editors
     try {
-      var me = Session.getEffectiveUser();
-      protection.addEditor(me);
-      protection.removeEditors(protection.getEditors());
-      if (protection.canDomainEdit()) {
-        protection.setDomainEdit(false);
-      }
-    } catch (permErr) {
-      // If workspace sharing settings prevent editor removal, enable strict warning popup on edit
-      protection.setWarningOnly(true);
-    }
-
-    // Visual toast notification if run from spreadsheet UI
-    try {
-      SpreadsheetApp.getActiveSpreadsheet().toast("✅ पहली रो (हेडर्स) हमेशा के लिए लॉक व सुरक्षित कर दी गई है!", "Row 1 Locked 🔒", 5);
+      SpreadsheetApp.getActiveSpreadsheet().toast("✅ पहली रो फ़्रीज़ व वार्निंग-सुरक्षित कर दी गई है!", "Row 1 Protected 🔒", 5);
     } catch (tErr) {}
 
     SpreadsheetApp.flush();
     return {
       success: true,
-      message: "Row 1 (Headers) is now permanently locked and protected!"
+      message: "Row 1 is now safely protected in warning mode!"
     };
   } catch (err) {
-    console.warn("Row 1 lock notice:", err);
+    console.warn("Row 1 safe-lock notice:", err);
     return {
       success: false,
       error: err.toString()
@@ -957,10 +1001,10 @@ function refreshAllRowColors(optSheet) {
   // Also sync dynamic conditional formatting across entire sheet
   setupDynamicConditionalFormatting(sheet, statusCol);
 
-  // 4. Ensure Row 1 Header Protection is permanently active
+  // 4. Ensure Row 1 is pinned at top without blocking write permissions
   try {
-    lockAndProtectHeaderRow(sheet);
-  } catch (lockErr) {}
+    sheet.setFrozenRows(1);
+  } catch (fzErr) {}
 
   SpreadsheetApp.flush();
 }
@@ -975,7 +1019,8 @@ function onOpen() {
     ui.createMenu('⚙️ VIP Tools')
       .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
-      .addItem('🔒 Lock & Protect Row 1 Headers (हेडिंग रो को लॉक करें)', 'lockAndProtectHeaderRow')
+      .addItem('🔓 Unlock Row 1 Headers (कठोर लॉक हटाएं / अनलॉक करें)', 'unlockRow1Headers')
+      .addItem('🔒 Safe-Lock Row 1 (सुरक्षित वार्निंग लॉक लगाएं)', 'lockAndProtectHeaderRow')
       .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
       .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
@@ -1349,12 +1394,10 @@ function fixAndRealignAllSheetColumns() {
       sheet.setColumnWidth(c + 1, colWidths[c]);
     }
 
-    // 14. Freeze & Lock Row 1 Headers from accidental edits
+    // 14. Freeze Row 1 Headers so they stay visible when scrolling (without permission locking)
     try {
-      lockAndProtectHeaderRow(sheet);
-    } catch (protErr) {
-      console.warn("Header lock notice:", protErr);
-    }
+      sheet.setFrozenRows(1);
+    } catch (protErr) {}
 
     fixedSheetsCount++;
   });
