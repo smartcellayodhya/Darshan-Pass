@@ -807,6 +807,11 @@ function onEdit(e) {
             try {
               var dateCell = sheet.getRange(currentRow, dateCol);
               if (!dateCell.getValue()) {
+                try {
+                  if (dateCell.getDataValidation()) {
+                    dateCell.clearDataValidations();
+                  }
+                } catch (dvClrErr) {}
                 dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
               }
             } catch (dErr) {
@@ -822,6 +827,11 @@ function onEdit(e) {
             try {
               var dateCell = sheet.getRange(currentRow, dateCol);
               if (!dateCell.getValue()) {
+                try {
+                  if (dateCell.getDataValidation()) {
+                    dateCell.clearDataValidations();
+                  }
+                } catch (dvClrErr2) {}
                 dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
               }
             } catch (dErr2) {}
@@ -1017,8 +1027,9 @@ function lockAndProtectHeaderRow(optSheet) {
   ];
 
   try {
-    // 1. Freeze Row 1
+    // 1. Freeze Row 1 only and strictly UNFREEZE Column B / any columns
     sheet.setFrozenRows(1);
+    sheet.setFrozenColumns(0);
 
     var maxCols = Math.max(sheet.getLastColumn() || 19, sheet.getMaxColumns() || 19);
     var headerRange = sheet.getRange(1, 1, 1, maxCols);
@@ -1165,6 +1176,11 @@ function refreshAllRowColors(optSheet) {
   }
 
   if (dateUpdated && dateVals) {
+    try {
+      if (dateCol > 0) {
+        sheet.getRange(2, dateCol, numDataRows, 1).clearDataValidations();
+      }
+    } catch (cdvErr) {}
     sheet.getRange(2, dateCol, numDataRows, 1).setValues(dateVals);
   }
 
@@ -1174,9 +1190,10 @@ function refreshAllRowColors(optSheet) {
   // Also sync dynamic conditional formatting across entire sheet
   setupDynamicConditionalFormatting(sheet, statusCol);
 
-  // 4. Ensure Row 1 is pinned at top without blocking write permissions
+  // 4. Ensure Row 1 is pinned at top and Columns are strictly UNFROZEN
   try {
     sheet.setFrozenRows(1);
+    sheet.setFrozenColumns(0);
   } catch (fzErr) {}
 
   SpreadsheetApp.flush();
@@ -1188,6 +1205,19 @@ function refreshAllRowColors(optSheet) {
  */
 function onOpen() {
   try {
+    // 1. ALWAYS UNFREEZE COLUMN B / ALL COLUMNS ON OPEN (Row 1 stays frozen)
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) {
+      var allSheets = ss.getSheets();
+      for (var s = 0; s < allSheets.length; s++) {
+        try {
+          allSheets[s].setFrozenColumns(0);
+        } catch (fErr) {}
+      }
+    }
+  } catch (openErr) {}
+
+  try {
     // 🔐 SECURITY GUARD: Only create VIP Tools menu for authorized admin (smartcellayd@gmail.com)
     if (!isAuthorizedAdmin()) {
       return; // Do NOT show VIP menu to unauthorized editors/viewers!
@@ -1195,6 +1225,7 @@ function onOpen() {
 
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
+      .addItem('🔧 1-Click Fix: Unfreeze Col B & Fix Cell B3 Error (कॉलम B अनफ्रीज व B3 एरर ठीक करें)', 'repairColumnsAndUnfreeze')
       .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
       .addItem('🛡️ Restore Pass Status Dropdowns (कॉलम C ड्रॉपडाउन रीस्टोर करें)', 'restoreStatusDropdowns')
@@ -1207,6 +1238,96 @@ function onOpen() {
   } catch (err) {
     console.warn("onOpen UI creation warning:", err);
   }
+}
+
+/**
+ * 🔧 1-CLICK FIX: UNFREEZE COLUMN B & FIX CELL B3 DROPDOWN ERROR
+ * 1. Strictly unfreezes Column B (setFrozenColumns(0))
+ * 2. Removes any dropdown/validation from Column B (Pass Created Date)
+ * 3. Detects if Column B and Column C data are inverted (Status in B and Date in C) and swaps them
+ * 4. Puts Dropdown validation ONLY on Column C (Pass Status)
+ * 5. Pinned/Freezes only Row 1
+ */
+function repairColumnsAndUnfreeze(optSheet) {
+  if (!isAuthorizedAdmin()) {
+    try {
+      SpreadsheetApp.getUi().alert("⛔ अनधिकृत पहुंच (Unauthorized Access)!\n\nकेवल मुख्य एडमिन (smartcellayd@gmail.com) ही इन VIP टूल्स को चलाने के लिए अधिकृत हैं।");
+    } catch (e) {}
+    return { success: false, message: "Unauthorized" };
+  }
+
+  var ss = getTargetSpreadsheet();
+  var sheet = optSheet || getMainDataSheet(ss);
+  if (!sheet) return;
+
+  // 1. UNFREEZE COLUMN B (All columns strictly unfrozen!)
+  try {
+    sheet.setFrozenColumns(0);
+    sheet.setFrozenRows(1);
+  } catch (fzErr) {}
+
+  var maxRows = Math.max(sheet.getLastRow(), sheet.getMaxRows(), 50);
+  var numDataRows = sheet.getLastRow() - 1;
+
+  // 2. Clear any conflicting validation rules on Column B (Col B = Date, never Status!)
+  try {
+    sheet.getRange(2, 2, maxRows - 1, 1).clearDataValidations();
+    sheet.getRange(2, 2, maxRows - 1, 1).setNumberFormat("@");
+  } catch (bValErr) {
+    console.warn("Clear Col B validation notice:", bValErr);
+  }
+
+  // 3. Detect if data in Column B and Column C is reversed (e.g. B has 'Pass Created' and C has Date)
+  if (numDataRows > 0) {
+    var bVals = sheet.getRange(2, 2, numDataRows, 1).getValues();
+    var cVals = sheet.getRange(2, 3, numDataRows, 1).getValues();
+    var needsSwap = false;
+
+    for (var i = 0; i < numDataRows; i++) {
+      var bStr = String(bVals[i][0] || '').trim().toLowerCase();
+      var cStr = String(cVals[i][0] || '').trim();
+
+      // If cell B contains status text like 'pass created', 'pending', etc.
+      var bIsStatus = bStr.includes("pass created") || bStr.includes("pending") || bStr.includes("rejected") || bStr.includes("already") || bStr.includes("approved");
+      var cIsDate = /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/.test(cStr) || cVals[i][0] instanceof Date;
+
+      if (bIsStatus) {
+        // Swap so Col B gets Date and Col C gets Status!
+        var dateVal = cIsDate ? cVals[i][0] : "";
+        var statusVal = bVals[i][0] || "Pass Created";
+
+        bVals[i][0] = dateVal;
+        cVals[i][0] = statusVal;
+        needsSwap = true;
+      }
+    }
+
+    if (needsSwap) {
+      sheet.getRange(2, 2, numDataRows, 1).setValues(bVals);
+      sheet.getRange(2, 3, numDataRows, 1).setValues(cVals);
+    }
+  }
+
+  // 4. Set Dropdown Validation strictly on Column C (Pass Status)
+  var statusRange = sheet.getRange(2, 3, maxRows - 1, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
+    .setAllowInvalid(false)
+    .build();
+  statusRange.setDataValidation(rule);
+
+  // 5. Ensure Row 1 Headers are strictly correct
+  sheet.getRange(1, 2).setValue("पास बनने की तिथि (Pass Created Date)");
+  sheet.getRange(1, 3).setValue("पास स्थिति (Pass Status)");
+
+  // 6. Refresh Row Colors
+  try {
+    refreshAllRowColors(sheet);
+  } catch (rErr) {}
+
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast("✅ कॉलम B अनफ्रीज हो गया, सेल B3 का एरर ठीक हुआ, और ड्रॉपडाउन कॉलम C में सेट हो गया!", "All Fixed 🎯", 6);
+  } catch (tErr) {}
 }
 
 /**
@@ -1338,12 +1459,10 @@ function fixAndRealignAllSheetColumns() {
     var lastCol = sheet.getLastColumn();
     if (lastRow < 1) return;
 
-    // 1. Unhide any hidden columns (e.g. Column E)
+    // 1. Strictly unfreeze Column B and all columns
     try {
-      sheet.showColumns(1, Math.max(lastCol, 25));
-    } catch (e) {
-      console.warn("Unhide columns notice:", e);
-    }
+      sheet.setFrozenColumns(0);
+    } catch (e) {}
 
     // 2. Read entire existing data grid
     var readCols = Math.max(lastCol, 25);
@@ -1609,9 +1728,10 @@ function fixAndRealignAllSheetColumns() {
       sheet.setColumnWidth(c + 1, colWidths[c]);
     }
 
-    // 14. Freeze Row 1 Headers so they stay visible when scrolling (without permission locking)
+    // 14. Freeze Row 1 Headers only and unfreeze columns
     try {
       sheet.setFrozenRows(1);
+      sheet.setFrozenColumns(0);
     } catch (protErr) {}
 
     fixedSheetsCount++;
