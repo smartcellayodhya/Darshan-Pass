@@ -195,9 +195,9 @@ function getTargetSpreadsheet() {
 }
 
 /**
- * AUTOMATIC EDIT TRIGGER (onEdit)
+ * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST OPTIMIZED
  * When status in Column 2 (B) is changed to "Pass Created":
- * 1. Highlights the whole row in Custom Sage Green (#9fc48a)
+ * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
  * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
  */
 function onEdit(e) {
@@ -211,13 +211,12 @@ function onEdit(e) {
 
   // Column 2 = Pass Status (Column B)
   if (col === 2 && row > 1) {
-    var statusVal = String(e.value || e.range.getValue() || '').trim();
-    var lastCol = Math.max(sheet.getLastColumn(), 19);
-    var rowRange = sheet.getRange(row, 1, 1, lastCol);
+    var statusVal = String(e.value || e.range.getValue() || '').trim().toLowerCase();
+    var rowRange = sheet.getRange(row, 1, 1, 19); // Direct 19 cols for maximum speed
     var dateCell = sheet.getRange(row, 3); // Column 3 (C - Pass Created Date)
 
-    if (statusVal.toLowerCase() === "pass created" || statusVal.toLowerCase() === "approved") {
-      // 1. Custom Sage Green Row Background (#9fc48a - matching user's requested color)
+    if (statusVal === "pass created" || statusVal === "approved") {
+      // 1. Instant Custom Sage Green Row Background (#9fc48a)
       rowRange.setBackground("#9fc48a");
       rowRange.setFontColor("#000000");
 
@@ -227,16 +226,18 @@ function onEdit(e) {
         dateCell.setValue(todayStr);
       }
 
-    } else if (statusVal.toLowerCase() === "rejected") {
+    } else if (statusVal === "rejected") {
       // Light Red Row Background (#fee2e2)
       rowRange.setBackground("#fee2e2");
       rowRange.setFontColor("#991b1b");
 
-    } else if (statusVal.toLowerCase() === "pending" || !statusVal) {
+    } else if (statusVal === "pending" || !statusVal) {
       // Reset row background to White (#ffffff)
       rowRange.setBackground("#ffffff");
       rowRange.setFontColor("#000000");
     }
+
+    SpreadsheetApp.flush(); // Commit updates immediately to sheet UI
   }
 }
 
@@ -350,11 +351,12 @@ function formatEntireSheet() {
     // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created)
     sheet.clearConditionalFormatRules();
 
-    var rangeToApply = sheet.getRange(2, 1, maxR - 1, lastCol);
+    var targetMaxRows = Math.max(maxR, 2500);
+    var rangeToApply = sheet.getRange("A2:S" + targetMaxRows);
 
-    // Rule 1: Pass Created -> Custom Sage Green (#9fc48a)
+    // Rule 1: Pass Created -> Custom Sage Green (#9fc48a) - Instant 0ms Native Formula
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$B2="Pass Created"')
+      .whenFormulaSatisfied('=OR(LOWER(TRIM($B2))="pass created", LOWER(TRIM($B2))="approved")')
       .setBackground("#9fc48a")
       .setFontColor("#000000")
       .setRanges([rangeToApply])
@@ -362,7 +364,7 @@ function formatEntireSheet() {
 
     // Rule 2: Rejected -> Light Red (#fee2e2)
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$B2="Rejected"')
+      .whenFormulaSatisfied('=LOWER(TRIM($B2))="rejected"')
       .setBackground("#fee2e2")
       .setFontColor("#991b1b")
       .setRanges([rangeToApply])
@@ -370,7 +372,7 @@ function formatEntireSheet() {
 
     // Rule 3: Pending -> Clean White (#ffffff)
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$B2="Pending"')
+      .whenFormulaSatisfied('=LOWER(TRIM($B2))="pending"')
       .setBackground("#ffffff")
       .setFontColor("#000000")
       .setRanges([rangeToApply])
