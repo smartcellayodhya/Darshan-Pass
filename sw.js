@@ -3,14 +3,14 @@
  * Ayodhya Police - Smart Cell Ayodhya
  */
 
-const CACHE_NAME = 'darshan-pass-v1.7';
+const CACHE_NAME = 'darshan-pass-v1.8';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
-  './style.css?v=2.5',
+  './style.css?v=2.6',
   './script.js',
-  './script.js?v=2.5',
+  './script.js?v=2.6',
   './manifest.json',
   './assets/up_police_logo.png',
   './assets/icon-192.png',
@@ -48,8 +48,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests or Google Apps Script / Google Identity API calls
-  if (event.request.method !== 'GET' || url.hostname.includes('script.google.com') || url.hostname.includes('accounts.google.com')) {
+  // Skip non-GET requests, all Google domains (including script.googleusercontent.com), and external CDNs
+  if (
+    event.request.method !== 'GET' || 
+    url.hostname.includes('google') || 
+    url.hostname.includes('gstatic') ||
+    url.hostname.includes('cloudflare') ||
+    url.hostname.includes('fontawesome')
+  ) {
     return;
   }
 

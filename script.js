@@ -1292,6 +1292,52 @@ https://darshanpass.ayodhyapolice.in
     }
 
     if (submitTrackBtn && trackQueryInput && trackResultBox) {
+        async function fetchTrackData(query) {
+            const encoded = encodeURIComponent(query);
+            const trackUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encoded}&_t=${Date.now()}`;
+
+            // Attempt 1: Modern fetch with follow redirect
+            try {
+                const res = await fetch(trackUrl, {
+                    method: "GET",
+                    cache: "no-store",
+                    redirect: "follow"
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json) return json;
+                }
+            } catch (fetchErr) {
+                console.warn("Direct fetch error in track, trying XHR fallback...", fetchErr);
+            }
+
+            // Attempt 2: XMLHttpRequest fallback (bulletproof for cross-origin redirects)
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", trackUrl, true);
+                xhr.timeout = 20000;
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 400) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            resolve(data);
+                        } catch (parseErr) {
+                            reject(parseErr);
+                        }
+                    } else {
+                        reject(new Error("Server returned status " + xhr.status));
+                    }
+                };
+                xhr.onerror = function() {
+                    reject(new Error("Network error during track request"));
+                };
+                xhr.ontimeout = function() {
+                    reject(new Error("Track request timed out"));
+                };
+                xhr.send();
+            });
+        }
+
         async function executeTrackSearch() {
             const query = trackQueryInput.value.trim();
             if (!query) {
@@ -1307,9 +1353,7 @@ https://darshanpass.ayodhyapolice.in
             if (trackSubmitLoader) trackSubmitLoader.classList.remove("hidden");
 
             try {
-                const trackUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encodeURIComponent(query)}`;
-                const res = await fetch(trackUrl);
-                const data = await res.json();
+                const data = await fetchTrackData(query);
 
                 trackResultBox.classList.remove("hidden");
                 if (data && data.result === "success" && data.data) {
