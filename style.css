@@ -21,9 +21,9 @@
     --border-grey: #cbd5e1;
     --border-light: #e2e8f0;
     
-    --radius-sm: 4px;
-    --radius-md: 4px;
-    --radius-lg: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
     
     --shadow-subtle: 0 6px 25px rgba(15, 23, 42, 0.07);
 }
@@ -920,7 +920,7 @@ body.modal-open .scroll-to-top-btn {
     color: #ef4444;
 }
 
-/* Toast Notification Styles */
+/* Toast Notification Styles (Wide Banner like Submit Button) */
 .gov-toast {
     position: fixed;
     bottom: 2rem;
@@ -928,20 +928,24 @@ body.modal-open .scroll-to-top-btn {
     transform: translateX(-50%) translateY(20px);
     background: #0f172a;
     color: #ffffff;
-    padding: 0.85rem 1.4rem;
-    border-radius: 4px !important;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    width: calc(100% - 2.5rem);
+    max-width: 780px;
+    min-height: 52px;
+    padding: 0.95rem 1.4rem;
+    border-radius: 8px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 0.92rem;
-    font-weight: 500;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 0.96rem;
+    font-weight: 600;
     z-index: 10001;
     opacity: 0;
     pointer-events: none;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 90vw;
+    box-sizing: border-box;
     text-align: center;
 }
 
@@ -953,14 +957,26 @@ body.modal-open .scroll-to-top-btn {
 
 .gov-toast.toast-success {
     background: #15803d;
+    border-color: #4ade80;
 }
 
 .gov-toast.toast-warning {
     background: #b45309;
+    border-color: #fde047;
 }
 
 .gov-toast.toast-error {
     background: #b91c1c;
+    border-color: #fca5a5;
+}
+
+@media (max-width: 640px) {
+    .gov-toast {
+        bottom: 1.2rem;
+        width: calc(100% - 1.5rem);
+        padding: 0.85rem 1rem;
+        font-size: 0.9rem;
+    }
 }
 
 /* Single Devotee Mode Style Helper */
@@ -2538,9 +2554,9 @@ body.modal-open .scroll-to-top-btn {
 }
 
 /* -------------------------------------------------------------
- * RECTANGULAR INFORMATIONAL POPUPS & MODALS
+ * SOFT ROUNDED RECTANGULAR CARDS, POPUPS & MODALS
  * All user information modals, status popups, alerts, and toasts
- * are cleanly styled as crisp rectangles.
+ * are cleanly styled as soft-cornered rectangles (border-radius: 8px).
  * ------------------------------------------------------------- */
 .gov-modal,
 .slip-modal,
@@ -2557,13 +2573,17 @@ body.modal-open .scroll-to-top-btn {
 .track-search-row input,
 .track-submit-btn,
 .compact-btn,
+.gov-btn-primary,
+.gov-form-card,
+.member-row-card,
+.stepper-wrapper,
 #ios-got-it-btn {
-    border-radius: 4px !important;
+    border-radius: 8px !important;
 }
 
 .pass-token-strip,
 .compact-success-badge,
 .compact-close-icon {
-    border-radius: 3px !important;
+    border-radius: 6px !important;
 }
 
