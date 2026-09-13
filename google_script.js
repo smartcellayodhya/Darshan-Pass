@@ -130,6 +130,9 @@ function doPost(e) {
       newRowRange.setFontFamily("Roboto");
       newRowRange.setFontSize(10);
 
+      // Column M (Col 13 - Accompanying Devotees): Left align for clean multi-line readability
+      sheet.getRange(lastRow, 13).setHorizontalAlignment("left");
+
       sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
 
       // Add Dropdown to Pass Status cell (Column 2 / B)
@@ -374,6 +377,52 @@ function findPassCreatedDateColumn(sheet) {
 }
 
 /**
+ * DYNAMIC COLUMN FINDER BY KEYWORDS
+ */
+function findColumnByKeywords(sheet, keywords, defaultCol) {
+  try {
+    var lastCol = sheet.getLastColumn() || 19;
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    for (var c = 0; c < headers.length; c++) {
+      var h = String(headers[c] || '').toLowerCase().trim();
+      for (var k = 0; k < keywords.length; k++) {
+        if (h.includes(keywords[k])) {
+          return c + 1;
+        }
+      }
+    }
+  } catch (err) {}
+  return defaultCol;
+}
+
+/**
+ * PARSE GENDER COUNTS FROM TEXT (उदा: 'Male: 1, Female: 0', '2 Male, 1 Female', या '5')
+ */
+function parseGenderCounts(val) {
+  var str = String(val || '').trim();
+  if (!str) return { total: 0, male: 0, female: 0 };
+
+  var mMatch = str.match(/male\s*[:\-=\s]*(\d+)/i) || str.match(/पुरुष\s*[:\-=\s]*(\d+)/i) || str.match(/(\d+)\s*(?:male|पुरुष|m)\b/i);
+  var fMatch = str.match(/female\s*[:\-=\s]*(\d+)/i) || str.match(/महिला\s*[:\-=\s]*(\d+)/i) || str.match(/(\d+)\s*(?:female|महिला|f)\b/i);
+
+  var m = mMatch ? parseInt(mMatch[1], 10) : null;
+  var f = fMatch ? parseInt(fMatch[1], 10) : null;
+
+  if (m === null && f === null) {
+    var numMatch = str.match(/^\d+$/);
+    if (numMatch) {
+      var num = parseInt(numMatch[0], 10);
+      return { total: num, male: num, female: 0 };
+    }
+    return { total: 0, male: 0, female: 0 };
+  }
+
+  m = m || 0;
+  f = f || 0;
+  return { total: (m + f), male: m, female: f };
+}
+
+/**
  * CONVERT COLUMN INDEX TO LETTER (e.g. 1->A, 2->B, 3->C)
  */
 function getColumnLetter(colIndex) {
@@ -435,10 +484,10 @@ function setupDynamicConditionalFormatting(sheet, optStatusCol) {
 }
 
 /**
- * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST & DYNAMIC
- * When status in Column C or B is changed to "Pass Created":
- * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
- * 2. Auto-fills Pass Created Date if date column is present
+ * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST, DYNAMIC & DUAL-SYNC
+ * 1. Highlights row in Custom Sage Green (#9fc48a) & fills Pass Created Date
+ * 2. Real-time Devotee Count Calculation: If Column J, R, S, or Q is edited, all counts sync automatically
+ * 3. Keeps Column M (साथ में आने वाले सदस्यों के नाम व उम्र) left-aligned
  */
 function onEdit(e) {
   if (!e || !e.range) return;
@@ -456,6 +505,12 @@ function onEdit(e) {
 
     var statusCol = findStatusColumn(sheet);
     var dateCol = findPassCreatedDateColumn(sheet);
+    var colJ = findColumnByKeywords(sheet, ["पुरूषो व महिलाओं", "gender"], 10);
+    var colM = findColumnByKeywords(sheet, ["साथ में आने वाले", "सदस्यों", "accompanying"], 13);
+    var colQ = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
+    var colR = findColumnByKeywords(sheet, ["पुरुष संख्या", "male count"], 18);
+    var colS = findColumnByKeywords(sheet, ["महिला संख्या", "female count"], 19);
+
     var maxCols = sheet.getMaxColumns();
     var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
 
@@ -466,13 +521,49 @@ function onEdit(e) {
       timeZone = "GMT+5:30";
     }
 
-    // Check if edited range touches statusCol
     var isStatusCol = (startCol <= statusCol && endCol >= statusCol);
+    var isGenderCol = (startCol <= colJ && endCol >= colJ);
+    var isMaleCol = (startCol <= colR && endCol >= colR);
+    var isFemaleCol = (startCol <= colS && endCol >= colS);
+    var isTotalCol = (startCol <= colQ && endCol >= colQ);
 
     for (var r = 0; r < numRows; r++) {
       var currentRow = startRow + r;
       if (currentRow <= 1) continue;
 
+      // 1. Column M (साथी विवरण): Always ensure Left-alignment for easy reading
+      try {
+        sheet.getRange(currentRow, colM).setHorizontalAlignment("left");
+      } catch (mErr) {}
+
+      // 2. Real-time Devotee Count Calculation & Sync
+      if (isGenderCol) {
+        // User manually edited Column J (पुरूषो व महिलाओं की संख्या)
+        var rawJ = sheet.getRange(currentRow, colJ).getValue();
+        var parsed = parseGenderCounts(rawJ);
+        sheet.getRange(currentRow, colQ).setValue(parsed.total);
+        sheet.getRange(currentRow, colR).setValue(parsed.male);
+        sheet.getRange(currentRow, colS).setValue(parsed.female);
+      } else if (isMaleCol || isFemaleCol) {
+        // User manually edited Column R (पुरुष संख्या) or Column S (महिला संख्या)
+        var mVal = parseInt(sheet.getRange(currentRow, colR).getValue(), 10) || 0;
+        var fVal = parseInt(sheet.getRange(currentRow, colS).getValue(), 10) || 0;
+        var totalVal = mVal + fVal;
+        sheet.getRange(currentRow, colQ).setValue(totalVal);
+        sheet.getRange(currentRow, colJ).setValue("Male: " + mVal + ", Female: " + fVal);
+      } else if (isTotalCol) {
+        // User manually edited Column Q (कुल दर्शनार्थी संख्या)
+        var qVal = parseInt(sheet.getRange(currentRow, colQ).getValue(), 10) || 0;
+        var curM = parseInt(sheet.getRange(currentRow, colR).getValue(), 10) || 0;
+        var curF = parseInt(sheet.getRange(currentRow, colS).getValue(), 10) || 0;
+        if (curM + curF !== qVal) {
+          sheet.getRange(currentRow, colR).setValue(qVal);
+          sheet.getRange(currentRow, colS).setValue(0);
+          sheet.getRange(currentRow, colJ).setValue("Male: " + qVal + ", Female: 0");
+        }
+      }
+
+      // 3. Status Highlight & Date Fill
       var rawVal = isStatusCol ? sheet.getRange(currentRow, statusCol).getValue() : e.range.getValue();
       var statusVal = String(rawVal || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
 
@@ -488,50 +579,45 @@ function onEdit(e) {
         statusVal.indexOf("pending") !== -1
       );
 
-      if (!isStatusCol && !isKnownStatus) continue;
+      if (isStatusCol || isKnownStatus) {
+        var rowRange = sheet.getRange(currentRow, 1, 1, lastCol);
 
-      var rowRange = sheet.getRange(currentRow, 1, 1, lastCol);
+        if (statusVal.indexOf("pass created") !== -1 || statusVal.indexOf("approved") !== -1 || statusVal.indexOf("बन गया") !== -1 || statusVal.indexOf("स्वीकृत") !== -1) {
+          rowRange.setBackground("#9fc48a");
+          rowRange.setFontColor("#000000");
 
-      if (statusVal.indexOf("pass created") !== -1 || statusVal.indexOf("approved") !== -1 || statusVal.indexOf("बन गया") !== -1 || statusVal.indexOf("स्वीकृत") !== -1) {
-        // 1. Instant Custom Sage Green Row Background (#9fc48a)
-        rowRange.setBackground("#9fc48a");
-        rowRange.setFontColor("#000000");
-
-        // 2. Auto-fill Pass Created Date if date column exists
-        if (dateCol !== -1) {
-          try {
-            var dateCell = sheet.getRange(currentRow, dateCol);
-            if (!dateCell.getValue()) {
-              dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
+          if (dateCol !== -1) {
+            try {
+              var dateCell = sheet.getRange(currentRow, dateCol);
+              if (!dateCell.getValue()) {
+                dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
+              }
+            } catch (dErr) {
+              console.warn("Date autofill notice:", dErr);
             }
-          } catch (dErr) {
-            console.warn("Date autofill notice:", dErr);
           }
+
+        } else if (statusVal.indexOf("already") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
+          rowRange.setBackground("#fef08a");
+          rowRange.setFontColor("#854d0e");
+
+          if (dateCol !== -1) {
+            try {
+              var dateCell = sheet.getRange(currentRow, dateCol);
+              if (!dateCell.getValue()) {
+                dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
+              }
+            } catch (dErr2) {}
+          }
+
+        } else if (statusVal.indexOf("rejected") !== -1 || statusVal.indexOf("निरस्त") !== -1 || statusVal.indexOf("अस्वीकृत") !== -1) {
+          rowRange.setBackground("#fee2e2");
+          rowRange.setFontColor("#991b1b");
+
+        } else if (statusVal.indexOf("pending") !== -1 || !statusVal) {
+          rowRange.setBackground("#ffffff");
+          rowRange.setFontColor("#000000");
         }
-
-      } else if (statusVal.indexOf("already") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
-        // Warm Soft Amber/Yellow Row Background (#fef08a)
-        rowRange.setBackground("#fef08a");
-        rowRange.setFontColor("#854d0e");
-
-        if (dateCol !== -1) {
-          try {
-            var dateCell = sheet.getRange(currentRow, dateCol);
-            if (!dateCell.getValue()) {
-              dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
-            }
-          } catch (dErr2) {}
-        }
-
-      } else if (statusVal.indexOf("rejected") !== -1 || statusVal.indexOf("निरस्त") !== -1 || statusVal.indexOf("अस्वीकृत") !== -1) {
-        // Light Red Row Background (#fee2e2)
-        rowRange.setBackground("#fee2e2");
-        rowRange.setFontColor("#991b1b");
-
-      } else if (statusVal.indexOf("pending") !== -1 || !statusVal) {
-        // Reset row background to White (#ffffff)
-        rowRange.setBackground("#ffffff");
-        rowRange.setFontColor("#000000");
       }
     }
 
@@ -542,14 +628,78 @@ function onEdit(e) {
 }
 
 /**
+ * BATCH SYNC DEVOTEE COUNTS & LEFT-ALIGN COLUMN M (सभी पंक्तियों में संख्या सिंक व कॉलम M लेफ्ट करें)
+ * Parses Column J (पुरूषो व महिलाओं की संख्या) and synchronizes Column Q (कुल), R (पुरुष), S (महिला).
+ * Also left-aligns Column M (साथ में आने वाले सदस्यों के नाम व उम्र) across all rows.
+ */
+function syncAllDevoteeCounts(optSheet) {
+  var ss = getTargetSpreadsheet();
+  var sheet = optSheet || getMainDataSheet(ss);
+  if (!sheet) return;
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  var numDataRows = lastRow - 1;
+  var colJ = findColumnByKeywords(sheet, ["पुरूषो व महिलाओं", "gender"], 10);
+  var colM = findColumnByKeywords(sheet, ["साथ में आने वाले", "सदस्यों", "accompanying"], 13);
+  var colQ = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
+  var colR = findColumnByKeywords(sheet, ["पुरुष संख्या", "male count"], 18);
+  var colS = findColumnByKeywords(sheet, ["महिला संख्या", "female count"], 19);
+
+  var jVals = sheet.getRange(2, colJ, numDataRows, 1).getValues();
+  var qVals = sheet.getRange(2, colQ, numDataRows, 1).getValues();
+  var rVals = sheet.getRange(2, colR, numDataRows, 1).getValues();
+  var sVals = sheet.getRange(2, colS, numDataRows, 1).getValues();
+
+  var needUpdate = false;
+
+  for (var i = 0; i < numDataRows; i++) {
+    var rawJ = String(jVals[i][0] || '').trim();
+    var curQ = parseInt(qVals[i][0], 10) || 0;
+    var curR = parseInt(rVals[i][0], 10) || 0;
+    var curS = parseInt(sVals[i][0], 10) || 0;
+
+    if (rawJ) {
+      var parsed = parseGenderCounts(rawJ);
+      if (parsed.total !== curQ || parsed.male !== curR || parsed.female !== curS) {
+        qVals[i][0] = parsed.total;
+        rVals[i][0] = parsed.male;
+        sVals[i][0] = parsed.female;
+        needUpdate = true;
+      }
+    } else if (curR > 0 || curS > 0) {
+      var calcTotal = curR + curS;
+      if (curQ !== calcTotal) {
+        qVals[i][0] = calcTotal;
+        needUpdate = true;
+      }
+      jVals[i][0] = "Male: " + curR + ", Female: " + curS;
+      sheet.getRange(i + 2, colJ).setValue(jVals[i][0]);
+    }
+  }
+
+  if (needUpdate) {
+    sheet.getRange(2, colQ, numDataRows, 1).setValues(qVals);
+    sheet.getRange(2, colR, numDataRows, 1).setValues(rVals);
+    sheet.getRange(2, colS, numDataRows, 1).setValues(sVals);
+  }
+
+  // Left-align Column M (साथ में आने वाले सदस्यों के नाम व उम्र) across entire data range
+  try {
+    sheet.getRange(2, colM, numDataRows, 1).setHorizontalAlignment("left");
+  } catch (alignErr) {
+    console.warn("Column M alignment notice:", alignErr);
+  }
+
+  SpreadsheetApp.flush();
+}
+
+/**
  * INSTANT ROW COLOR RE-APPLY (सभी पंक्तियों में स्थिति अनुसार रंग भरें)
- * Automatically detects whether status is in Column C, Column B, etc.
- * Scans every row in Google Sheet and sets direct background colors in one fast batch:
- * - Pass Created -> #9fc48a (Sage Green)
- * - Already Created -> #fef08a (Soft Amber)
- * - Rejected -> #fee2e2 (Light Red)
- * - Pending -> #ffffff (White)
- * Also re-applies dynamic conditional formatting to guarantee colors persist.
+ * 1. Syncs all Devotee Counts & Left-aligns Column M
+ * 2. Highlights row in Custom Sage Green (#9fc48a) for Pass Created
+ * 3. Applies sheet-wide dynamic conditional formatting
  */
 function refreshAllRowColors(optSheet) {
   var ss = getTargetSpreadsheet();
@@ -560,6 +710,13 @@ function refreshAllRowColors(optSheet) {
   var maxCols = sheet.getMaxColumns();
   var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
   if (lastRow < 2) return;
+
+  // 1. Sync Devotee Counts & Left-align Column M
+  try {
+    syncAllDevoteeCounts(sheet);
+  } catch (syncErr) {
+    console.warn("Devotee sync notice:", syncErr);
+  }
 
   var statusCol = findStatusColumn(sheet);
   var numDataRows = lastRow - 1;
@@ -612,6 +769,7 @@ function onOpen() {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
       .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
+      .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
       .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
       .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
@@ -929,6 +1087,11 @@ function fixAndRealignAllSheetColumns() {
     dataRange.setWrap(true);
     dataRange.setFontFamily("Roboto");
 
+    // Column M (Col 13 - Accompanying Devotees): Left-align for superior readability
+    if (totalRows > 1) {
+      sheet.getRange(2, 13, totalRows - 1, 1).setHorizontalAlignment("left");
+    }
+
     // Format Timestamp Column A
     if (sheet.getLastRow() > 1) {
       sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
@@ -1046,28 +1209,28 @@ function setupVipDashboard() {
   dashSheet.getRange("A5").setFormula("=COUNTA(" + dataSheetName + "!A2:A)");
   dashSheet.getRange("A5").setFontSize(18).setFontWeight("bold").setHorizontalAlignment("center");
 
-  // Card 2: Total Passes Created (Sage Green - Column B)
+  // Card 2: Total Passes Created (Sage Green - Column B or C)
   dashSheet.getRange("D4:E4").merge();
   dashSheet.getRange("D4").setValue("कुल बने पास (Pass Created)");
   dashSheet.getRange("D4").setBackground("#9fc48a").setFontColor("#000000").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("D5:E5").merge();
-  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pass Created\")");
+  dashSheet.getRange("D5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pass Created\") + COUNTIF(" + dataSheetName + "!C2:C, \"Pass Created\")");
   dashSheet.getRange("D5").setFontSize(18).setFontWeight("bold").setFontColor("#064e3b").setHorizontalAlignment("center");
 
-  // Card 3: Pending Applications (Yellow/Orange - Column B)
+  // Card 3: Pending Applications (Yellow/Orange - Column B or C)
   dashSheet.getRange("G4:H4").merge();
   dashSheet.getRange("G4").setValue("कुल लंबित (Pending)");
   dashSheet.getRange("G4").setBackground("#f59e0b").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("G5:H5").merge();
-  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pending\")");
+  dashSheet.getRange("G5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Pending\") + COUNTIF(" + dataSheetName + "!C2:C, \"Pending\")");
   dashSheet.getRange("G5").setFontSize(18).setFontWeight("bold").setFontColor("#b45309").setHorizontalAlignment("center");
 
-  // Card 4: Rejected (Red - Column B)
+  // Card 4: Rejected (Red - Column B or C)
   dashSheet.getRange("J4:K4").merge();
   dashSheet.getRange("J4").setValue("निरस्त आवेदन (Rejected)");
   dashSheet.getRange("J4").setBackground("#ef4444").setFontColor("#ffffff").setFontWeight("bold").setHorizontalAlignment("center");
   dashSheet.getRange("J5:K5").merge();
-  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Rejected\")");
+  dashSheet.getRange("J5").setFormula("=COUNTIF(" + dataSheetName + "!B2:B, \"Rejected\") + COUNTIF(" + dataSheetName + "!C2:C, \"Rejected\")");
   dashSheet.getRange("J5").setFontSize(18).setFontWeight("bold").setFontColor("#b91c1c").setHorizontalAlignment("center");
 
   // 3. TABLE 1: पास बनने की तिथि वार रिपोर्ट (PASS CREATED DATE REPORT - Column C)
@@ -1095,8 +1258,8 @@ function setupVipDashboard() {
 
   dashSheet.getRange("E9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!D2:D, " + dataSheetName + "!D2:D <> \"\")), \"(अभी कोई डेटा नहीं)\")");
   dashSheet.getRange("F9:F28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!D$2:D, E9))");
-  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pass Created\"))");
-  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pending\"))");
+  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pass Created\") + COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
+  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!B$2:B, \"Pending\") + COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pending\"))");
 
   // 5. TABLE 3: REFERRED BY REPORT (Column N)
   dashSheet.getRange("J7:K7").merge();
@@ -1107,7 +1270,7 @@ function setupVipDashboard() {
   dashSheet.getRange("K8").setValue("बने पास").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
   dashSheet.getRange("J9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!N2:N, " + dataSheetName + "!N2:N <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!B$2:B, \"Pass Created\"))");
+  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!B$2:B, \"Pass Created\") + COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
 
   // Format Dashboard Cells
   dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
