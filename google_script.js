@@ -629,7 +629,41 @@ function onEdit(e) {
     var endCol = startCol + numCols - 1;
     var startRow = e.range.getRow();
     var numRows = e.range.getNumRows();
-    if (startRow <= 1) return;
+    if (startRow === 1) {
+      // STRICT ANTI-TAMPER GUARD: Instantly restore official standard headers
+      var stdHeadersList = [
+        "Timestamp",
+        "पास स्थिति (Pass Status)",
+        "पास बनने की तिथि (Pass Created Date)",
+        "दर्शन तिथि",
+        "दर्शन समय स्लॉट",
+        "नाम व उम्र",
+        "राज्य",
+        "जिला",
+        "आधार नं0/पासपोर्ट नं0",
+        "पुरूषो व महिलाओं की संख्या",
+        "मो0नं0",
+        "गाडी नं0",
+        "साथ में आने वाले सदस्यों के नाम व उम्र",
+        "Referred by",
+        "आवेदनकर्ता गूगल नाम",
+        "आवेदनकर्ता ईमेल ID",
+        "कुल दर्शनार्थी संख्या",
+        "पुरुष संख्या",
+        "महिला संख्या"
+      ];
+      for (var hc = 0; hc < numCols; hc++) {
+        var hCol = startCol + hc;
+        if (hCol >= 1 && hCol <= stdHeadersList.length) {
+          sheet.getRange(1, hCol).setValue(stdHeadersList[hCol - 1]);
+        }
+      }
+      try {
+        SpreadsheetApp.getActiveSpreadsheet().toast("🚫 पहली रो पूर्णतः लॉक है! कोई भी बदलाव स्वीकार्य नहीं है।", "STRICT LOCK 🔒", 4);
+      } catch (tErr) {}
+      SpreadsheetApp.flush();
+      return;
+    }
 
     var statusCol = findStatusColumn(sheet);
     var dateCol = findPassCreatedDateColumn(sheet);
@@ -825,8 +859,8 @@ function syncAllDevoteeCounts(optSheet) {
 }
 
 /**
- * UNLOCK ROW 1 HEADERS (पहली रो से लॉक हटाएं ताकि कोई एरर न आए)
- * Removes all strict range protections on Row 1 so scripts run smoothly with full permissions.
+ * UNLOCK ROW 1 HEADERS (पहली रो से लॉक हटाएं)
+ * Removes strict data validation reject rules and range protections on Row 1.
  */
 function unlockRow1Headers(optSheet) {
   var ss = getTargetSpreadsheet();
@@ -834,6 +868,15 @@ function unlockRow1Headers(optSheet) {
   if (!sheet) return { success: false, message: "Sheet not found" };
 
   try {
+    var maxCols = Math.max(sheet.getLastColumn() || 19, sheet.getMaxColumns() || 19);
+    var headerRange = sheet.getRange(1, 1, 1, maxCols);
+
+    // 1. Remove all reject data validations on Row 1
+    try {
+      headerRange.clearDataValidations();
+    } catch (dvErr) {}
+
+    // 2. Remove all range protections on Row 1
     var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
     var removedCount = 0;
     for (var i = 0; i < protections.length; i++) {
@@ -846,7 +889,7 @@ function unlockRow1Headers(optSheet) {
     }
 
     try {
-      SpreadsheetApp.getActiveSpreadsheet().toast("🔓 पहली रो से लॉक हटा दिया गया है! सभी स्क्रिप्ट्स अब पूरी तरह काम करेंगी।", "Row 1 Unlocked", 5);
+      SpreadsheetApp.getActiveSpreadsheet().toast("🔓 पहली रो का लॉक सफलतापूर्वक हटा दिया गया है!", "Row 1 Unlocked", 5);
     } catch (tErr) {}
 
     SpreadsheetApp.flush();
@@ -865,24 +908,51 @@ function unlockRow1Headers(optSheet) {
 }
 
 /**
- * SAFE SOFT-LOCK ROW 1 (पहली हेडिंग रो को सुरक्षित व फ़्रीज़ करें - बिना किसी एरर के)
- * 1. Freezes Row 1 so it stays permanently pinned at the top when scrolling
- * 2. Sets Warning-Only protection so human editors get an accidental edit warning,
- *    while Apps Script background functions continue to run with 100% full speed and zero permission errors!
+ * 100% STRICT LOCK ROW 1 (पहली हेडिंग रो को पूरी तरह सील/लॉक करें - न टाइप होगा, न बदलेगा)
+ * 1. Freezes Row 1 so it stays permanently pinned at the top
+ * 2. Writes the 19 standard headers cleanly
+ * 3. Applies Strict Data Validation Reject (=FALSE, AllowInvalid: false) so Google Sheets REJECTS any keystroke/typing!
+ * 4. Applies Strict Range Protection removing all editors
  */
 function lockAndProtectHeaderRow(optSheet) {
   var ss = getTargetSpreadsheet();
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return { success: false, message: "Sheet not found" };
 
+  var standardHeadersList = [
+    "Timestamp",
+    "पास स्थिति (Pass Status)",
+    "पास बनने की तिथि (Pass Created Date)",
+    "दर्शन तिथि",
+    "दर्शन समय स्लॉट",
+    "नाम व उम्र",
+    "राज्य",
+    "जिला",
+    "आधार नं0/पासपोर्ट नं0",
+    "पुरूषो व महिलाओं की संख्या",
+    "मो0नं0",
+    "गाडी नं0",
+    "साथ में आने वाले सदस्यों के नाम व उम्र",
+    "Referred by",
+    "आवेदनकर्ता गूगल नाम",
+    "आवेदनकर्ता ईमेल ID",
+    "कुल दर्शनार्थी संख्या",
+    "पुरुष संख्या",
+    "महिला संख्या"
+  ];
+
   try {
-    // 1. Freeze Row 1 so it stays fixed during vertical scrolling
+    // 1. Freeze Row 1
     sheet.setFrozenRows(1);
 
     var maxCols = Math.max(sheet.getLastColumn() || 19, sheet.getMaxColumns() || 19);
     var headerRange = sheet.getRange(1, 1, 1, maxCols);
 
-    // 2. Remove any previous duplicate protections on Row 1
+    // 2. Clear old protections & validations on Row 1
+    try {
+      headerRange.clearDataValidations();
+    } catch (dvErr) {}
+
     var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
     for (var i = 0; i < protections.length; i++) {
       var p = protections[i];
@@ -892,21 +962,41 @@ function lockAndProtectHeaderRow(optSheet) {
       }
     }
 
-    // 3. Create Safe Warning-Only Range Protection (Never restricts script write permissions!)
-    var protection = headerRange.protect().setDescription("🔒 सुरक्षित Row 1 हेडर्स (Protected Header Row)");
-    protection.setWarningOnly(true);
+    // 3. Ensure official standard headers are written correctly
+    sheet.getRange(1, 1, 1, standardHeadersList.length).setValues([standardHeadersList]);
+
+    // 4. LAYER 1: STRICT DATA VALIDATION HARD REJECT (Any typing is immediately rejected by Google Sheets!)
+    var strictRejectRule = SpreadsheetApp.newDataValidation()
+      .requireFormulaSatisfied('=FALSE')
+      .setAllowInvalid(false)
+      .setHelpText("🚫 पहली रो (हेडर्स) पूर्णतः लॉक है! इसमें किसी भी प्रकार का टाइपिंग या बदलाव पूर्णतः प्रतिबंधित है।")
+      .build();
+    headerRange.setDataValidation(strictRejectRule);
+
+    // 5. LAYER 2: STRICT RANGE PROTECTION (Blocks editors from editing)
+    try {
+      var protection = headerRange.protect().setDescription("🔒 STRICT 100% LOCKED HEADERS (Do Not Edit)");
+      var me = Session.getEffectiveUser();
+      protection.addEditor(me);
+      protection.removeEditors(protection.getEditors());
+      if (protection.canDomainEdit()) {
+        protection.setDomainEdit(false);
+      }
+    } catch (permErr) {
+      console.warn("Range protection notice:", permErr);
+    }
 
     try {
-      SpreadsheetApp.getActiveSpreadsheet().toast("✅ पहली रो फ़्रीज़ व वार्निंग-सुरक्षित कर दी गई है!", "Row 1 Protected 🔒", 5);
+      SpreadsheetApp.getActiveSpreadsheet().toast("🔒 पहली रो 100% स्ट्रिक्ट लॉक हो चुकी है! अब इसमें कोई बदलाव संभव नहीं है।", "Strict Lock Active 🔒", 6);
     } catch (tErr) {}
 
     SpreadsheetApp.flush();
     return {
       success: true,
-      message: "Row 1 is now safely protected in warning mode!"
+      message: "Row 1 is now 100% strictly locked!"
     };
   } catch (err) {
-    console.warn("Row 1 safe-lock notice:", err);
+    console.warn("Strict lock error:", err);
     return {
       success: false,
       error: err.toString()
