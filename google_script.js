@@ -69,7 +69,7 @@ function doPost(e) {
     var state = data.state || '';
     var district = data.district || '';
     var idNumber = data.idNumber || data.id_number || data.id || '';
-    
+
     var mVal = parseInt(data.maleCount || data.male_count || 0) || 0;
     var fVal = parseInt(data.femaleCount || data.female_count || 0) || 0;
     var genderCountsStr = "Male: " + mVal + ", Female: " + fVal;
@@ -112,10 +112,10 @@ function doPost(e) {
     // 4. AUTOMATIC CENTER ALIGNMENT & DROPDOWN VALIDATION FOR NEW ROW
     var lastRow = sheet.getLastRow();
     var lastCol = Math.max(sheet.getLastColumn(), 19);
-    
+
     if (lastRow > 1) {
       var newRowRange = sheet.getRange(lastRow, 1, 1, lastCol);
-      
+
       newRowRange.setHorizontalAlignment("center");
       newRowRange.setVerticalAlignment("middle");
       newRowRange.setWrap(true);
@@ -137,6 +137,9 @@ function doPost(e) {
 
     return ContentService.createTextOutput(JSON.stringify({
       "result": "success",
+      "rowNumber": lastRow,
+      "row": lastRow,
+      "name": nameAge,
       "message": "Darshan Pass entry saved successfully with Status = Pending in Column B!"
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -152,11 +155,16 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  var ss = getTargetSpreadsheet();
+  var sheet = ss ? (ss.getSheetByName("Form Responses") || ss.getSheetByName("Form Responses 1") || ss.getSheets()[0]) : null;
+  var lastRow = sheet ? sheet.getLastRow() : 0;
+
   if (e && e.parameter && e.parameter.action === 'format') {
     try {
       formatEntireSheet();
       return ContentService.createTextOutput(JSON.stringify({
         "status": "success",
+        "lastRow": lastRow,
         "message": "Google Sheet Formatted! Pass Status is now in Column B right after Timestamp!"
       })).setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
@@ -169,6 +177,7 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({
     "status": "online",
+    "lastRow": lastRow,
     "message": "Darshan Pass Apps Script API is active."
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -257,7 +266,7 @@ function formatEntireSheet() {
 
   var sheets = ss.getSheets();
 
-  sheets.forEach(function(sheet) {
+  sheets.forEach(function (sheet) {
     if (!sheet || sheet.getName().includes("Dashboard")) return;
 
     var lastRow = sheet.getLastRow();
@@ -340,7 +349,7 @@ function formatEntireSheet() {
 
     // 4. Setup Dynamic Conditional Formatting Rules (Auto Custom Sage Green #9fc48a for Pass Created)
     sheet.clearConditionalFormatRules();
-    
+
     var rangeToApply = sheet.getRange(2, 1, maxR - 1, lastCol);
 
     // Rule 1: Pass Created -> Custom Sage Green (#9fc48a)
@@ -518,7 +527,7 @@ function setupVipDashboard() {
     .setOption('colors', ['#9fc48a'])
     .setOption('width', 600)
     .setOption('height', 380);
-    
+
   dashSheet.insertChart(chartBuilder.build());
 
   SpreadsheetApp.flush();

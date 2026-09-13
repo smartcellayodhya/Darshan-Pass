@@ -335,17 +335,19 @@
                         </div>
 
                         <!-- Accompanying Members Details Area -->
-                        <div class="input-group">
-                            <label for="accompanying" class="input-label">
-                                Accompanying Devotees / साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र <span class="sub-label-note">(कृपया 10 साल से नीचे के बच्चों का नाम न लिखें क्योंकि उनका पास नहीं बनता है)</span> <span class="required">*</span>
+                        <div class="input-group" id="accompanying-group">
+                            <label for="accompanying" class="input-label" id="accompanying-label">
+                                Accompanying Devotees / साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र 
+                                <span class="sub-label-note" id="accompanying-note">(कृपया 10 साल से नीचे के बच्चों का नाम न लिखें क्योंकि उनका पास नहीं बनता है)</span> 
+                                <span class="required" id="accompanying-required">*</span>
                             </label>
                             <div class="input-wrapper mic-wrapper">
-                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Rahul 32 Yrs&#10;2. Ashwani 35 Yrs" required></textarea>
+                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Rahul 32 Yrs&#10;2. Ashwani 35 Yrs"></textarea>
                                 <button type="button" class="voice-mic-btn textarea-mic-btn" data-target="accompanying" title="बोलकर टाइप करें (Voice Typing)">
                                     <i class="fa-solid fa-microphone"></i>
                                 </button>
                             </div>
-                            <span class="error-msg" id="accompanying-error">कृपया सभी सदस्यों की उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)</span>
+                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)</span>
                         </div>
                     </div>
                 </div>
@@ -433,42 +435,96 @@
             </button>
         </section>
 
-        <!-- Success Modal Popup -->
+        <!-- Success Modal Popup with Acknowledgement Slip -->
         <div id="success-modal" class="modal-overlay hidden">
-            <div class="modal-content gov-modal">
+            <div class="modal-content gov-modal slip-modal">
                 <div class="gov-success-icon">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-                <h2>आपका आवेदन सफलतापूर्वक हो गया है</h2>
-                <p>आपकी दर्शन पास की जानकारी सफलतापूर्वक दर्ज कर ली गई है।</p>
+                <h2>आवेदन सफलतापूर्वक दर्ज हुआ</h2>
+                <p class="success-subtitle">आपकी श्रीरामजन्मभूमि दर्शन पास की जानकारी सुरक्षित रूप से दर्ज कर ली गई है।</p>
+                
+                <!-- Printable Acknowledgement Slip Card -->
+                <div id="printable-slip" class="receipt-card">
+                    <div class="receipt-header">
+                        <img src="assets/up_police_logo.png" alt="UP Police" class="receipt-logo">
+                        <div class="receipt-header-text">
+                            <h3>श्रीरामजन्मभूमि दर्शन पास - पावती रसीद</h3>
+                            <p>अयोध्या पुलिस (Ayodhya Police) • Smart Cell Ayodhya</p>
+                        </div>
+                    </div>
+
+                    <div class="receipt-highlight-box">
+                        <!-- Primary Devotee Name -->
+                        <div class="highlight-item devotee-highlight">
+                            <span class="highlight-label"><i class="fa-solid fa-user"></i> मुख्य दर्शनार्थी का नाम</span>
+                            <span class="highlight-value" id="slip-devotee-name">--</span>
+                        </div>
+                        
+                        <!-- Google Sheet Row Number -->
+                        <div class="highlight-item row-highlight">
+                            <span class="highlight-label"><i class="fa-solid fa-table-cells"></i> शीट रो नंबर (Row Number)</span>
+                            <span class="highlight-value row-pill" id="slip-row-number">Row #--</span>
+                        </div>
+
+                        <!-- Application ID -->
+                        <div class="highlight-item token-highlight">
+                            <span class="highlight-label"><i class="fa-solid fa-ticket"></i> टोकन नंबर (Token ID)</span>
+                            <div class="token-copy-wrapper">
+                                <span class="highlight-value token-code" id="slip-token-id">AYO-DP-XXXX</span>
+                                <button type="button" id="copy-token-btn" class="token-copy-btn" title="टोकन कॉपी करें">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="receipt-details-grid">
+                        <div class="receipt-detail-item">
+                            <span class="detail-label">दर्शन तिथि व स्लॉट:</span>
+                            <span class="detail-value" id="slip-visit-datetime">--</span>
+                        </div>
+                        <div class="receipt-detail-item">
+                            <span class="detail-label">कुल दर्शनार्थी:</span>
+                            <span class="detail-value" id="slip-total-devotees">--</span>
+                        </div>
+                        <div class="receipt-detail-item">
+                            <span class="detail-label">मोबाइल नंबर:</span>
+                            <span class="detail-value" id="slip-mobile">--</span>
+                        </div>
+                        <div class="receipt-detail-item">
+                            <span class="detail-label">रेफरेंस / संदर्भ:</span>
+                            <span class="detail-value" id="slip-referred-by">--</span>
+                        </div>
+                        <div class="receipt-detail-item full-width" id="slip-accompanying-box">
+                            <span class="detail-label">साथी दर्शनार्थी:</span>
+                            <span class="detail-value" id="slip-accompanying">लागू नहीं (अकेले दर्शनार्थी)</span>
+                        </div>
+                    </div>
+
+                    <div class="receipt-footer-note">
+                        <i class="fa-solid fa-circle-info"></i> यह केवल ऑनलाइन आवेदन की पावती है। अंतिम दर्शन पास सक्षम पुलिस अधिकारी की अनुमति के उपरांत जारी किया जाएगा।
+                    </div>
+                </div>
+
                 <div class="modal-action-buttons">
-                    <button id="submit-another-btn" class="modal-btn gov-modal-btn">
-                        <i class="fa-solid fa-rotate-left"></i> दूसरा फॉर्म भरें (Submit Another Form)
+                    <button id="print-slip-btn" type="button" class="modal-btn gov-modal-btn">
+                        <i class="fa-solid fa-print"></i> रसीद प्रिंट करें / PDF
                     </button>
-                    <button id="modal-close-btn" class="modal-btn gov-btn-secondary">
-                        <i class="fa-solid fa-xmark"></i> बंद करें (Close)
+                    <button id="submit-another-btn" type="button" class="modal-btn gov-btn-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> दूसरा फॉर्म भरें
+                    </button>
+                    <button id="modal-close-btn" type="button" class="modal-btn gov-btn-outline">
+                        <i class="fa-solid fa-xmark"></i> बंद करें
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- SEARCHABLE DROPDOWN OVERLAY MODAL (Opens when clicking dropdown) -->
-        <div id="search-select-modal" class="modal-overlay hidden">
-            <div class="modal-content gov-modal search-modal-content">
-                <div class="search-modal-header">
-                    <h3 id="search-modal-title">चयन करें (Select Option)</h3>
-                    <button type="button" id="close-search-modal-btn" class="close-search-btn">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div class="search-modal-input-wrapper">
-                    <i class="fa-solid fa-magnifying-glass search-modal-icon"></i>
-                    <input type="text" id="search-modal-input" placeholder="🔍 टाइप करके सर्च करें (Type to Search)..." autocomplete="off">
-                </div>
-                <div id="search-modal-options-list" class="search-modal-options-list">
-                    <!-- Options populated dynamically -->
-                </div>
-            </div>
+        <!-- Toast Notification Notification -->
+        <div id="gov-toast" class="gov-toast hidden">
+            <i class="toast-icon fa-solid fa-circle-info"></i>
+            <span id="toast-message">सूचना</span>
         </div>
 
         <!-- Official Footer -->

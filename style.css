@@ -435,6 +435,313 @@ body.gov-minimal-theme {
     background-color: var(--primary-blue-hover);
 }
 
+.gov-btn-outline {
+    width: 100%;
+    padding: 0.85rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    background-color: #ffffff;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.gov-btn-outline:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+
+/* -------------------------------------------------------------
+ * ACKNOWLEDGEMENT RECEIPT SLIP CARD & MODAL STYLES
+ * ------------------------------------------------------------- */
+.slip-modal {
+    max-width: 580px !important;
+    padding: 2rem 1.8rem !important;
+}
+
+.success-subtitle {
+    color: #475569 !important;
+    font-size: 0.95rem;
+    margin-bottom: 1.2rem !important;
+}
+
+.receipt-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-md);
+    padding: 1.4rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.receipt-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1e3a8a, #0284c7, #16a34a);
+}
+
+.receipt-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1.5px dashed #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.receipt-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
+.receipt-header-text h3 {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: 1.15rem;
+    color: var(--navy-dark);
+    margin-bottom: 0.15rem;
+}
+
+.receipt-header-text p {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0 !important;
+    font-weight: 500;
+}
+
+/* Highlight Box: Primary Devotee, Row Number & Token ID */
+.receipt-highlight-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    padding: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.highlight-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.highlight-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.highlight-label i {
+    color: var(--primary-blue);
+    font-size: 0.8rem;
+}
+
+.highlight-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--navy-dark);
+}
+
+#slip-devotee-name {
+    color: #1e3a8a;
+    font-size: 1.05rem;
+    word-break: break-word;
+}
+
+.row-pill {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.05rem !important;
+    width: fit-content;
+}
+
+.token-copy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.token-code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.92rem;
+    background: #f1f5f9;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+}
+
+.token-copy-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+
+.token-copy-btn:hover {
+    background: #eff6ff;
+    color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+/* Receipt Details Grid */
+.receipt-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem 1rem;
+    font-size: 0.88rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1.5px dashed #e2e8f0;
+    margin-bottom: 0.8rem;
+}
+
+.receipt-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.receipt-detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: pre-line;
+}
+
+.receipt-footer-note {
+    font-size: 0.78rem;
+    color: #64748b;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+}
+
+.receipt-footer-note i {
+    color: #0284c7;
+    margin-top: 2px;
+}
+
+/* Toast Notification Styles */
+.gov-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.8rem 1.4rem;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    z-index: 10001;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 90vw;
+    text-align: center;
+}
+
+.gov-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.gov-toast.toast-success {
+    background: #15803d;
+}
+
+.gov-toast.toast-warning {
+    background: #b45309;
+}
+
+.gov-toast.toast-error {
+    background: #b91c1c;
+}
+
+/* Single Devotee Mode Style Helper */
+.input-group.single-devotee {
+    opacity: 0.75;
+}
+
+.input-group.single-devotee textarea {
+    background-color: #f8fafc;
+}
+
+/* -------------------------------------------------------------
+ * PRINT MEDIA OPTIMIZATION
+ * When printing receipt slip, hide page and show only the receipt!
+ * ------------------------------------------------------------- */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #printable-slip, #printable-slip * {
+        visibility: visible;
+    }
+
+    #printable-slip {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 2rem !important;
+    }
+
+    .token-copy-btn {
+        display: none !important;
+    }
+}
+
 /* -------------------------------------------------------------
  * GOOGLE SUBMITTER IDENTITY CARD STYLES
  * ------------------------------------------------------------- */

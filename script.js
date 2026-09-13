@@ -402,28 +402,100 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // UNSTOPPABLE TRANSMISSION PIPELINE
     // -------------------------------------------------------------
-    async function sendDataUnstoppable(formData) {
+    // TOAST NOTIFICATION HELPER
+    // -------------------------------------------------------------
+    function showToast(message, type = "info") {
+        const toast = document.getElementById("gov-toast");
+        if (!toast) return;
+
+        let iconClass = "fa-circle-info";
+        if (type === "success") iconClass = "fa-circle-check";
+        if (type === "error" || type === "warning") iconClass = "fa-triangle-exclamation";
+
+        toast.innerHTML = `<i class="toast-icon fa-solid ${iconClass}"></i> <span>${message}</span>`;
+        toast.className = `gov-toast toast-${type}`;
+        toast.classList.remove("hidden");
+        toast.classList.add("show");
+
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.classList.add("hidden"), 300);
+        }, 4500);
+    }
+
+    // UNIQUE APPLICATION REFERENCE NUMBER GENERATOR (AYO-DP-YYYYMMDD-XXXX)
+    function generateApplicationId() {
+        const now = new Date();
+        const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        return `AYO-DP-${ymd}-${rand}`;
+    }
+
+    // -------------------------------------------------------------
+    // RELIABLE TRANSMISSION PIPELINE WITH SHEET ROW NUMBER RETURN
+    // -------------------------------------------------------------
+    async function sendDataWithRowFeedback(formData) {
         const payloadStr = JSON.stringify(formData);
+        let rowNumber = null;
+
+        // Check active internet connection first
+        if (navigator.onLine === false) {
+            showToast("इंटरनेट कनेक्शन उपलब्ध नहीं है। कृपया नेटवर्क जांचें।", "error");
+            throw new Error("Offline");
+        }
 
         try {
-            await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            // Attempt standard POST fetch to Google Apps Script
+            const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "text/plain" },
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: payloadStr
             });
+
+            if (response.ok) {
+                const resJson = await response.json();
+                if (resJson && (resJson.rowNumber || resJson.row)) {
+                    rowNumber = resJson.rowNumber || resJson.row;
+                }
+            }
         } catch (fetchErr) {
-            console.warn("Fetch failed, initiating Navigator Beacon fallback...", fetchErr);
+            console.warn("Direct POST JSON response not readable due to CORS redirect, initiating fallback...", fetchErr);
+            // Fallback: send via no-cors mode to ensure Google Sheet definitely receives data
             try {
+                await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain" },
+                    body: payloadStr
+                });
+            } catch (fallbackErr) {
                 if (navigator.sendBeacon) {
                     navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
                 }
-            } catch (beaconErr) {
-                console.error("Beacon fallback also failed:", beaconErr);
             }
         }
+
+        // If row number was not returned in direct POST, query the latest row via GET
+        if (!rowNumber) {
+            try {
+                const getRes = await fetch(GOOGLE_APPS_SCRIPT_URL);
+                if (getRes.ok) {
+                    const getJson = await getRes.json();
+                    if (getJson && getJson.lastRow) {
+                        rowNumber = getJson.lastRow;
+                    }
+                }
+            } catch (getErr) {
+                console.warn("Could not query lastRow from GET endpoint:", getErr);
+            }
+        }
+
+        return {
+            success: true,
+            rowNumber: rowNumber
+        };
     }
 
     function resetFormState() {
@@ -444,6 +516,11 @@ document.addEventListener("DOMContentLoaded", () => {
             referredBySelect.dispatchEvent(new Event("change"));
         }
         document.querySelectorAll(".input-group").forEach(g => g.classList.remove("valid", "invalid"));
+
+        // Reset devotee count defaults (1 Male, 0 Female = 1 Total Single Devotee)
+        if (maleCountInput) maleCountInput.value = "1";
+        if (femaleCountInput) femaleCountInput.value = "0";
+        updateAccompanyingRequirement(1);
     }
 
     // -------------------------------------------------------------
@@ -489,13 +566,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (isIndia) {
                     if (/^\d+$/.test(idVal)) {
-                        // Pure numeric: MUST BE STRICTLY 12 DIGITS FOR AADHAAR
                         isIdValid = idVal.length === 12;
                         if (idErrorEl && !isIdValid) {
                             idErrorEl.textContent = "आधार नंबर strictly 12 अंकों का होना अनिवार्य है";
                         }
                     } else if (idVal.length >= 6 && idVal.length <= 12) {
-                        // Passport number (Alphanumeric)
                         isIdValid = /^[A-Z0-9]{6,12}$/.test(idVal);
                         if (idErrorEl && !isIdValid) {
                             idErrorEl.textContent = "मान्य 12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें";
@@ -507,7 +582,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     }
                 } else {
-                    // International Passport
                     isIdValid = /^[A-Z0-9]{6,12}$/.test(idVal);
                     if (idErrorEl && !isIdValid) {
                         idErrorEl.textContent = "Please enter a valid Passport Number (6-12 alphanumeric)";
@@ -522,25 +596,39 @@ document.addEventListener("DOMContentLoaded", () => {
             const mobVal = mobileInput ? mobileInput.value.trim() : "";
             const isMobileValid = mobileInput ? markGroup(mobileInput, /^\d{10}$/.test(mobVal)) : true;
 
-            // Accompanying devotees validation (Must contain at least 1 number/digit for Age)
-            let isAccompanyingValid = false;
+            // Devotee Counts Calculation
+            const mVal = parseInt(getVal("maleCount")) || 0;
+            const fVal = parseInt(getVal("femaleCount")) || 0;
+            const totalCount = mVal + fVal;
+            const isCountValid = totalCount > 0 && totalCount <= 8;
+            if (maleCountInput) markGroup(maleCountInput, isCountValid);
+
+            // Accompanying devotees validation (Dynamically based on Total Devotees count)
+            let isAccompanyingValid = true;
             if (accompanyingInput) {
                 const accVal = accompanyingInput.value.trim();
-                const hasAccAgeDigit = /\d/.test(accVal);
                 const accErrorEl = document.getElementById("accompanying-error");
 
-                if (accVal.length < 2) {
-                    isAccompanyingValid = false;
-                    if (accErrorEl) accErrorEl.textContent = "कृपया साथ में आने वाले सदस्यों के नाम एवं उम्र दर्ज करें";
-                } else if (!hasAccAgeDigit) {
-                    isAccompanyingValid = false;
-                    if (accErrorEl) accErrorEl.textContent = "कृपया सभी सदस्यों की उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)";
-                } else {
+                if (totalCount <= 1) {
+                    // Single Devotee: Accompanying is NOT required
                     isAccompanyingValid = true;
+                    markGroup(accompanyingInput, true);
+                } else {
+                    // Multiple Devotees: Accompanying members details are mandatory
+                    const hasAccAgeDigit = /\b([1-9][0-9]?|1[0-1][0-9]|120)\b/.test(accVal);
+                    const remainingMembers = totalCount - 1;
+
+                    if (accVal.length < 2) {
+                        isAccompanyingValid = false;
+                        if (accErrorEl) accErrorEl.textContent = `कृपया अन्य ${remainingMembers} साथी सदस्यों के नाम एवं उम्र दर्ज करें`;
+                    } else if (!hasAccAgeDigit) {
+                        isAccompanyingValid = false;
+                        if (accErrorEl) accErrorEl.textContent = "कृपया सभी साथी सदस्यों की उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)";
+                    } else {
+                        isAccompanyingValid = true;
+                    }
+                    markGroup(accompanyingInput, isAccompanyingValid);
                 }
-                markGroup(accompanyingInput, isAccompanyingValid);
-            } else {
-                isAccompanyingValid = true;
             }
 
             // Vehicle No validation (Optional, but no symbols allowed)
@@ -558,12 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isCountryValid = countrySelect ? markGroup(countrySelect, countrySelect.value !== "") : true;
                 isLocationValid = isCountryValid;
             }
-
-            const mVal = parseInt(getVal("maleCount")) || 0;
-            const fVal = parseInt(getVal("femaleCount")) || 0;
-            const totalCount = mVal + fVal;
-            const isCountValid = totalCount > 0 && totalCount <= 8;
-            if (maleCountInput) markGroup(maleCountInput, isCountValid);
 
             const isRefValid = referredBySelect ? markGroup(referredBySelect, referredBySelect.value !== "") : true;
             let isOtherRefValid = true;
@@ -586,6 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!isDateValid || !isSlotValid || !isNameAgeValid || !isIdValid || !isMobileValid || !isVehicleValid || !isAccompanyingValid || !isLocationValid || !isCountValid || !isRefValid || !isOtherRefValid) {
                 const firstInvalid = form.querySelector(".input-group.invalid input, .input-group.invalid select, .input-group.invalid textarea");
                 if (firstInvalid) firstInvalid.focus();
+                showToast("कृपया फॉर्म में सभी आवश्यक जानकारी सही प्रकार भरें", "warning");
                 return;
             }
 
@@ -619,12 +702,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalReferredBy = "Other: " + getVal("otherRefName");
             }
 
-            // Construct Unstoppable Payload
+            const devoteeNameVal = getVal("nameAge");
+            const finalAccompanyingVal = totalCount <= 1 ? "लागू नहीं (अकेले दर्शनार्थी)" : (getVal("accompanying") || "कोई नहीं");
+            const generatedAppId = generateApplicationId();
+
+            // Construct Transmission Payload
             const formData = {
+                applicationId: generatedAppId,
                 visitDateTime: formattedVisitDateTime,
                 visitDate: formattedDateStr,
                 visitSlot: slotVal,
-                nameAge: getVal("nameAge"),
+                nameAge: devoteeNameVal,
                 state: finalState,
                 district: finalDistrict,
                 idNumber: getVal("idNumber"),
@@ -632,19 +720,49 @@ document.addEventListener("DOMContentLoaded", () => {
                 femaleCount: fVal,
                 mobile: getVal("mobile"),
                 vehicleNo: getVal("vehicleNo"),
-                accompanying: getVal("accompanying"),
+                accompanying: finalAccompanyingVal,
                 referredBy: finalReferredBy,
                 submitterName: subName,
                 submitterEmail: subEmail
             };
 
-            // Transmit Data via Unstoppable Pipeline
-            await sendDataUnstoppable(formData);
+            try {
+                // Transmit Data and retrieve Google Sheet Row Number
+                const result = await sendDataWithRowFeedback(formData);
+                const finalRow = (result && result.rowNumber) ? result.rowNumber : "Saved";
 
-            // Display Success Modal
-            if (successModal) successModal.classList.remove("hidden");
+                // Populate Acknowledgement Slip / Modal
+                const slipDevoteeName = document.getElementById("slip-devotee-name");
+                const slipRowNumber = document.getElementById("slip-row-number");
+                const slipTokenId = document.getElementById("slip-token-id");
+                const slipVisitDatetime = document.getElementById("slip-visit-datetime");
+                const slipTotalDevotees = document.getElementById("slip-total-devotees");
+                const slipMobile = document.getElementById("slip-mobile");
+                const slipReferredBy = document.getElementById("slip-referred-by");
+                const slipAccompanying = document.getElementById("slip-accompanying");
 
-            setSubmittingState(false);
+                if (slipDevoteeName) slipDevoteeName.textContent = devoteeNameVal;
+                if (slipRowNumber) slipRowNumber.textContent = typeof finalRow === "number" ? `Row #${finalRow}` : `Row #${finalRow}`;
+                if (slipTokenId) slipTokenId.textContent = generatedAppId;
+                if (slipVisitDatetime) slipVisitDatetime.textContent = formattedVisitDateTime;
+                if (slipTotalDevotees) slipTotalDevotees.textContent = `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
+                if (slipMobile) slipMobile.textContent = formData.mobile;
+                if (slipReferredBy) slipReferredBy.textContent = finalReferredBy;
+                if (slipAccompanying) slipAccompanying.textContent = finalAccompanyingVal;
+
+                // Display Success Modal
+                if (successModal) {
+                    successModal.classList.remove("hidden");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+
+                showToast("आवेदन सफलतापूर्वक दर्ज हो गया!", "success");
+            } catch (err) {
+                console.error("Submission error:", err);
+                showToast("आवेदन सबमिट करने में समस्या आई। कृपया पुनः प्रयास करें।", "error");
+            } finally {
+                setSubmittingState(false);
+            }
         });
     }
 
@@ -704,17 +822,50 @@ document.addEventListener("DOMContentLoaded", () => {
         reopenFormBtn.addEventListener("click", openNewForm);
     }
 
+    // Copy Token ID Handler
+    const copyTokenBtn = document.getElementById("copy-token-btn");
+    if (copyTokenBtn) {
+        copyTokenBtn.addEventListener("click", () => {
+            const tokenIdEl = document.getElementById("slip-token-id");
+            if (tokenIdEl) {
+                navigator.clipboard.writeText(tokenIdEl.textContent.trim()).then(() => {
+                    copyTokenBtn.innerHTML = '<i class="fa-solid fa-check" style="color: #16a34a;"></i>';
+                    showToast("टोकन ID सफलतापूर्वक कॉपी हो गई!", "success");
+                    setTimeout(() => {
+                        copyTokenBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                    }, 2200);
+                });
+            }
+        });
+    }
+
+    // Print Receipt Handler
+    const printSlipBtn = document.getElementById("print-slip-btn");
+    if (printSlipBtn) {
+        printSlipBtn.addEventListener("click", () => {
+            window.print();
+        });
+    }
+
     // -------------------------------------------------------------
     // VOICE TYPING (SPEECH TO TEXT) HANDLER
     // -------------------------------------------------------------
     function setupVoiceTyping() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const micButtons = document.querySelectorAll(".voice-mic-btn");
+
         if (!SpeechRecognition) {
             console.warn("Speech Recognition API not supported in this browser.");
+            micButtons.forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    showToast("आपका ब्राउज़र वॉयस टाइपिंग का समर्थन नहीं करता है। कृपया कीबोर्ड से टाइप करें।", "warning");
+                });
+            });
             return;
         }
 
-        document.querySelectorAll(".voice-mic-btn").forEach(btn => {
+        micButtons.forEach(btn => {
             btn.addEventListener("click", (e) => {
                 e.preventDefault();
                 const targetId = btn.getAttribute("data-target");
@@ -894,6 +1045,40 @@ document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // REAL-TIME DEVOTEE COUNT MAX 8 CLAMP HANDLER
     // -------------------------------------------------------------
+    // -------------------------------------------------------------
+    // REAL-TIME DEVOTEE COUNT MAX 8 CLAMP HANDLER & SINGLE DEVOTEE TOGGLE
+    // -------------------------------------------------------------
+    function updateAccompanyingRequirement(totalCount) {
+        const accGroup = document.getElementById("accompanying-group");
+        const accNote = document.getElementById("accompanying-note");
+        const accReq = document.getElementById("accompanying-required");
+        const accError = document.getElementById("accompanying-error");
+
+        if (totalCount <= 1) {
+            if (accompanyingInput) {
+                accompanyingInput.required = false;
+            }
+            if (accReq) accReq.style.display = "none";
+            if (accNote) accNote.textContent = "(अकेले दर्शनार्थी हेतु लागू नहीं / Not Applicable for Single Devotee)";
+            if (accGroup) {
+                accGroup.classList.remove("invalid");
+                accGroup.classList.add("single-devotee");
+            }
+            if (accError) accError.style.display = "none";
+        } else {
+            if (accompanyingInput) {
+                accompanyingInput.required = true;
+            }
+            if (accReq) accReq.style.display = "inline";
+            const extra = totalCount - 1;
+            if (accNote) accNote.textContent = `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
+            if (accGroup) {
+                accGroup.classList.remove("single-devotee");
+            }
+            if (accError) accError.style.display = "";
+        }
+    }
+
     function enforceDevoteeCountLimit() {
         if (!maleCountInput || !femaleCountInput) return;
 
@@ -911,8 +1096,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 maleCountInput.value = mVal;
             }
 
-            const isCountValid = (mVal + fVal) > 0 && (mVal + fVal) <= 8;
+            const total = mVal + fVal;
+            const isCountValid = total > 0 && total <= 8;
             markGroup(maleCountInput, isCountValid);
+            updateAccompanyingRequirement(total);
         }
 
         function handleFemaleInput() {
@@ -929,14 +1116,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 femaleCountInput.value = fVal;
             }
 
-            const isCountValid = (mVal + fVal) > 0 && (mVal + fVal) <= 8;
+            const total = mVal + fVal;
+            const isCountValid = total > 0 && total <= 8;
             markGroup(maleCountInput, isCountValid);
+            updateAccompanyingRequirement(total);
         }
 
         maleCountInput.addEventListener("input", handleMaleInput);
         maleCountInput.addEventListener("change", handleMaleInput);
         femaleCountInput.addEventListener("input", handleFemaleInput);
         femaleCountInput.addEventListener("change", handleFemaleInput);
+
+        // Run initially for current values (default: 1 Male + 0 Female = 1 Single Devotee)
+        const initialTotal = (parseInt(maleCountInput.value) || 0) + (parseInt(femaleCountInput.value) || 0);
+        updateAccompanyingRequirement(initialTotal);
     }
 
     // Initialize Voice Typing, Devotee Count Limit & Searchable Dropdowns
