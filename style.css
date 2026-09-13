@@ -1540,30 +1540,31 @@ body.gov-minimal-theme {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+.utility-action-btn.install-icon-btn,
 .utility-action-btn.install-btn {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    border: 1.5px solid #6ee7b7;
-    color: #ffffff;
-    animation: installPulse 3s infinite;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.18);
+    border: 1.5px solid rgba(16, 185, 129, 0.55);
+    color: #34d399;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.utility-action-btn.install-icon-btn:hover,
 .utility-action-btn.install-btn:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    border-color: #a7f3d0;
-    transform: translateY(-1.5px);
+    background: #10b981;
+    border-color: #6ee7b7;
+    color: #ffffff;
+    transform: translateY(-1.5px) scale(1.06);
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
-}
-
-@keyframes installPulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
-    }
-    65% {
-        box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
 }
 
 .ios-modal {
