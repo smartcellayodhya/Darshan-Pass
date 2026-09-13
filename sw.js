@@ -3,14 +3,14 @@
  * Ayodhya Police - Smart Cell Ayodhya
  */
 
-const CACHE_NAME = 'darshan-pass-v1.8';
+const CACHE_NAME = 'darshan-pass-v1.9';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
-  './style.css?v=2.6',
+  './style.css?v=2.7',
   './script.js',
-  './script.js?v=2.6',
+  './script.js?v=2.7',
   './manifest.json',
   './assets/up_police_logo.png',
   './assets/icon-192.png',
@@ -44,7 +44,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event: Network-first for dynamic requests, Cache-first/Stale-while-revalidate for static files
+// 3. Fetch Event: Network-first for HTML & dynamic requests, Cache-first for static assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -59,6 +59,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-First for HTML navigation to ensure users instantly get the latest layout
+  const isHtml = event.request.mode === 'navigate' || 
+                 url.pathname.endsWith('.html') || 
+                 url.pathname === '/' || 
+                 url.pathname === '';
+
+  if (isHtml) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first / Stale-while-revalidate for versioned static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {

@@ -628,6 +628,40 @@ body.gov-minimal-theme {
     color: #ffffff;
 }
 
+/* Fallback for legacy markup if cached */
+.pass-token-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    margin-top: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pass-token-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #0369a1;
+}
+
+.pass-token-val-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+@media (max-width: 480px) {
+    .pass-card-topbar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+    }
+}
+
 /* Devotee Info Bar */
 .pass-devotee-bar {
     background: #f8fafc;
@@ -849,14 +883,20 @@ body.gov-minimal-theme {
         overflow: visible !important;
     }
 
-    /* Completely hide everything that is not the modal receipt */
-    body > *:not(.modal-overlay) {
+    /* Explicitly hide non-receipt components */
+    header, nav, main, footer, 
+    .app-splash-screen, .app-header, .gov-main-container,
+    .gov-form-card, .utility-action-bar, .scroll-to-top-btn,
+    .gov-account-card, #config-alert, #track-pass-modal,
+    #ios-install-modal, #google-auth-lock, #gov-toast,
+    .compact-modal-header, .modal-action-buttons, .compact-close-text-btn,
+    .pass-copy-btn, #copy-token-btn {
         display: none !important;
     }
 
-    .modal-overlay {
-        position: static !important;
+    #success-modal {
         display: block !important;
+        position: static !important;
         width: 100% !important;
         height: auto !important;
         background: none !important;
@@ -864,31 +904,24 @@ body.gov-minimal-theme {
         margin: 0 !important;
     }
 
-    .modal-content.gov-modal {
+    #success-modal .modal-content {
         position: static !important;
         box-shadow: none !important;
         border: none !important;
         padding: 0 !important;
         margin: 0 auto !important;
-        max-width: 460px !important;
+        max-width: 480px !important;
         width: 100% !important;
         background: none !important;
     }
 
-    .compact-modal-header,
-    .modal-action-buttons,
-    .compact-close-text-btn,
-    .pass-copy-btn,
-    #copy-token-btn {
-        display: none !important;
-    }
-
     #printable-slip {
         display: block !important;
+        visibility: visible !important;
         position: static !important;
         transform: none !important;
         width: 100% !important;
-        max-width: 460px !important;
+        max-width: 480px !important;
         margin: 0 auto !important;
         padding: 1.2rem 1.4rem !important;
         background: #ffffff !important;
@@ -899,6 +932,10 @@ body.gov-minimal-theme {
         break-inside: avoid !important;
         page-break-after: avoid !important;
         break-after: avoid !important;
+    }
+
+    #printable-slip * {
+        visibility: visible !important;
     }
 }
 

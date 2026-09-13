@@ -1198,11 +1198,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // WHATSAPP 1-CLICK SHARE HANDLER
+    // WHATSAPP 1-CLICK SHARE HANDLER (PNG IMAGE + CLEAN TEXT)
     // -------------------------------------------------------------
     const whatsappShareBtn = document.getElementById("whatsapp-share-btn");
     if (whatsappShareBtn) {
-        whatsappShareBtn.addEventListener("click", () => {
+        whatsappShareBtn.addEventListener("click", async () => {
             const devoteeName = (document.getElementById("slip-devotee-name")?.textContent || "").trim();
             const tokenId = (document.getElementById("slip-token-id")?.textContent || "").trim();
             const visitDatetime = (document.getElementById("slip-visit-datetime")?.textContent || "").trim();
@@ -1220,13 +1220,93 @@ document.addEventListener("DOMContentLoaded", () => {
 📱 *मोबाइल नंबर:* ${mobile}
 🏛️ *रेफरेंस:* ${referredBy}
 ━━━━━━━━━━━━━━━━━━━━
-ℹ️ *ऑनलाइन पावती स्थिति जांचें:*
-https://darshanpass.ayodhyapolice.in
-
 🙏 *जय श्री राम* 🙏`;
 
-            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
-            window.open(whatsappUrl, "_blank");
+            const printableSlip = document.getElementById("printable-slip");
+            const cleanTokenStr = tokenId.replace(/[^a-zA-Z0-9_-]/g, '') || "pass";
+            const fileName = `Darshan-Pass-${cleanTokenStr}.png`;
+
+            if (!printableSlip || typeof html2canvas === "undefined") {
+                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+                window.open(whatsappUrl, "_blank");
+                return;
+            }
+
+            const origHtml = whatsappShareBtn.innerHTML;
+            try {
+                whatsappShareBtn.disabled = true;
+                whatsappShareBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> तैयार हो रहा है...';
+
+                const canvas = await html2canvas(printableSlip, {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onclone: (clonedDoc) => {
+                        const slip = clonedDoc.getElementById("printable-slip");
+                        if (slip) {
+                            slip.style.width = "460px";
+                            slip.style.maxWidth = "460px";
+                            slip.style.boxSizing = "border-box";
+                            slip.style.margin = "0";
+                            slip.style.padding = "1.2rem 1.4rem";
+                            slip.style.boxShadow = "none";
+                            slip.style.border = "1.5px solid #0f172a";
+                            const copyBtn = slip.querySelector(".pass-copy-btn, #copy-token-btn");
+                            if (copyBtn) copyBtn.remove();
+                        }
+                    }
+                });
+
+                canvas.toBlob(async (blob) => {
+                    whatsappShareBtn.disabled = false;
+                    whatsappShareBtn.innerHTML = origHtml;
+
+                    if (!blob) {
+                        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+                        window.open(whatsappUrl, "_blank");
+                        return;
+                    }
+
+                    const file = new File([blob], fileName, { type: "image/png" });
+
+                    // Web Share API with File (Native support on Android Chrome & iOS Safari)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: "श्रीरामजन्मभूमि दर्शन पास",
+                                text: messageText
+                            });
+                        } catch (err) {
+                            if (err.name !== "AbortError") {
+                                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+                                window.open(whatsappUrl, "_blank");
+                            }
+                        }
+                    } else {
+                        // Desktop fallback: download PNG + open WhatsApp Web
+                        const link = document.createElement("a");
+                        link.download = fileName;
+                        link.href = URL.createObjectURL(blob);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        showToast("रसीद डाउनलोड हो गई, WhatsApp चैट खुल रहा है...", "info");
+                        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+                        window.open(whatsappUrl, "_blank");
+                    }
+                }, "image/png");
+            } catch (err) {
+                console.error("WhatsApp share error:", err);
+                whatsappShareBtn.disabled = false;
+                whatsappShareBtn.innerHTML = origHtml;
+                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+                window.open(whatsappUrl, "_blank");
+            }
         });
     }
 
