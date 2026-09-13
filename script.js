@@ -1972,8 +1972,26 @@ Reference: ${referredBy}
     }
 
     // -------------------------------------------------------------
-    // VOICE TYPING (SPEECH TO TEXT) HANDLER
     // -------------------------------------------------------------
+    // VOICE TYPING (SPEECH TO TEXT) HANDLER (SINGLETON TOGGLE)
+    // -------------------------------------------------------------
+    let currentVoiceRecognition = null;
+    let currentVoiceBtn = null;
+
+    function stopCurrentVoiceTyping() {
+        if (currentVoiceRecognition) {
+            try {
+                currentVoiceRecognition.abort();
+            } catch (e) {}
+            currentVoiceRecognition = null;
+        }
+        if (currentVoiceBtn) {
+            currentVoiceBtn.classList.remove("listening");
+            currentVoiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+            currentVoiceBtn = null;
+        }
+    }
+
     function setupVoiceTyping() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const micButtons = document.querySelectorAll(".voice-mic-btn");
@@ -1985,7 +2003,8 @@ Reference: ${referredBy}
                 btn._voiceBound = true;
                 btn.addEventListener("click", (e) => {
                     e.preventDefault();
-                    showToast("आपका ब्राउज़र वॉयस टाइपिंग का समर्थन नहीं करता है। कृपया कीबोर्ड से टाइप करें।", "warning");
+                    e.stopPropagation();
+                    showToast("आपके ब्राउज़र में वॉयस टाइपिंग समर्थित नहीं है। कृपया कीबोर्ड से लिखें।", "warning");
                 });
             });
             return;
@@ -1994,16 +2013,43 @@ Reference: ${referredBy}
         micButtons.forEach(btn => {
             if (btn._voiceBound) return;
             btn._voiceBound = true;
+
             btn.addEventListener("click", (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+
+                // If THIS button is already active, touching it again turns it OFF!
+                if (currentVoiceBtn === btn) {
+                    stopCurrentVoiceTyping();
+                    showToast("माइक बंद कर दिया गया (Voice typing stopped)", "info");
+                    return;
+                }
+
+                // If ANOTHER mic is active, stop that one first
+                stopCurrentVoiceTyping();
+
                 const targetId = btn.getAttribute("data-target");
                 const targetInput = document.getElementById(targetId);
                 if (!targetInput) return;
 
-                const recognition = new SpeechRecognition();
-                recognition.lang = "hi-IN"; // Set Hindi speech recognition
+                let recognition;
+                try {
+                    recognition = new SpeechRecognition();
+                } catch (err) {
+                    console.error("Failed to create SpeechRecognition:", err);
+                    showToast("वॉयस टाइपिंग शुरू नहीं हो सकी। कृपया कीबोर्ड से लिखें।", "warning");
+                    return;
+                }
+
+                // Check language (Hindi or English)
+                const curLang = localStorage.getItem("darshan_lang") || "hi";
+                recognition.lang = curLang === "en" ? "en-IN" : "hi-IN";
                 recognition.interimResults = false;
                 recognition.maxAlternatives = 1;
+                recognition.continuous = false;
+
+                currentVoiceRecognition = recognition;
+                currentVoiceBtn = btn;
 
                 btn.classList.add("listening");
                 btn.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat" style="color: #ef4444;"></i>';
@@ -2013,31 +2059,54 @@ Reference: ${referredBy}
                 };
 
                 recognition.onresult = (event) => {
-                    const speechResult = event.results[0][0].transcript;
+                    if (!event.results || !event.results[0]) return;
+                    const speechResult = (event.results[0][0].transcript || "").trim();
+                    if (!speechResult) return;
+
                     if (targetInput.tagName === "TEXTAREA") {
                         targetInput.value += (targetInput.value ? "\n" : "") + speechResult;
                     } else {
-                        targetInput.value = speechResult;
+                        if (targetInput.id === "mobile") {
+                            // Extract digits only for mobile number
+                            const digits = speechResult.replace(/\D/g, "");
+                            targetInput.value = digits ? digits.slice(0, 10) : speechResult;
+                        } else if (targetInput.id === "idNumber") {
+                            const cleanId = speechResult.replace(/[\s-]/g, "");
+                            targetInput.value = cleanId.slice(0, 12);
+                        } else {
+                            targetInput.value = speechResult;
+                        }
                     }
-                    targetInput.dispatchEvent(new Event("input"));
-                    btn.classList.remove("listening");
-                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+
+                    targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    targetInput.dispatchEvent(new Event("change", { bubbles: true }));
                     showToast("✅ आवाज़ दर्ज हो गई (Voice recorded)", "success");
+                    stopCurrentVoiceTyping();
                 };
 
                 recognition.onerror = (event) => {
-                    console.error("Speech recognition error:", event.error);
-                    btn.classList.remove("listening");
-                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    console.warn("Speech recognition error:", event.error);
+                    stopCurrentVoiceTyping();
                     if (event.error === "no-speech") {
                         showToast("कोई आवाज़ नहीं पहचानी गई, कृपया पुनः बोलें", "warning");
+                    } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+                        showToast("माइक्रोफ़ोन की अनुमति (Permission) नहीं मिली। कृपया ब्राउज़र में माइक अनुमति दें।", "error");
+                    } else if (event.error === "network") {
+                        showToast("इंटरनेट कनेक्शन समस्या के कारण वॉयस टाइपिंग नहीं हो सकी।", "warning");
                     }
                 };
 
                 recognition.onend = () => {
-                    btn.classList.remove("listening");
-                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    stopCurrentVoiceTyping();
                 };
+
+                try {
+                    recognition.start();
+                } catch (startErr) {
+                    console.error("recognition.start() threw:", startErr);
+                    stopCurrentVoiceTyping();
+                    showToast("माइक शुरू नहीं हो सका। कृपया पुनः प्रयास करें।", "warning");
+                }
             });
         });
     }
