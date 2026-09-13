@@ -498,12 +498,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (noVehicleCheck && vehicleNoInput) {
+        const noVehicleLabel = document.querySelector(".no-vehicle-label");
         noVehicleCheck.addEventListener("change", () => {
             if (noVehicleCheck.checked) {
+                if (noVehicleLabel) noVehicleLabel.classList.add("checked");
                 vehicleNoInput.value = "पैदल (On Foot)";
                 vehicleNoInput.disabled = true;
                 markGroup(vehicleNoInput, true);
             } else {
+                if (noVehicleLabel) noVehicleLabel.classList.remove("checked");
                 vehicleNoInput.value = "";
                 vehicleNoInput.disabled = false;
                 markGroup(vehicleNoInput, true);
@@ -522,11 +525,29 @@ document.addEventListener("DOMContentLoaded", () => {
         inputEl.addEventListener("paste", () => setTimeout(cleanDotOnly, 10));
     });
 
-    // 4. ID Number (Aadhaar / Passport): Alphanumeric Uppercase, Max 12 chars
+    // 4. ID Number (Aadhaar / Passport): Alphanumeric Uppercase, Max 12 chars + Live Digit Counter
     if (idNumberInput) {
+        const idCounter = document.getElementById("idNumber-counter");
         const cleanId = () => {
             let val = idNumberInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             idNumberInput.value = val.slice(0, 12);
+
+            if (idCounter) {
+                const len = idNumberInput.value.length;
+                const curLang = localStorage.getItem("darshan_lang") || "hi";
+                if (len === 0) {
+                    idCounter.style.display = "none";
+                    idCounter.className = "id-counter";
+                } else if (len === 12) {
+                    idCounter.style.display = "inline-block";
+                    idCounter.className = "id-counter valid";
+                    idCounter.textContent = curLang === "en" ? "✔ 12 digits complete" : "✔ 12 अंक पूर्ण";
+                } else {
+                    idCounter.style.display = "inline-block";
+                    idCounter.className = "id-counter";
+                    idCounter.textContent = curLang === "en" ? `${len}/12 digits` : `${len}/12 अंक`;
+                }
+            }
         };
         idNumberInput.addEventListener("input", cleanId);
         idNumberInput.addEventListener("paste", () => setTimeout(cleanId, 10));
@@ -1755,6 +1776,9 @@ Reference: ${referredBy}
             phNameAge: 'उदा: Rahul 35 Yrs',
             lblMobile: 'मोबाइल नंबर <span class="required">*</span>',
             phMobile: '10 अंकों का मोबाइल नंबर दर्ज करें',
+            lblId: 'पहचान पत्र / आधार संख्या <span class="required">*</span>',
+            phId: '12-अंकों का आधार या पासपोर्ट',
+            hintVisitDate: 'केवल आज से अगले 6 दिन तक मान्य',
             lblVehicle: 'गाड़ी नं0 <span class="optional-tag">(ऐच्छिक)</span>',
             phVehicle: 'उदा: UP42AB1234',
             noVehicle: 'पैदल / कोई वाहन नहीं',
@@ -1824,6 +1848,9 @@ Reference: ${referredBy}
             phNameAge: 'E.g. Rahul 35 Yrs',
             lblMobile: 'Mobile Number (10 Digits) <span class="required">*</span>',
             phMobile: 'Enter 10-digit Mobile Number',
+            lblId: 'Identity Card / Aadhaar Number <span class="required">*</span>',
+            phId: '12-digit Aadhaar or Passport',
+            hintVisitDate: 'Valid for Today + next 6 days only',
             lblVehicle: 'Vehicle Number <span class="optional-tag">(Optional)</span>',
             phVehicle: 'E.g. UP42AB1234 (Alphanumeric only)',
             noVehicle: 'On Foot / No Vehicle',
@@ -1908,8 +1935,8 @@ Reference: ${referredBy}
         }
         if (idNumberInput) {
             idNumberInput.placeholder = isIndia 
-                ? (lang === "en" ? "Enter 12-digit Aadhaar No. or Passport No." : "12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें")
-                : (lang === "en" ? "Enter Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)");
+                ? (lang === "en" ? "12-digit Aadhaar or Passport" : "12-अंकों का आधार या पासपोर्ट")
+                : (lang === "en" ? "Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)");
         }
 
         // Update dynamic member row cards if present

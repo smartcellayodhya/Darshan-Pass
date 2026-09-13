@@ -2587,3 +2587,150 @@ body.modal-open .scroll-to-top-btn {
     border-radius: 6px !important;
 }
 
+/* -------------------------------------------------------------
+ * 1. TOUCH-FRIENDLY "NO VEHICLE" TOGGLE CHIP
+ * ------------------------------------------------------------- */
+.no-vehicle-box {
+    margin-top: 0.65rem;
+}
+
+.no-vehicle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 1.1rem;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.no-vehicle-label:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.no-vehicle-label:active {
+    transform: scale(0.98);
+}
+
+.no-vehicle-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #1e3a8a;
+    cursor: pointer;
+    margin: 0;
+}
+
+.no-vehicle-label.checked {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1e3a8a;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+}
+
+/* -------------------------------------------------------------
+ * 2. LIVE AADHAAR / ID DIGIT COUNTER
+ * ------------------------------------------------------------- */
+.id-counter {
+    display: inline-block;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 5px;
+    padding: 2px 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.id-counter.valid {
+    color: #15803d;
+    background: #dcfce7;
+    border-color: #86efac;
+    font-weight: 700;
+}
+
+.id-counter.overflow {
+    color: #b91c1c;
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+/* -------------------------------------------------------------
+ * 3. ENHANCED VOICE MIC BUTTON TOUCH TARGET (38px)
+ * ------------------------------------------------------------- */
+.mic-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mic-wrapper input {
+    padding-right: 48px !important;
+}
+
+.voice-mic-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px;
+    min-height: 38px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 5;
+}
+
+.voice-mic-btn:hover {
+    background: #f1f5f9;
+    color: #1e3a8a;
+}
+
+.voice-mic-btn:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+.voice-mic-btn.listening {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    animation: micPulse 1.2s infinite alternate;
+}
+
+/* -------------------------------------------------------------
+ * 4. SAFE BOTTOM CLEARANCE FOR FLOATING BUTTONS
+ * ------------------------------------------------------------- */
+.gov-form-card {
+    margin-bottom: 3.5rem !important;
+}
+
+/* -------------------------------------------------------------
+ * 5. TRACKING MODAL RESPONSIVE STACK FOR <= 380px
+ * ------------------------------------------------------------- */
+@media (max-width: 380px) {
+    .track-grid-details {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+    }
+}
+
+

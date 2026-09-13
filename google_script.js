@@ -184,6 +184,22 @@ function doGet(e) {
     }
   }
 
+  // INSTANT COLOR REFRESH HANDLER
+  if (e && e.parameter && (e.parameter.action === 'recolor' || e.parameter.action === 'color')) {
+    try {
+      refreshAllRowColors();
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "message": "All row colors successfully refreshed according to status!"
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (cErr) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "error",
+        "message": cErr.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // PASS APPLICATION TRACKING HANDLER
   if (e && e.parameter && e.parameter.action === 'track') {
     var rawQuery = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim();
@@ -311,56 +327,155 @@ function getMainDataSheet(ss) {
  * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
  * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
  */
+/**
+ * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST & RESILIENT
+ * When status in Column 2 (B) is changed to "Pass Created":
+ * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
+ * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
+ * Handles single cells, ranges, paste actions, and mobile edits gracefully.
+ */
 function onEdit(e) {
   if (!e || !e.range) return;
 
-  var sheet = e.range.getSheet();
-  if (!sheet || sheet.getName().includes("Dashboard")) return;
+  try {
+    var sheet = e.range.getSheet();
+    if (!sheet || sheet.getName().includes("Dashboard")) return;
 
-  var col = e.range.getColumn();
-  var row = e.range.getRow();
+    var startCol = e.range.getColumn();
+    var endCol = startCol + e.range.getNumColumns() - 1;
+    var startRow = e.range.getRow();
+    var numRows = e.range.getNumRows();
 
-  // Column 2 = Pass Status (Column B)
-  if (col === 2 && row > 1) {
-    var statusVal = String(e.value || e.range.getValue() || '').trim().toLowerCase();
-    var rowRange = sheet.getRange(row, 1, 1, 19); // Direct 19 cols for maximum speed
-    var dateCell = sheet.getRange(row, 3); // Column 3 (C - Pass Created Date)
-
-    if (statusVal === "pass created" || statusVal === "approved") {
-      // 1. Instant Custom Sage Green Row Background (#9fc48a)
-      rowRange.setBackground("#9fc48a");
-      rowRange.setFontColor("#000000");
-
-      // 2. Auto-fill Pass Created Date in Col C if empty
-      if (!dateCell.getValue()) {
-        var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
-        dateCell.setValue(todayStr);
-      }
-
-    } else if (statusVal.indexOf("already created") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
-      // Warm Soft Yellow / Amber Row Background (#fef08a) for passes created from another counter
-      rowRange.setBackground("#fef08a");
-      rowRange.setFontColor("#854d0e");
-
-      // Auto-fill Pass Created Date in Col C if empty
-      if (!dateCell.getValue()) {
-        var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy");
-        dateCell.setValue(todayStr);
-      }
-
-    } else if (statusVal === "rejected") {
-      // Light Red Row Background (#fee2e2)
-      rowRange.setBackground("#fee2e2");
-      rowRange.setFontColor("#991b1b");
-
-    } else if (statusVal === "pending" || !statusVal) {
-      // Reset row background to White (#ffffff)
-      rowRange.setBackground("#ffffff");
-      rowRange.setFontColor("#000000");
+    // Check if edited range includes Column 2 (Status column)
+    // Or if edited column header has status/स्थिति
+    var isStatusCol = (startCol <= 2 && endCol >= 2);
+    if (!isStatusCol && startRow > 1) {
+      try {
+        var headerVal = String(sheet.getRange(1, startCol).getValue() || '').toLowerCase();
+        if (headerVal.includes("स्थिति") || headerVal.includes("status")) {
+          isStatusCol = true;
+        }
+      } catch (hErr) {}
     }
 
-    SpreadsheetApp.flush(); // Commit updates immediately to sheet UI
+    if (isStatusCol && startRow > 1) {
+      var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), sheet.getMaxColumns() || 19);
+      
+      var timeZone = "GMT+5:30";
+      try {
+        timeZone = Session.getScriptTimeZone() || "GMT+5:30";
+      } catch (tzErr) {
+        timeZone = "GMT+5:30";
+      }
+
+      for (var r = 0; r < numRows; r++) {
+        var currentRow = startRow + r;
+        if (currentRow <= 1) continue;
+
+        var statusCell = sheet.getRange(currentRow, 2);
+        var rawVal = statusCell.getValue();
+        var statusVal = String(rawVal || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
+
+        var rowRange = sheet.getRange(currentRow, 1, 1, lastCol);
+        var dateCell = sheet.getRange(currentRow, 3); // Column 3 (C - Pass Created Date)
+
+        if (statusVal.indexOf("pass created") !== -1 || statusVal.indexOf("approved") !== -1 || statusVal.indexOf("बन गया") !== -1 || statusVal.indexOf("स्वीकृत") !== -1) {
+          // 1. Instant Custom Sage Green Row Background (#9fc48a)
+          rowRange.setBackground("#9fc48a");
+          rowRange.setFontColor("#000000");
+
+          // 2. Auto-fill Pass Created Date in Col C if empty
+          try {
+            if (!dateCell.getValue()) {
+              var todayStr = Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy");
+              dateCell.setValue(todayStr);
+            }
+          } catch (dErr) {
+            console.warn("Date autofill notice:", dErr);
+          }
+
+        } else if (statusVal.indexOf("already") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
+          // Warm Soft Amber/Yellow Row Background (#fef08a)
+          rowRange.setBackground("#fef08a");
+          rowRange.setFontColor("#854d0e");
+
+          try {
+            if (!dateCell.getValue()) {
+              var todayStr = Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy");
+              dateCell.setValue(todayStr);
+            }
+          } catch (dErr2) {}
+
+        } else if (statusVal.indexOf("rejected") !== -1 || statusVal.indexOf("निरस्त") !== -1 || statusVal.indexOf("अस्वीकृत") !== -1) {
+          // Light Red Row Background (#fee2e2)
+          rowRange.setBackground("#fee2e2");
+          rowRange.setFontColor("#991b1b");
+
+        } else if (statusVal.indexOf("pending") !== -1 || !statusVal) {
+          // Reset row background to White (#ffffff)
+          rowRange.setBackground("#ffffff");
+          rowRange.setFontColor("#000000");
+        }
+      }
+
+      SpreadsheetApp.flush(); // Commit updates immediately to sheet UI
+    }
+  } catch (err) {
+    console.error("onEdit error:", err);
   }
+}
+
+/**
+ * INSTANT ROW COLOR RE-APPLY (सभी पंक्तियों में स्थिति अनुसार रंग भरें)
+ * Scans every row in Google Sheet and sets direct background colors in one fast batch:
+ * - Pass Created -> #9fc48a (Sage Green)
+ * - Already Created -> #fef08a (Soft Amber)
+ * - Rejected -> #fee2e2 (Light Red)
+ * - Pending -> #ffffff (White)
+ */
+function refreshAllRowColors(optSheet) {
+  var ss = getTargetSpreadsheet();
+  var sheet = optSheet || getMainDataSheet(ss);
+  if (!sheet) return;
+
+  var lastRow = sheet.getLastRow();
+  var maxCols = sheet.getMaxColumns();
+  var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
+  if (lastRow < 2) return;
+
+  var numDataRows = lastRow - 1;
+  var statusVals = sheet.getRange(2, 2, numDataRows, 1).getValues();
+  var backgrounds = sheet.getRange(2, 1, numDataRows, lastCol).getBackgrounds();
+  var fontColors = sheet.getRange(2, 1, numDataRows, lastCol).getFontColors();
+
+  for (var i = 0; i < numDataRows; i++) {
+    var raw = String(statusVals[i][0] || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
+    var bg = "#ffffff";
+    var fc = "#000000";
+
+    if (raw.indexOf("pass created") !== -1 || raw.indexOf("approved") !== -1 || raw.indexOf("बन गया") !== -1 || raw.indexOf("स्वीकृत") !== -1) {
+      bg = "#9fc48a"; // Sage Green
+      fc = "#000000";
+    } else if (raw.indexOf("already") !== -1 || raw.indexOf("अन्य काउंटर") !== -1) {
+      bg = "#fef08a"; // Amber Yellow
+      fc = "#854d0e";
+    } else if (raw.indexOf("rejected") !== -1 || raw.indexOf("निरस्त") !== -1 || raw.indexOf("अस्वीकृत") !== -1) {
+      bg = "#fee2e2"; // Red
+      fc = "#991b1b";
+    } else if (raw.indexOf("pending") !== -1 || raw === "") {
+      bg = "#ffffff";
+      fc = "#000000";
+    }
+
+    for (var c = 0; c < lastCol; c++) {
+      backgrounds[i][c] = bg;
+      fontColors[i][c] = fc;
+    }
+  }
+
+  sheet.getRange(2, 1, numDataRows, lastCol).setBackgrounds(backgrounds);
+  sheet.getRange(2, 1, numDataRows, lastCol).setFontColors(fontColors);
+  SpreadsheetApp.flush();
 }
 
 /**
@@ -371,6 +486,7 @@ function onOpen() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
+      .addItem('🎨 Re-apply Status Colors (सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🛠️ 1-Click Realign & Fix All Columns (कॉलम क्रम 1-क्लिक में ठीक करें)', 'fixAndRealignAllSheetColumns')
       .addItem('🎯 Format Entire Sheet (शीट फॉर्मेट करें)', 'formatEntireSheet')
       .addItem('📊 Generate VIP Dashboard (डैशबोर्ड व दैनिक रिपोर्ट बनाएं)', 'setupVipDashboard')
@@ -702,33 +818,41 @@ function fixAndRealignAllSheetColumns() {
       .build();
     statusRange.setDataValidation(statusRule);
 
-    // 12. Conditional Formatting (Strict: NEVER colors empty rows, requires $B2<>"")
+    // 12. Apply Batch Colors to All Data Rows directly
+    try {
+      refreshAllRowColors(sheet);
+    } catch (colErr) {
+      console.warn("Direct row coloring notice:", colErr);
+    }
+
+    // 13. Sheet-Wide Conditional Formatting (Resilient SEARCH, covers all current & upcoming rows)
     sheet.clearConditionalFormatRules();
-    var formatRange = sheet.getRange("A2:S" + (cleanedRows.length + 10));
+    var maxFormatRows = Math.max(sheet.getMaxRows(), 1000);
+    var formatRange = sheet.getRange("A2:S" + maxFormatRows);
 
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($B2<>"", OR(LOWER(TRIM($B2))="pass created", LOWER(TRIM($B2))="approved"))')
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("pass created", $B2)), ISNUMBER(SEARCH("approved", $B2)), ISNUMBER(SEARCH("बन गया", $B2)))')
       .setBackground("#9fc48a")
       .setFontColor("#000000")
       .setRanges([formatRange])
       .build();
 
     var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($B2<>"", OR(REGEXMATCH(LOWER(TO_TEXT($B2)), "already created"), REGEXMATCH(TO_TEXT($B2), "अन्य काउंटर"))) ')
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("already", $B2)), ISNUMBER(SEARCH("अन्य काउंटर", $B2)))')
       .setBackground("#fef08a")
       .setFontColor("#854d0e")
       .setRanges([formatRange])
       .build();
 
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($B2<>"", LOWER(TRIM($B2))="rejected")')
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("rejected", $B2)), ISNUMBER(SEARCH("निरस्त", $B2)))')
       .setBackground("#fee2e2")
       .setFontColor("#991b1b")
       .setRanges([formatRange])
       .build();
 
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=AND($B2<>"", LOWER(TRIM($B2))="pending")')
+      .whenFormulaSatisfied('=ISNUMBER(SEARCH("pending", $B2))')
       .setBackground("#ffffff")
       .setFontColor("#000000")
       .setRanges([formatRange])
