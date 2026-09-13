@@ -9,6 +9,15 @@
     <link rel="shortcut icon" type="image/png" href="assets/up_police_logo.png">
     <link rel="apple-touch-icon" href="assets/up_police_logo.png">
     
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b192c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="दर्शन पास">
+    <meta name="application-name" content="दर्शन पास">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -145,6 +154,9 @@
                 <span class="utility-strip-tagline" id="strip-tagline" data-i18n="stripTagline">श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा</span>
             </div>
             <div class="utility-strip-actions">
+                <button type="button" id="pwa-install-btn" class="utility-action-btn install-btn" title="ऐप इंस्टॉल करें (Install App)">
+                    <i class="fa-solid fa-mobile-screen-button"></i> <span id="pwa-install-text" data-i18n="installAppBtn">ऐप इंस्टॉल करें</span>
+                </button>
                 <button type="button" id="track-pass-nav-btn" class="utility-action-btn track-btn" title="पास स्थिति जांचें">
                     <i class="fa-solid fa-magnifying-glass"></i> <span id="track-nav-label" data-i18n="trackBtn">स्थिति देखें</span>
                 </button>
@@ -573,6 +585,29 @@
 
                     <!-- Live Result Container -->
                     <div id="track-result-box" class="track-result-box hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- iOS PWA Install Guide Modal -->
+        <div id="ios-install-modal" class="modal-overlay hidden">
+            <div class="modal-content gov-modal ios-modal">
+                <div class="track-modal-header">
+                    <h3><i class="fa-brands fa-apple" style="color: #0284c7;"></i> <span data-i18n="iosInstallTitle">iPhone / iPad पर ऐप जोड़ें</span></h3>
+                    <button type="button" id="close-ios-modal-btn" class="close-search-btn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="ios-modal-body" style="padding: 1.2rem; text-align: left;">
+                    <p style="margin-bottom: 0.85rem; font-weight: 600; color: #1e293b;">इस पोर्टल को अपने iPhone पर ऐप की तरह इंस्टॉल करने के लिए 3 आसान स्टेप्स:</p>
+                    <ol style="padding-left: 1.25rem; line-height: 1.9; font-size: 0.94rem; color: #334155; margin-bottom: 1.2rem;">
+                        <li>Safari ब्राउज़र में सबसे नीचे <strong>Share (शेयर <i class="fa-solid fa-arrow-up-from-bracket" style="color: #0284c7;"></i>)</strong> बटन पर टैप करें।</li>
+                        <li>मेन्यू में नीचे स्क्रॉल करें और <strong>'Add to Home Screen (होम स्क्रीन पर जोड़ें <i class="fa-regular fa-square-plus" style="color: #16a34a;"></i>)'</strong> चुनें।</li>
+                        <li>ऊपर दाईं ओर <strong>'Add (जोड़ें)'</strong> पर क्लिक करें।</li>
+                    </ol>
+                    <button type="button" id="ios-got-it-btn" class="gov-btn-primary" style="width: 100%; border-radius: 8px;">
+                        <i class="fa-solid fa-check"></i> <span>समझ गया (Got it)</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -1412,12 +1412,16 @@ https://darshan-pass.vercel.app
             reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)',
             footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).',
             footerLine2: 'Designed & Developed by Smart Cell Ayodhya',
-            stripTagline: 'श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा'
+            stripTagline: 'श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा',
+            installAppBtn: 'ऐप इंस्टॉल करें',
+            iosInstallTitle: 'iPhone / iPad पर ऐप जोड़ें'
         },
         en: {
             langBtn: "हिन्दी",
             trackBtn: "Track Status",
             stripTagline: 'Shri Ram Janmabhoomi | Official Darshan Pass Portal',
+            installAppBtn: 'Install App',
+            iosInstallTitle: 'Add App to iPhone / iPad',
             portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",
             secVisit: '<i class="fa-solid fa-calendar-day"></i> Visit Date & Time Schedule',
             lblVisitDate: 'Visit Date <span class="required">*</span>',
@@ -1996,6 +2000,79 @@ https://darshan-pass.vercel.app
     initCustomSearchableSelects();
     restoreFormDraft();
     applyLanguage(localStorage.getItem("darshan_lang") || "hi");
+
+    // -------------------------------------------------------------
+    // PROGRESSIVE WEB APP (PWA) INSTALL & SERVICE WORKER
+    // -------------------------------------------------------------
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('PWA ServiceWorker registered with scope:', reg.scope))
+                .catch(err => console.warn('PWA ServiceWorker registration error:', err));
+        });
+    }
+
+    let deferredPrompt = null;
+    const pwaInstallBtn = document.getElementById("pwa-install-btn");
+    const iosInstallModal = document.getElementById("ios-install-modal");
+    const closeIosModalBtn = document.getElementById("close-ios-modal-btn");
+    const iosGotItBtn = document.getElementById("ios-got-it-btn");
+
+    // Detect if already installed / running in standalone PWA mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone && pwaInstallBtn) {
+        pwaInstallBtn.style.display = "none";
+    }
+
+    // Android/Chrome/Edge native install prompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (pwaInstallBtn) {
+            pwaInstallBtn.style.display = "inline-flex";
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        if (pwaInstallBtn) pwaInstallBtn.style.display = "none";
+        showToast("श्रीरामजन्मभूमि दर्शन पास ऐप सफलतापूर्वक आपके डिवाइस पर इंस्टॉल हो गया!", "success");
+    });
+
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            // Check if iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                if (iosInstallModal) iosInstallModal.classList.remove("hidden");
+                return;
+            }
+
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    pwaInstallBtn.style.display = "none";
+                }
+                deferredPrompt = null;
+            } else {
+                // If browser has not fired beforeinstallprompt or desktop Safari/Firefox
+                showToast("ब्राउज़र के ऊपर दाईं ओर मेनू (⋮) पर क्लिक करके 'Install app' या 'Add to Home screen' चुनें।", "info");
+            }
+        });
+    }
+
+    if (closeIosModalBtn && iosInstallModal) {
+        closeIosModalBtn.addEventListener('click', () => iosInstallModal.classList.add("hidden"));
+    }
+    if (iosGotItBtn && iosInstallModal) {
+        iosGotItBtn.addEventListener('click', () => iosInstallModal.classList.add("hidden"));
+    }
+    if (iosInstallModal) {
+        iosInstallModal.addEventListener('click', (e) => {
+            if (e.target === iosInstallModal) iosInstallModal.classList.add("hidden");
+        });
+    }
 
     // Background silent sync of latest sheet row for instant token generator
     try {
