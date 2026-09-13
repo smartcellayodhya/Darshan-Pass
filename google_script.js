@@ -322,17 +322,123 @@ function getMainDataSheet(ss) {
 }
 
 /**
- * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST OPTIMIZED
- * When status in Column 2 (B) is changed to "Pass Created":
- * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
- * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
+ * DYNAMIC STATUS COLUMN FINDER
+ * Automatically detects whether 'Pass Status' is in Column C, Column B, or elsewhere.
+ * Checks: 1) Row 1 Headers for 'स्थिति'/'status', 2) Cell values in rows 2-15.
  */
+function findStatusColumn(sheet) {
+  var lastCol = sheet.getLastColumn() || 19;
+  if (lastCol < 1) return 3;
+
+  // 1. Check Row 1 Headers
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c] || '').toLowerCase().trim();
+    if (h.includes("स्थिति") || h.includes("status")) {
+      return c + 1; // 1-based index (e.g. 3 for Column C)
+    }
+  }
+
+  // 2. Check actual values in top data rows
+  var maxCheckRow = Math.min(sheet.getLastRow(), 15);
+  if (maxCheckRow >= 2) {
+    var sampleGrid = sheet.getRange(2, 1, maxCheckRow - 1, lastCol).getValues();
+    for (var colIdx = 0; colIdx < lastCol; colIdx++) {
+      for (var r = 0; r < sampleGrid.length; r++) {
+        var v = String(sampleGrid[r][colIdx] || '').toLowerCase().trim();
+        if (v === "pass created" || v === "pending" || v.includes("already created") || v === "rejected") {
+          return colIdx + 1;
+        }
+      }
+    }
+  }
+
+  return 3; // Default to Column C (Column 3)
+}
+
 /**
- * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST & RESILIENT
- * When status in Column 2 (B) is changed to "Pass Created":
+ * DYNAMIC PASS CREATED DATE COLUMN FINDER
+ */
+function findPassCreatedDateColumn(sheet) {
+  var lastCol = sheet.getLastColumn() || 19;
+  if (lastCol < 1) return -1;
+
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c] || '').toLowerCase().trim();
+    if (h.includes("पास बनने") || h.includes("created date")) {
+      return c + 1;
+    }
+  }
+  return -1;
+}
+
+/**
+ * CONVERT COLUMN INDEX TO LETTER (e.g. 1->A, 2->B, 3->C)
+ */
+function getColumnLetter(colIndex) {
+  var temp = "";
+  var letter = "";
+  while (colIndex > 0) {
+    temp = (colIndex - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    colIndex = Math.floor((colIndex - temp - 1) / 26);
+  }
+  return letter || "C";
+}
+
+/**
+ * DYNAMIC CONDITIONAL FORMATTING (Works on Column B, Column C, and all rows)
+ */
+function setupDynamicConditionalFormatting(sheet, optStatusCol) {
+  try {
+    var statusCol = optStatusCol || findStatusColumn(sheet);
+    var colLetter = getColumnLetter(statusCol);
+    var maxFormatRows = Math.max(sheet.getMaxRows(), 1000);
+    var formatRange = sheet.getRange("A2:S" + maxFormatRows);
+
+    sheet.clearConditionalFormatRules();
+
+    // Check dynamic column letter (e.g. $C2) AND fallbacks ($B2, $C2)
+    var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("pass created", $' + colLetter + '2)), ISNUMBER(SEARCH("approved", $' + colLetter + '2)), ISNUMBER(SEARCH("बन गया", $' + colLetter + '2)), ISNUMBER(SEARCH("pass created", $C2)), ISNUMBER(SEARCH("pass created", $B2)))')
+      .setBackground("#9fc48a")
+      .setFontColor("#000000")
+      .setRanges([formatRange])
+      .build();
+
+    var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("already", $' + colLetter + '2)), ISNUMBER(SEARCH("अन्य काउंटर", $' + colLetter + '2)), ISNUMBER(SEARCH("already", $C2)), ISNUMBER(SEARCH("already", $B2)))')
+      .setBackground("#fef08a")
+      .setFontColor("#854d0e")
+      .setRanges([formatRange])
+      .build();
+
+    var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("rejected", $' + colLetter + '2)), ISNUMBER(SEARCH("निरस्त", $' + colLetter + '2)), ISNUMBER(SEARCH("rejected", $C2)), ISNUMBER(SEARCH("rejected", $B2)))')
+      .setBackground("#fee2e2")
+      .setFontColor("#991b1b")
+      .setRanges([formatRange])
+      .build();
+
+    var pendingRule = SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("pending", $' + colLetter + '2)), ISNUMBER(SEARCH("pending", $C2)), ISNUMBER(SEARCH("pending", $B2)))')
+      .setBackground("#ffffff")
+      .setFontColor("#000000")
+      .setRanges([formatRange])
+      .build();
+
+    sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
+  } catch (cfErr) {
+    console.warn("Conditional formatting setup notice:", cfErr);
+  }
+}
+
+/**
+ * AUTOMATIC EDIT TRIGGER (onEdit) - ULTRA-FAST & DYNAMIC
+ * When status in Column C or B is changed to "Pass Created":
  * 1. Highlights row in Custom Sage Green (#9fc48a) instantly
- * 2. Auto-fills Column 3 (C - Pass Created Date) with Today's Date (DD/MM/YYYY) if empty
- * Handles single cells, ranges, paste actions, and mobile edits gracefully.
+ * 2. Auto-fills Pass Created Date if date column is present
  */
 function onEdit(e) {
   if (!e || !e.range) return;
@@ -342,84 +448,94 @@ function onEdit(e) {
     if (!sheet || sheet.getName().includes("Dashboard")) return;
 
     var startCol = e.range.getColumn();
-    var endCol = startCol + e.range.getNumColumns() - 1;
+    var numCols = e.range.getNumColumns();
+    var endCol = startCol + numCols - 1;
     var startRow = e.range.getRow();
     var numRows = e.range.getNumRows();
+    if (startRow <= 1) return;
 
-    // Check if edited range includes Column 2 (Status column)
-    // Or if edited column header has status/स्थिति
-    var isStatusCol = (startCol <= 2 && endCol >= 2);
-    if (!isStatusCol && startRow > 1) {
-      try {
-        var headerVal = String(sheet.getRange(1, startCol).getValue() || '').toLowerCase();
-        if (headerVal.includes("स्थिति") || headerVal.includes("status")) {
-          isStatusCol = true;
-        }
-      } catch (hErr) {}
+    var statusCol = findStatusColumn(sheet);
+    var dateCol = findPassCreatedDateColumn(sheet);
+    var maxCols = sheet.getMaxColumns();
+    var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
+
+    var timeZone = "GMT+5:30";
+    try {
+      timeZone = Session.getScriptTimeZone() || "GMT+5:30";
+    } catch (tzErr) {
+      timeZone = "GMT+5:30";
     }
 
-    if (isStatusCol && startRow > 1) {
-      var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), sheet.getMaxColumns() || 19);
-      
-      var timeZone = "GMT+5:30";
-      try {
-        timeZone = Session.getScriptTimeZone() || "GMT+5:30";
-      } catch (tzErr) {
-        timeZone = "GMT+5:30";
-      }
+    // Check if edited range touches statusCol
+    var isStatusCol = (startCol <= statusCol && endCol >= statusCol);
 
-      for (var r = 0; r < numRows; r++) {
-        var currentRow = startRow + r;
-        if (currentRow <= 1) continue;
+    for (var r = 0; r < numRows; r++) {
+      var currentRow = startRow + r;
+      if (currentRow <= 1) continue;
 
-        var statusCell = sheet.getRange(currentRow, 2);
-        var rawVal = statusCell.getValue();
-        var statusVal = String(rawVal || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
+      var rawVal = isStatusCol ? sheet.getRange(currentRow, statusCol).getValue() : e.range.getValue();
+      var statusVal = String(rawVal || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
 
-        var rowRange = sheet.getRange(currentRow, 1, 1, lastCol);
-        var dateCell = sheet.getRange(currentRow, 3); // Column 3 (C - Pass Created Date)
+      var isKnownStatus = (
+        statusVal.indexOf("pass created") !== -1 ||
+        statusVal.indexOf("approved") !== -1 ||
+        statusVal.indexOf("बन गया") !== -1 ||
+        statusVal.indexOf("स्वीकृत") !== -1 ||
+        statusVal.indexOf("already") !== -1 ||
+        statusVal.indexOf("अन्य काउंटर") !== -1 ||
+        statusVal.indexOf("rejected") !== -1 ||
+        statusVal.indexOf("निरस्त") !== -1 ||
+        statusVal.indexOf("pending") !== -1
+      );
 
-        if (statusVal.indexOf("pass created") !== -1 || statusVal.indexOf("approved") !== -1 || statusVal.indexOf("बन गया") !== -1 || statusVal.indexOf("स्वीकृत") !== -1) {
-          // 1. Instant Custom Sage Green Row Background (#9fc48a)
-          rowRange.setBackground("#9fc48a");
-          rowRange.setFontColor("#000000");
+      if (!isStatusCol && !isKnownStatus) continue;
 
-          // 2. Auto-fill Pass Created Date in Col C if empty
+      var rowRange = sheet.getRange(currentRow, 1, 1, lastCol);
+
+      if (statusVal.indexOf("pass created") !== -1 || statusVal.indexOf("approved") !== -1 || statusVal.indexOf("बन गया") !== -1 || statusVal.indexOf("स्वीकृत") !== -1) {
+        // 1. Instant Custom Sage Green Row Background (#9fc48a)
+        rowRange.setBackground("#9fc48a");
+        rowRange.setFontColor("#000000");
+
+        // 2. Auto-fill Pass Created Date if date column exists
+        if (dateCol !== -1) {
           try {
+            var dateCell = sheet.getRange(currentRow, dateCol);
             if (!dateCell.getValue()) {
-              var todayStr = Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy");
-              dateCell.setValue(todayStr);
+              dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
             }
           } catch (dErr) {
             console.warn("Date autofill notice:", dErr);
           }
+        }
 
-        } else if (statusVal.indexOf("already") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
-          // Warm Soft Amber/Yellow Row Background (#fef08a)
-          rowRange.setBackground("#fef08a");
-          rowRange.setFontColor("#854d0e");
+      } else if (statusVal.indexOf("already") !== -1 || statusVal.indexOf("अन्य काउंटर") !== -1) {
+        // Warm Soft Amber/Yellow Row Background (#fef08a)
+        rowRange.setBackground("#fef08a");
+        rowRange.setFontColor("#854d0e");
 
+        if (dateCol !== -1) {
           try {
+            var dateCell = sheet.getRange(currentRow, dateCol);
             if (!dateCell.getValue()) {
-              var todayStr = Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy");
-              dateCell.setValue(todayStr);
+              dateCell.setValue(Utilities.formatDate(new Date(), timeZone, "dd/MM/yyyy"));
             }
           } catch (dErr2) {}
-
-        } else if (statusVal.indexOf("rejected") !== -1 || statusVal.indexOf("निरस्त") !== -1 || statusVal.indexOf("अस्वीकृत") !== -1) {
-          // Light Red Row Background (#fee2e2)
-          rowRange.setBackground("#fee2e2");
-          rowRange.setFontColor("#991b1b");
-
-        } else if (statusVal.indexOf("pending") !== -1 || !statusVal) {
-          // Reset row background to White (#ffffff)
-          rowRange.setBackground("#ffffff");
-          rowRange.setFontColor("#000000");
         }
-      }
 
-      SpreadsheetApp.flush(); // Commit updates immediately to sheet UI
+      } else if (statusVal.indexOf("rejected") !== -1 || statusVal.indexOf("निरस्त") !== -1 || statusVal.indexOf("अस्वीकृत") !== -1) {
+        // Light Red Row Background (#fee2e2)
+        rowRange.setBackground("#fee2e2");
+        rowRange.setFontColor("#991b1b");
+
+      } else if (statusVal.indexOf("pending") !== -1 || !statusVal) {
+        // Reset row background to White (#ffffff)
+        rowRange.setBackground("#ffffff");
+        rowRange.setFontColor("#000000");
+      }
     }
+
+    SpreadsheetApp.flush(); // Commit updates immediately to sheet UI
   } catch (err) {
     console.error("onEdit error:", err);
   }
@@ -427,11 +543,13 @@ function onEdit(e) {
 
 /**
  * INSTANT ROW COLOR RE-APPLY (सभी पंक्तियों में स्थिति अनुसार रंग भरें)
+ * Automatically detects whether status is in Column C, Column B, etc.
  * Scans every row in Google Sheet and sets direct background colors in one fast batch:
  * - Pass Created -> #9fc48a (Sage Green)
  * - Already Created -> #fef08a (Soft Amber)
  * - Rejected -> #fee2e2 (Light Red)
  * - Pending -> #ffffff (White)
+ * Also re-applies dynamic conditional formatting to guarantee colors persist.
  */
 function refreshAllRowColors(optSheet) {
   var ss = getTargetSpreadsheet();
@@ -443,8 +561,11 @@ function refreshAllRowColors(optSheet) {
   var lastCol = Math.min(Math.max(sheet.getLastColumn() || 19, 19), maxCols || 19);
   if (lastRow < 2) return;
 
+  var statusCol = findStatusColumn(sheet);
   var numDataRows = lastRow - 1;
-  var statusVals = sheet.getRange(2, 2, numDataRows, 1).getValues();
+
+  // Read status values directly from detected status column (Column C / Col 3!)
+  var statusVals = sheet.getRange(2, statusCol, numDataRows, 1).getValues();
   var backgrounds = sheet.getRange(2, 1, numDataRows, lastCol).getBackgrounds();
   var fontColors = sheet.getRange(2, 1, numDataRows, lastCol).getFontColors();
 
@@ -475,6 +596,10 @@ function refreshAllRowColors(optSheet) {
 
   sheet.getRange(2, 1, numDataRows, lastCol).setBackgrounds(backgrounds);
   sheet.getRange(2, 1, numDataRows, lastCol).setFontColors(fontColors);
+
+  // Also sync dynamic conditional formatting across entire sheet
+  setupDynamicConditionalFormatting(sheet, statusCol);
+
   SpreadsheetApp.flush();
 }
 
@@ -825,40 +950,8 @@ function fixAndRealignAllSheetColumns() {
       console.warn("Direct row coloring notice:", colErr);
     }
 
-    // 13. Sheet-Wide Conditional Formatting (Resilient SEARCH, covers all current & upcoming rows)
-    sheet.clearConditionalFormatRules();
-    var maxFormatRows = Math.max(sheet.getMaxRows(), 1000);
-    var formatRange = sheet.getRange("A2:S" + maxFormatRows);
-
-    var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("pass created", $B2)), ISNUMBER(SEARCH("approved", $B2)), ISNUMBER(SEARCH("बन गया", $B2)))')
-      .setBackground("#9fc48a")
-      .setFontColor("#000000")
-      .setRanges([formatRange])
-      .build();
-
-    var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("already", $B2)), ISNUMBER(SEARCH("अन्य काउंटर", $B2)))')
-      .setBackground("#fef08a")
-      .setFontColor("#854d0e")
-      .setRanges([formatRange])
-      .build();
-
-    var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=OR(ISNUMBER(SEARCH("rejected", $B2)), ISNUMBER(SEARCH("निरस्त", $B2)))')
-      .setBackground("#fee2e2")
-      .setFontColor("#991b1b")
-      .setRanges([formatRange])
-      .build();
-
-    var pendingRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=ISNUMBER(SEARCH("pending", $B2))')
-      .setBackground("#ffffff")
-      .setFontColor("#000000")
-      .setRanges([formatRange])
-      .build();
-
-    sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
+    // 13. Dynamic Sheet-Wide Conditional Formatting (Resilient SEARCH on Column C, B, etc.)
+    setupDynamicConditionalFormatting(sheet);
 
     // 13. Column Widths
     var colWidths = [
