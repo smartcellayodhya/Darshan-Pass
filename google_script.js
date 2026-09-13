@@ -616,6 +616,7 @@ function onEdit(e) {
 
     var statusCol = findStatusColumn(sheet);
     var dateCol = findPassCreatedDateColumn(sheet);
+    if (dateCol === -1) dateCol = 3; // Column 3: पास बनने की तिथि (Pass Created Date)
     var colJ = findColumnByKeywords(sheet, ["पुरूषो व महिलाओं", "gender"], 10);
     var colM = findColumnByKeywords(sheet, ["साथ में आने वाले", "सदस्यों", "accompanying"], 13);
     var colQ = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
@@ -894,12 +895,19 @@ function refreshAllRowColors(optSheet) {
   }
 
   var statusCol = findStatusColumn(sheet);
+  var dateCol = findPassCreatedDateColumn(sheet);
+  if (dateCol === -1) dateCol = 3; // Column 3: पास बनने की तिथि (Pass Created Date)
   var numDataRows = lastRow - 1;
 
-  // Read status values directly from detected status column (Column C / Col 3!)
+  // Read status values directly from detected status column
   var statusVals = sheet.getRange(2, statusCol, numDataRows, 1).getValues();
+  var dateVals = (dateCol > 0 && dateCol <= lastCol) ? sheet.getRange(2, dateCol, numDataRows, 1).getValues() : null;
   var backgrounds = sheet.getRange(2, 1, numDataRows, lastCol).getBackgrounds();
   var fontColors = sheet.getRange(2, 1, numDataRows, lastCol).getFontColors();
+  var dateUpdated = false;
+
+  var scriptTz = "GMT+5:30";
+  try { scriptTz = Session.getScriptTimeZone() || "GMT+5:30"; } catch (e) {}
 
   for (var i = 0; i < numDataRows; i++) {
     var raw = String(statusVals[i][0] || '').replace(/[\u00A0\s]+/g, ' ').trim().toLowerCase();
@@ -909,9 +917,22 @@ function refreshAllRowColors(optSheet) {
     if (raw.indexOf("pass created") !== -1 || raw.indexOf("approved") !== -1 || raw.indexOf("बन गया") !== -1 || raw.indexOf("स्वीकृत") !== -1) {
       bg = "#9fc48a"; // Sage Green
       fc = "#000000";
+
+      // Auto-fill Pass Created Date in Column C if empty
+      if (dateVals && !dateVals[i][0]) {
+        var rowTs = sheet.getRange(i + 2, 1).getValue();
+        dateVals[i][0] = formatSheetDateToDDMMYYYY(rowTs) || Utilities.formatDate(new Date(), scriptTz, "dd/MM/yyyy");
+        dateUpdated = true;
+      }
     } else if (raw.indexOf("already") !== -1 || raw.indexOf("अन्य काउंटर") !== -1) {
       bg = "#fef08a"; // Amber Yellow
       fc = "#854d0e";
+
+      if (dateVals && !dateVals[i][0]) {
+        var rowTs2 = sheet.getRange(i + 2, 1).getValue();
+        dateVals[i][0] = formatSheetDateToDDMMYYYY(rowTs2) || Utilities.formatDate(new Date(), scriptTz, "dd/MM/yyyy");
+        dateUpdated = true;
+      }
     } else if (raw.indexOf("rejected") !== -1 || raw.indexOf("निरस्त") !== -1 || raw.indexOf("अस्वीकृत") !== -1) {
       bg = "#fee2e2"; // Red
       fc = "#991b1b";
@@ -924,6 +945,10 @@ function refreshAllRowColors(optSheet) {
       backgrounds[i][c] = bg;
       fontColors[i][c] = fc;
     }
+  }
+
+  if (dateUpdated && dateVals) {
+    sheet.getRange(2, dateCol, numDataRows, 1).setValues(dateVals);
   }
 
   sheet.getRange(2, 1, numDataRows, lastCol).setBackgrounds(backgrounds);
