@@ -1412,14 +1412,12 @@ https://darshan-pass.vercel.app
             reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें (Open New Form)',
             footerLine1: '© 2026 अयोध्या पुलिस. सर्वाधिकार सुरक्षित (All Rights Reserved).',
             footerLine2: 'Designed & Developed by Smart Cell Ayodhya',
-            stripTagline: 'श्रीरामजन्मभूमि तीर्थ क्षेत्र | आधिकारिक दर्शन पास सेवा',
             installAppBtn: 'ऐप इंस्टॉल करें',
             iosInstallTitle: 'iPhone / iPad पर ऐप जोड़ें'
         },
         en: {
             langBtn: "हिन्दी",
             trackBtn: "Track Status",
-            stripTagline: 'Shri Ram Janmabhoomi | Official Darshan Pass Portal',
             installAppBtn: 'Install App',
             iosInstallTitle: 'Add App to iPhone / iPad',
             portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",

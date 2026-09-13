@@ -1465,26 +1465,11 @@ body.gov-minimal-theme {
 .utility-strip-container {
     max-width: 840px;
     margin: 0 auto;
-    padding: 0.65rem 1rem;
+    padding: 0.45rem 1rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-}
-
-.utility-strip-left {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: #cbd5e1;
-    font-size: 0.88rem;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-}
-
-.utility-strip-left i {
-    color: #38bdf8;
-    font-size: 1rem;
+    justify-content: flex-end;
+    gap: 0.75rem;
 }
 
 .utility-strip-actions,
@@ -1573,16 +1558,9 @@ body.gov-minimal-theme {
 
 @media (max-width: 640px) {
     .utility-strip-container {
-        flex-direction: column;
         justify-content: center;
         align-items: center;
-        gap: 0.55rem;
-        padding: 0.65rem 0.85rem;
-    }
-
-    .utility-strip-left {
-        font-size: 0.8rem;
-        text-align: center;
+        padding: 0.45rem 0.75rem;
     }
 
     .utility-strip-actions {
