@@ -82,6 +82,14 @@ function doPost(e) {
     var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
     var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
 
+    // Safety Guard: Reject empty/ghost submissions
+    if (!nameAge && !visitDate && !mobile) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "result": "ignored",
+        "message": "Empty submission ignored."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Initial Status is always 'Pending' when form is filled
     var passStatus = "Pending";
     var passCreatedDate = ""; // Empty until pass is generated
@@ -555,6 +563,16 @@ function fixAndRealignAllSheetColumns() {
         femaleCount = row[18] || row[20] || "";
       }
 
+      // Filter ghost rows that have no name, no visit date, and no mobile
+      var cleanMob = String(mobile || '').replace(/\D/g, '');
+      var isGenuineRow = (nameAge && nameAge.trim().length > 1) || 
+                         (visitDate && String(visitDate).trim().length > 5) || 
+                         (cleanMob.length >= 8);
+      if (!isGenuineRow) {
+        // Skip ghost/empty submissions like "Male: 0, Female: 0"
+        continue;
+      }
+
       // If status is Pass Created and createdDate is empty, fill with row's timestamp date or today
       if (status === "Pass Created" && !createdDate) {
         createdDate = formatDateVal(timestamp) || Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
@@ -589,11 +607,18 @@ function fixAndRealignAllSheetColumns() {
       return;
     }
 
-    // 3. Clear old validations and formats safely via Range methods (NOT invalid sheet methods)
-    try {
-      sheet.getDataRange().clearDataValidations();
-    } catch (valErr) {
-      console.warn("Validation clear notice:", valErr);
+    // 3. Reset all old backgrounds, text colors and validations across entire sheet
+    var maxR = sheet.getMaxRows();
+    var maxC = sheet.getMaxColumns();
+    if (maxR > 1) {
+      var allDataRange = sheet.getRange(2, 1, maxR - 1, maxC);
+      allDataRange.setBackground(null);
+      allDataRange.setFontColor(null);
+      try {
+        allDataRange.clearDataValidations();
+      } catch (valErr) {
+        console.warn("Validation clear notice:", valErr);
+      }
     }
 
     // 4. Write standard Row 1 Headers
@@ -603,17 +628,31 @@ function fixAndRealignAllSheetColumns() {
     sheet.getRange(2, 1, cleanedRows.length, standardHeaders.length).setValues(cleanedRows);
     totalRowsRepaired += cleanedRows.length;
 
-    // 6. Delete extra columns beyond Column 19
-    var currentMaxCols = sheet.getMaxColumns();
-    if (currentMaxCols > 19) {
+    // 6. Clear any leftover text from old rows below the genuine data
+    if (maxR > cleanedRows.length + 1) {
+      var trailingRange = sheet.getRange(cleanedRows.length + 2, 1, maxR - (cleanedRows.length + 1), maxC);
+      trailingRange.clearContent();
+    }
+
+    // 7. Delete extra columns beyond Column 19
+    if (sheet.getMaxColumns() > 19) {
       try {
-        sheet.deleteColumns(20, currentMaxCols - 19);
+        sheet.deleteColumns(20, sheet.getMaxColumns() - 19);
       } catch (colDelErr) {
         console.warn("Column trimming notice:", colDelErr);
       }
     }
 
-    // 7. Styling: Row 1 Header Banner (Navy Blue)
+    // 8. Delete excess empty rows below genuine data (keep only 5 clean blank rows)
+    if (sheet.getMaxRows() > cleanedRows.length + 5) {
+      try {
+        sheet.deleteRows(cleanedRows.length + 6, sheet.getMaxRows() - (cleanedRows.length + 5));
+      } catch (delRowErr) {
+        console.warn("Row trimming notice:", delRowErr);
+      }
+    }
+
+    // 9. Styling: Row 1 Header Banner (Navy Blue)
     var headerRange = sheet.getRange(1, 1, 1, 19);
     headerRange.setBackground("#1e3a8a"); // Navy Blue
     headerRange.setFontColor("#ffffff"); // White
@@ -621,7 +660,7 @@ function fixAndRealignAllSheetColumns() {
     headerRange.setFontSize(11);
     sheet.setRowHeight(1, 45);
 
-    // 8. Grid Formatting for Data Rows
+    // 10. Grid Formatting for Data Rows
     var totalRows = Math.max(sheet.getLastRow(), 50);
     var dataRange = sheet.getRange(1, 1, totalRows, 19);
     dataRange.setHorizontalAlignment("center");
@@ -634,41 +673,42 @@ function fixAndRealignAllSheetColumns() {
       sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
     }
 
-    // 9. Dropdown Validation on Column B (Pass Status)
-    var statusRange = sheet.getRange(2, 2, totalRows - 1, 1);
+    // 11. Dropdown Validation on Column B (Pass Status)
+    var statusRowsCount = Math.max(cleanedRows.length + 5, 20);
+    var statusRange = sheet.getRange(2, 2, statusRowsCount, 1);
     var statusRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
       .setAllowInvalid(false)
       .build();
     statusRange.setDataValidation(statusRule);
 
-    // 10. Conditional Formatting (Sage Green for Pass Created, Soft Yellow for Already Created)
+    // 12. Conditional Formatting (Strict: NEVER colors empty rows, requires $B2<>"")
     sheet.clearConditionalFormatRules();
-    var formatRange = sheet.getRange("A2:S" + Math.max(totalRows, 2500));
+    var formatRange = sheet.getRange("A2:S" + (cleanedRows.length + 10));
 
     var passCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=OR(LOWER(TRIM($B2))="pass created", LOWER(TRIM($B2))="approved")')
+      .whenFormulaSatisfied('=AND($B2<>"", OR(LOWER(TRIM($B2))="pass created", LOWER(TRIM($B2))="approved"))')
       .setBackground("#9fc48a")
       .setFontColor("#000000")
       .setRanges([formatRange])
       .build();
 
     var alreadyCreatedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=OR(REGEXMATCH(LOWER(TO_TEXT($B2)), "already created"), REGEXMATCH(TO_TEXT($B2), "अन्य काउंटर"))')
+      .whenFormulaSatisfied('=AND($B2<>"", OR(REGEXMATCH(LOWER(TO_TEXT($B2)), "already created"), REGEXMATCH(TO_TEXT($B2), "अन्य काउंटर"))) ')
       .setBackground("#fef08a")
       .setFontColor("#854d0e")
       .setRanges([formatRange])
       .build();
 
     var rejectedRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=LOWER(TRIM($B2))="rejected"')
+      .whenFormulaSatisfied('=AND($B2<>"", LOWER(TRIM($B2))="rejected")')
       .setBackground("#fee2e2")
       .setFontColor("#991b1b")
       .setRanges([formatRange])
       .build();
 
     var pendingRule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=LOWER(TRIM($B2))="pending"')
+      .whenFormulaSatisfied('=AND($B2<>"", LOWER(TRIM($B2))="pending")')
       .setBackground("#ffffff")
       .setFontColor("#000000")
       .setRanges([formatRange])
@@ -676,7 +716,7 @@ function fixAndRealignAllSheetColumns() {
 
     sheet.setConditionalFormatRules([passCreatedRule, alreadyCreatedRule, rejectedRule, pendingRule]);
 
-    // 11. Column Widths
+    // 13. Column Widths
     var colWidths = [
       150, // 1. Timestamp
       165, // 2. Pass Status (B)
