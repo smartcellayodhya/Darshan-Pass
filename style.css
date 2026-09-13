@@ -1307,9 +1307,6 @@ body.modal-open .scroll-to-top-btn {
     top: 1.2rem;
     transform: none;
 }
-    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-}
 
 /* Searchable Select Popup Modal */
 .search-modal-content {

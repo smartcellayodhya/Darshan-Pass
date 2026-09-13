@@ -545,6 +545,14 @@ function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
     var cleanId = String(idNumber || "").trim().toUpperCase();
     var cleanMob = String(mobile || "").trim();
 
+    // Ignore placeholder/generic values
+    if (cleanId === "NA" || cleanId === "N/A" || cleanId === "NONE" || cleanId === "NULL" || cleanId.length < 6) {
+      cleanId = "";
+    }
+    if (cleanMob.length < 10) {
+      cleanMob = "";
+    }
+
     if (!cleanId && !cleanMob) return { isDuplicate: false };
 
     var nowTime = new Date().getTime();
@@ -621,7 +629,9 @@ var DEFAULT_OFFICERS_LIST = [
 function getOrCreateReferenceOfficersSheet(ss) {
   if (!ss) ss = getTargetSpreadsheet();
   var sheet = ss.getSheetByName(OFFICERS_SHEET_NAME);
+  var isNew = false;
   if (!sheet) {
+    isNew = true;
     sheet = ss.insertSheet(OFFICERS_SHEET_NAME);
     // Header
     sheet.getRange(1, 1, 1, 2).setValues([["Officer Name / Designation", "Status"]]);
@@ -644,6 +654,14 @@ function getOrCreateReferenceOfficersSheet(ss) {
     sheet.getRange(2, 2, rows.length + 50, 1).setDataValidation(statusRule);
     sheet.setFrozenRows(1);
   }
+
+  try {
+    var toastMsg = isNew 
+      ? "✅ 'Reference_Officers' टैब सफलतापूर्वक बन गया है!" 
+      : "ℹ️ 'Reference_Officers' टैब पहले से सक्रिय है।";
+    SpreadsheetApp.getActiveSpreadsheet().toast(toastMsg, "Officers Tab Ready 🎖️", 5);
+  } catch (e) {}
+
   return sheet;
 }
 

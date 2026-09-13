@@ -677,12 +677,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function checkDuplicateSubmission(mobile, idNumber, visitDate, visitSlot) {
-        if ((!mobile && !idNumber) || !visitDate || !visitSlot) return null;
+        let cleanMob = String(mobile || "").trim();
+        let cleanId = String(idNumber || "").trim().toUpperCase();
+
+        if (cleanId === "NA" || cleanId === "N/A" || cleanId === "NONE" || cleanId === "NULL" || cleanId.length < 6) {
+            cleanId = "";
+        }
+        if (cleanMob.length < 10) {
+            cleanMob = "";
+        }
+
+        if ((!cleanMob && !cleanId) || !visitDate || !visitSlot) return null;
         const history = getSubmissionsHistory();
         const oneDayMs = 24 * 60 * 60 * 1000; // Strictly 24 hours
         const now = Date.now();
-        const cleanMob = String(mobile || "").trim();
-        const cleanId = String(idNumber || "").trim().toUpperCase();
 
         return history.find(item => {
             const isRecent = (now - (item.timestamp || 0)) < oneDayMs;
