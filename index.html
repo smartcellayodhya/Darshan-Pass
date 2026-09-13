@@ -82,7 +82,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=2.4">
+    <link rel="stylesheet" href="style.css?v=2.5">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -527,7 +527,7 @@
                 
                 <!-- Printable Acknowledgement Slip Card (Smart Pocket Pass Layout) -->
                 <div id="printable-slip" class="receipt-card compact-pass-card">
-                    <!-- Top Ribbon: Logo + Title + Token Badge -->
+                    <!-- Top Ribbon: Logo + Brand Header -->
                     <div class="pass-card-topbar">
                         <div class="pass-card-brand">
                             <img src="assets/up_police_logo.png" alt="UP Police" class="pass-card-logo">
@@ -536,15 +536,18 @@
                                 <p id="slip-subtitle" data-i18n="receiptSubtitle">अयोध्या पुलिस • Smart Cell</p>
                             </div>
                         </div>
-                        <div class="pass-token-badge">
-                            <span class="pass-token-label"><i class="fa-solid fa-ticket"></i> टोकन ID</span>
-                            <div class="pass-token-val-wrap">
-                                <span class="pass-token-code" id="slip-token-id">AYO-YYYYMMDD-ROW</span>
-                                <button type="button" id="copy-token-btn" class="pass-copy-btn" title="टोकन कॉपी करें">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                            </div>
+                    </div>
+
+                    <!-- Dedicated High-Visibility Token ID Strip -->
+                    <div class="pass-token-strip">
+                        <div class="pass-token-strip-left">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span class="pass-token-strip-label" data-i18n="slipLabelToken">टोकन ID:</span>
+                            <span class="pass-token-code" id="slip-token-id">AYO-YYYYMMDD-ROW</span>
                         </div>
+                        <button type="button" id="copy-token-btn" class="pass-copy-btn" title="टोकन कॉपी करें">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
                     </div>
 
                     <!-- Devotee & Count Bar -->
@@ -554,7 +557,7 @@
                             <span class="pass-devotee-val" id="slip-devotee-name">--</span>
                         </div>
                         <div class="pass-devotee-count">
-                            <span class="pass-bar-lbl"><i class="fa-solid fa-users"></i> <span id="slip-lbl-total" data-i18n="slipLabelTotal">कुल दर्शनार्थी</span></span>
+                            <span class="pass-bar-lbl"><i class="fa-solid fa-users"></i> <span id="slip-lbl-total" data-i18n="slipLabelTotal">कुल दर्शनार्थी:</span></span>
                             <span class="pass-count-val" id="slip-total-devotees">--</span>
                         </div>
                     </div>
@@ -577,7 +580,7 @@
 
                     <!-- Micro Footer Note -->
                     <div class="receipt-footer-note compact-footer-note" id="slip-footer-note" data-i18n="slipFooterNote">
-                        <i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है। अंतिम पास पुलिस सत्यापन उपरांत जारी होगा।
+                        <i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है, इसको अन्तिम पास नही माना जायेगा। अंतिम पास सक्षम पुलिस अधिकारी के अनुमोदन के उपरांत जारी होगा।
                     </div>
                 </div>
 
@@ -669,6 +672,6 @@
     </main>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=2.4"></script>
+    <script src="script.js?v=2.5"></script>
 </body>
 </html>

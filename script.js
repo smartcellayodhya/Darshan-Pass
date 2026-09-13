@@ -1148,10 +1148,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (copyBtn) copyBtn.style.display = "none";
 
                 const canvas = await html2canvas(printableSlip, {
-                    scale: 2,
+                    scale: 3,
                     useCORS: true,
                     backgroundColor: "#ffffff",
-                    logging: false
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onclone: (clonedDoc) => {
+                        const slip = clonedDoc.getElementById("printable-slip");
+                        if (slip) {
+                            slip.style.width = "460px";
+                            slip.style.maxWidth = "460px";
+                            slip.style.boxSizing = "border-box";
+                            slip.style.margin = "0";
+                            slip.style.padding = "1.2rem 1.4rem";
+                            slip.style.boxShadow = "none";
+                            slip.style.border = "1.5px solid #0f172a";
+                            const copyBtn = slip.querySelector(".pass-copy-btn, #copy-token-btn");
+                            if (copyBtn) copyBtn.remove();
+                        }
+                    }
                 });
 
                 if (copyBtn) copyBtn.style.display = "";
@@ -1205,7 +1221,7 @@ document.addEventListener("DOMContentLoaded", () => {
 🏛️ *रेफरेंस:* ${referredBy}
 ━━━━━━━━━━━━━━━━━━━━
 ℹ️ *ऑनलाइन पावती स्थिति जांचें:*
-https://darshan-pass.vercel.app
+https://darshanpass.ayodhyapolice.in
 
 🙏 *जय श्री राम* 🙏`;
 
@@ -1497,7 +1513,7 @@ https://darshan-pass.vercel.app
             slipLabelTotal: 'कुल दर्शनार्थी:',
             slipLabelMobile: 'मोबाइल नंबर:',
             slipLabelRef: 'रेफरेंस:',
-            slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है। अंतिम पास पुलिस सत्यापन उपरांत जारी होगा।',
+            slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> यह ऑनलाइन आवेदन पावती है, इसको अन्तिम पास नही माना जायेगा। अंतिम पास सक्षम पुलिस अधिकारी के अनुमोदन के उपरांत जारी होगा।',
             whatsappShare: 'WhatsApp शेयर',
             downloadSlip: 'रसीद डाउनलोड',
             printSlip: 'प्रिंट / PDF',
@@ -1567,7 +1583,7 @@ https://darshan-pass.vercel.app
             slipLabelTotal: 'Total Devotees:',
             slipLabelMobile: 'Mobile Number:',
             slipLabelRef: 'Reference / Recommended By:',
-            slipFooterNote: '<i class="fa-solid fa-circle-info"></i> This is an online acknowledgement slip only. Final Darshan Pass is subject to official police verification.',
+            slipFooterNote: '<i class="fa-solid fa-shield-halved"></i> This is an online acknowledgement slip only and not the final pass. The final pass will be issued upon approval by the competent police officer.',
             whatsappShare: 'Share on WhatsApp',
             downloadSlip: 'Download Slip (Save PNG)',
             printSlip: 'Print Slip / Save PDF',
