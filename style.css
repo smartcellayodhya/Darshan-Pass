@@ -1538,3 +1538,171 @@ body.gov-minimal-theme {
 .download-btn:hover {
     background-color: #0369a1 !important;
 }
+
+/* -------------------------------------------------------------
+ * WHATSAPP 1-CLICK SHARE BUTTON
+ * ------------------------------------------------------------- */
+.whatsapp-share-btn {
+    background-color: #25D366 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600;
+}
+
+.whatsapp-share-btn:hover {
+    background-color: #128C7E !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);
+}
+
+/* -------------------------------------------------------------
+ * FLOATING SCROLL TO TOP BUTTON
+ * ------------------------------------------------------------- */
+.scroll-to-top-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #0284c7;
+    color: #ffffff;
+    border: 2.5px solid #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    z-index: 999;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-to-top-btn:hover {
+    background-color: #0369a1;
+    transform: translateY(-3px) scale(1.06);
+    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+}
+
+.scroll-to-top-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+@media (max-width: 640px) {
+    .scroll-to-top-btn {
+        bottom: 1.2rem;
+        right: 1.2rem;
+        width: 42px;
+        height: 42px;
+        font-size: 1.05rem;
+    }
+}
+
+/* -------------------------------------------------------------
+ * DYNAMIC ACCOMPANYING DEVOTEES MEMBER ROWS
+ * ------------------------------------------------------------- */
+.accompanying-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: 0.45rem;
+}
+
+.member-row-card {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-md, 8px);
+    padding: 0.85rem 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.25s ease;
+}
+
+.member-row-card:focus-within {
+    border-color: var(--primary-blue, #1d4ed8);
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(29, 78, 216, 0.08);
+}
+
+.member-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.55rem;
+}
+
+.member-index-badge {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--navy-dark, #1e3a8a);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #e0f2fe;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+}
+
+.member-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    gap: 0.75rem;
+}
+
+@media (max-width: 540px) {
+    .member-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.member-inputs-grid input {
+    width: 100%;
+    padding: 0.72rem 0.85rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.92rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.member-inputs-grid input:focus {
+    border-color: var(--primary-blue, #1d4ed8);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+}
+
+.member-age-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.member-age-wrapper input {
+    padding-right: 2.6rem;
+}
+
+.age-suffix {
+    position: absolute;
+    right: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    pointer-events: none;
+}
+
+.single-devotee-notice {
+    background: #f1f5f9;
+    border: 1px dashed #cbd5e1;
+    border-radius: var(--radius-sm, 6px);
+    padding: 0.85rem 1rem;
+    color: #64748b;
+    font-size: 0.9rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+

@@ -587,6 +587,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function saveFormDraft() {
         if (!form) return;
         try {
+            const memberRows = [];
+            document.querySelectorAll(".member-row-card").forEach(card => {
+                const nameEl = card.querySelector(".member-name-input");
+                const ageEl = card.querySelector(".member-age-input");
+                if (nameEl || ageEl) {
+                    memberRows.push({
+                        name: nameEl ? nameEl.value : "",
+                        age: ageEl ? ageEl.value : ""
+                    });
+                }
+            });
+
             const draft = {
                 visitDate: visitDateInput ? visitDateInput.value : "",
                 visitSlot: visitSlotSelect ? visitSlotSelect.value : "",
@@ -602,6 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 vehicleNo: vehicleNoInput ? vehicleNoInput.value : "",
                 noVehicle: noVehicleCheck ? noVehicleCheck.checked : false,
                 accompanying: accompanyingInput ? accompanyingInput.value : "",
+                accompanyingMembers: memberRows,
                 referredBySelect: referredBySelect ? referredBySelect.value : "",
                 otherRefName: otherRefNameInput ? otherRefNameInput.value : "",
                 timestamp: Date.now()
@@ -679,7 +692,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const totalDev = (parseInt(draft.maleCount) || 1) + (parseInt(draft.femaleCount) || 0);
-            updateAccompanyingRequirement(totalDev);
+            updateAccompanyingRequirement(totalDev, draft.accompanyingMembers || null);
 
             showToast("अंतिम अधूरा ड्राफ्ट स्वतः लोड हो गया है।", "info");
         } catch (e) {
@@ -802,29 +815,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Accompanying devotees validation (Dynamically based on Total Devotees count)
             let isAccompanyingValid = true;
-            if (accompanyingInput) {
-                const accVal = accompanyingInput.value.trim();
+            if (totalCount <= 1) {
+                // Single Devotee: Accompanying is NOT required
+                isAccompanyingValid = true;
+                if (accompanyingInput) accompanyingInput.value = "लागू नहीं (अकेले दर्शनार्थी)";
+                markGroup(accompanyingInput, true);
+            } else {
+                syncAccompanyingTextarea();
                 const accErrorEl = document.getElementById("accompanying-error");
+                const memberCards = document.querySelectorAll(".member-row-card");
+                let firstInvalidIndex = -1;
+                let invalidFieldType = "";
 
-                if (totalCount <= 1) {
-                    // Single Devotee: Accompanying is NOT required
-                    isAccompanyingValid = true;
-                    markGroup(accompanyingInput, true);
-                } else {
-                    // Multiple Devotees: Accompanying members details are mandatory
-                    const hasAccAgeDigit = /\b([1-9][0-9]?|1[0-1][0-9]|120)\b/.test(accVal);
-                    const remainingMembers = totalCount - 1;
+                memberCards.forEach((card, idx) => {
+                    const nameEl = card.querySelector(".member-name-input");
+                    const ageEl = card.querySelector(".member-age-input");
+                    const nVal = nameEl ? nameEl.value.trim() : "";
+                    const aVal = ageEl ? parseInt(ageEl.value.trim(), 10) : NaN;
 
-                    if (accVal.length < 2) {
-                        isAccompanyingValid = false;
-                        if (accErrorEl) accErrorEl.textContent = `कृपया अन्य ${remainingMembers} साथी सदस्यों के नाम एवं उम्र दर्ज करें`;
-                    } else if (!hasAccAgeDigit) {
-                        isAccompanyingValid = false;
-                        if (accErrorEl) accErrorEl.textContent = "कृपया सभी साथी सदस्यों की उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)";
-                    } else {
-                        isAccompanyingValid = true;
+                    let rowValid = true;
+                    if (!nVal || nVal.length < 2) {
+                        rowValid = false;
+                        if (firstInvalidIndex === -1) {
+                            firstInvalidIndex = idx + 1;
+                            invalidFieldType = "name";
+                        }
+                    } else if (isNaN(aVal) || aVal < 10 || aVal > 120) {
+                        rowValid = false;
+                        if (firstInvalidIndex === -1) {
+                            firstInvalidIndex = idx + 1;
+                            invalidFieldType = "age";
+                        }
                     }
-                    markGroup(accompanyingInput, isAccompanyingValid);
+
+                    if (!rowValid) {
+                        card.style.borderColor = "#dc2626";
+                    } else {
+                        card.style.borderColor = "";
+                    }
+                });
+
+                if (firstInvalidIndex !== -1) {
+                    isAccompanyingValid = false;
+                    if (accErrorEl) {
+                        if (invalidFieldType === "age") {
+                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} की सही उम्र (10 से 120 वर्ष) दर्ज करें`;
+                        } else {
+                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} का पूरा नाम दर्ज करें`;
+                        }
+                        accErrorEl.style.display = "block";
+                    }
+                    markGroup(accompanyingInput, false);
+                } else {
+                    isAccompanyingValid = true;
+                    if (accErrorEl) accErrorEl.style.display = "none";
+                    markGroup(accompanyingInput, true);
                 }
             }
 
@@ -1112,6 +1157,60 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
+    // WHATSAPP 1-CLICK SHARE HANDLER
+    // -------------------------------------------------------------
+    const whatsappShareBtn = document.getElementById("whatsapp-share-btn");
+    if (whatsappShareBtn) {
+        whatsappShareBtn.addEventListener("click", () => {
+            const devoteeName = (document.getElementById("slip-devotee-name")?.textContent || "").trim();
+            const tokenId = (document.getElementById("slip-token-id")?.textContent || "").trim();
+            const visitDatetime = (document.getElementById("slip-visit-datetime")?.textContent || "").trim();
+            const totalDevotees = (document.getElementById("slip-total-devotees")?.textContent || "").trim();
+            const mobile = (document.getElementById("slip-mobile")?.textContent || "").trim();
+            const referredBy = (document.getElementById("slip-referred-by")?.textContent || "").trim();
+
+            const messageText = 
+`🚩 *श्री राम जन्मभूमि दर्शन पास - अयोध्या पुलिस पावती* 🚩
+━━━━━━━━━━━━━━━━━━━━
+🎫 *टोकन ID:* ${tokenId}
+👤 *मुख्य दर्शनार्थी:* ${devoteeName}
+📅 *दर्शन तिथि व समय:* ${visitDatetime}
+👥 *कुल दर्शनार्थी:* ${totalDevotees}
+📱 *मोबाइल नंबर:* ${mobile}
+🏛️ *रेफरेंस:* ${referredBy}
+━━━━━━━━━━━━━━━━━━━━
+ℹ️ *ऑनलाइन पावती स्थिति जांचें:*
+https://darshan-pass.vercel.app
+
+🙏 *जय श्री राम* 🙏`;
+
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
+            window.open(whatsappUrl, "_blank");
+        });
+    }
+
+    // -------------------------------------------------------------
+    // FLOATING SCROLL TO TOP BUTTON HANDLER
+    // -------------------------------------------------------------
+    const scrollToTopBtn = document.getElementById("scroll-to-top-btn");
+    if (scrollToTopBtn) {
+        window.addEventListener("scroll", () => {
+            if (window.scrollY > 280) {
+                scrollToTopBtn.classList.remove("hidden");
+            } else {
+                scrollToTopBtn.classList.add("hidden");
+            }
+        }, { passive: true });
+
+        scrollToTopBtn.addEventListener("click", () => {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+    }
+
+    // -------------------------------------------------------------
     // TRACK PASS APPLICATION STATUS (ITEM 1)
     // -------------------------------------------------------------
     const trackPassNavBtn = document.getElementById("track-pass-nav-btn");
@@ -1299,10 +1398,12 @@ document.addEventListener("DOMContentLoaded", () => {
             slipLabelMobile: 'मोबाइल नंबर:',
             slipLabelRef: 'रेफरेंस / संदर्भ:',
             slipFooterNote: '<i class="fa-solid fa-circle-info"></i> यह केवल ऑनलाइन आवेदन की पावती है। अंतिम दर्शन पास सक्षम पुलिस अधिकारी की अनुमति के उपरांत जारी किया जाएगा।',
+            whatsappShare: 'WhatsApp पर भेजें',
             downloadSlip: 'रसीद डाउनलोड करें (Save PNG)',
             printSlip: 'रसीद प्रिंट करें / PDF',
             submitAnother: 'दूसरा फॉर्म भरें',
             closeModal: 'बंद करें',
+            singleDevoteeNotice: 'अकेले दर्शनार्थी हैं - अतिरिक्त साथी विवरण की आवश्यकता नहीं है।',
             trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> आवेदन स्थिति जांचें (Track Pass)',
             trackModalDesc: 'अपने आवेदन का टोकन ID (उदा: AYO-20260913-145) या 10-अंकों का मोबाइल नंबर दर्ज करें:',
             trackSearchBtn: 'खोजें (Search)',
@@ -1363,10 +1464,12 @@ document.addEventListener("DOMContentLoaded", () => {
             slipLabelMobile: 'Mobile Number:',
             slipLabelRef: 'Reference / Recommended By:',
             slipFooterNote: '<i class="fa-solid fa-circle-info"></i> This is an online acknowledgement slip only. Final Darshan Pass is subject to official police verification.',
+            whatsappShare: 'Share on WhatsApp',
             downloadSlip: 'Download Slip (Save PNG)',
             printSlip: 'Print Slip / Save PDF',
             submitAnother: 'Submit Another Application',
             closeModal: 'Close',
+            singleDevoteeNotice: 'Single devotee - No additional accompanying member details required.',
             trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> Track Application Status',
             trackModalDesc: 'Enter your Token ID (e.g. AYO-20260913-145) or 10-digit Mobile Number:',
             trackSearchBtn: 'Search Status',
@@ -1420,6 +1523,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? (lang === "en" ? "Enter 12-digit Aadhaar No. or Passport No." : "12-अंकों का आधार नंबर या पासपोर्ट नंबर दर्ज करें")
                 : (lang === "en" ? "Enter Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)");
         }
+
+        // Update dynamic member row cards if present
+        document.querySelectorAll(".member-row-card").forEach(card => {
+            const idx = card.getAttribute("data-member-index");
+            const badge = card.querySelector(".member-index-badge span");
+            if (badge) badge.textContent = lang === "en" ? `Member ${idx}` : `साथी ${idx}`;
+            const nameIn = card.querySelector(".member-name-input");
+            if (nameIn) nameIn.placeholder = lang === "en" ? `Devotee ${idx} Full Name` : `सदस्य ${idx} का पूरा नाम`;
+            const ageIn = card.querySelector(".member-age-input");
+            if (ageIn) ageIn.placeholder = lang === "en" ? "Age" : "उम्र";
+            const suffix = card.querySelector(".age-suffix");
+            if (suffix) suffix.textContent = lang === "en" ? "Yrs" : "वर्ष";
+        });
 
         // Update Searchable select triggers if they are on default/empty selection
         const stateContainer = document.querySelector('.custom-select-container[data-target="stateSelect"]');
@@ -1477,6 +1593,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!SpeechRecognition) {
             console.warn("Speech Recognition API not supported in this browser.");
             micButtons.forEach(btn => {
+                if (btn._voiceBound) return;
+                btn._voiceBound = true;
                 btn.addEventListener("click", (e) => {
                     e.preventDefault();
                     showToast("आपका ब्राउज़र वॉयस टाइपिंग का समर्थन नहीं करता है। कृपया कीबोर्ड से टाइप करें।", "warning");
@@ -1486,6 +1604,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         micButtons.forEach(btn => {
+            if (btn._voiceBound) return;
+            btn._voiceBound = true;
             btn.addEventListener("click", (e) => {
                 e.preventDefault();
                 const targetId = btn.getAttribute("data-target");
@@ -1663,12 +1783,126 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("click", closeAllDropdowns);
 
     // -------------------------------------------------------------
-    // REAL-TIME DEVOTEE COUNT MAX 8 CLAMP HANDLER
+    // DYNAMIC ACCOMPANYING MEMBER ROWS & SYNC PIPELINE
     // -------------------------------------------------------------
-    // -------------------------------------------------------------
-    // REAL-TIME DEVOTEE COUNT MAX 8 CLAMP HANDLER & SINGLE DEVOTEE TOGGLE
-    // -------------------------------------------------------------
-    function updateAccompanyingRequirement(totalCount) {
+    function syncAccompanyingTextarea() {
+        if (!accompanyingInput) return;
+        const cards = document.querySelectorAll(".member-row-card");
+        if (!cards || cards.length === 0) {
+            accompanyingInput.value = "लागू नहीं (अकेले दर्शनार्थी)";
+            return;
+        }
+
+        const lines = [];
+        cards.forEach((card, idx) => {
+            const i = idx + 1;
+            const nameInput = card.querySelector(".member-name-input");
+            const ageInput = card.querySelector(".member-age-input");
+            const nameVal = nameInput ? nameInput.value.trim() : "";
+            const ageVal = ageInput ? ageInput.value.trim() : "";
+
+            if (nameVal || ageVal) {
+                lines.push(`${i}. ${nameVal}${ageVal ? ' ' + ageVal + ' Yrs' : ''}`);
+            }
+        });
+
+        accompanyingInput.value = lines.join("\n");
+    }
+
+    function renderAccompanyingMemberRows(extraCount, prefillMembers = null) {
+        const container = document.getElementById("accompanying-rows-container");
+        if (!container) return;
+
+        // Preserve currently entered values if prefillMembers not explicitly provided
+        const existingValues = [];
+        if (prefillMembers && Array.isArray(prefillMembers)) {
+            prefillMembers.forEach(m => existingValues.push({ name: m.name || "", age: m.age || "" }));
+        } else {
+            const existingCards = container.querySelectorAll(".member-row-card");
+            existingCards.forEach(card => {
+                const nInput = card.querySelector(".member-name-input");
+                const aInput = card.querySelector(".member-age-input");
+                existingValues.push({
+                    name: nInput ? nInput.value : "",
+                    age: aInput ? aInput.value : ""
+                });
+            });
+        }
+
+        container.innerHTML = "";
+
+        const curLang = localStorage.getItem("darshan_lang") || "hi";
+        const t = translations[curLang] || translations.hi;
+
+        if (extraCount <= 0) {
+            container.innerHTML = `
+                <div class="single-devotee-notice">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span data-i18n="singleDevoteeNotice">${t.singleDevoteeNotice || "अकेले दर्शनार्थी हैं - अतिरिक्त साथी विवरण की आवश्यकता नहीं है।"}</span>
+                </div>
+            `;
+            if (accompanyingInput) accompanyingInput.value = "लागू नहीं (अकेले दर्शनार्थी)";
+            return;
+        }
+
+        for (let i = 1; i <= extraCount; i++) {
+            const prev = existingValues[i - 1] || { name: "", age: "" };
+            const card = document.createElement("div");
+            card.className = "member-row-card";
+            card.setAttribute("data-member-index", i);
+
+            const memberBadgeText = (curLang === "en" ? `Member ${i}` : `साथी ${i}`);
+            const namePlaceholder = (curLang === "en" ? `Devotee ${i} Full Name` : `सदस्य ${i} का पूरा नाम`);
+            const agePlaceholder = (curLang === "en" ? "Age" : "उम्र");
+            const yrsSuffix = (curLang === "en" ? "Yrs" : "वर्ष");
+
+            card.innerHTML = `
+                <div class="member-index-badge">
+                    <i class="fa-solid fa-user-tag"></i> <span>${memberBadgeText}</span>
+                </div>
+                <div class="member-inputs-grid">
+                    <div class="input-wrapper mic-wrapper">
+                        <input type="text" class="member-name-input" id="member-name-${i}" placeholder="${namePlaceholder}" value="${prev.name}" autocomplete="off">
+                        <button type="button" class="voice-mic-btn" data-target="member-name-${i}" title="बोलकर टाइप करें (Voice Typing)">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                    </div>
+                    <div class="member-age-wrapper">
+                        <input type="number" class="member-age-input" id="member-age-${i}" placeholder="${agePlaceholder}" min="10" max="120" value="${prev.age}" autocomplete="off">
+                        <span class="age-suffix">${yrsSuffix}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        // Attach speech-to-text recognition to newly created mic buttons
+        setupVoiceTyping();
+
+        // Attach input listeners to dynamically sync with textarea and auto-save draft
+        container.querySelectorAll(".member-name-input").forEach(input => {
+            const cleanName = () => {
+                input.value = input.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.]/g, '');
+                syncAccompanyingTextarea();
+                queueSaveDraft();
+            };
+            input.addEventListener("input", cleanName);
+            input.addEventListener("paste", () => setTimeout(cleanName, 10));
+        });
+
+        container.querySelectorAll(".member-age-input").forEach(input => {
+            input.addEventListener("input", () => {
+                let ageVal = parseInt(input.value, 10);
+                if (ageVal > 120) input.value = 120;
+                syncAccompanyingTextarea();
+                queueSaveDraft();
+            });
+        });
+
+        syncAccompanyingTextarea();
+    }
+
+    function updateAccompanyingRequirement(totalCount, prefillMembers = null) {
         const accGroup = document.getElementById("accompanying-group");
         const accNote = document.getElementById("accompanying-note");
         const accReq = document.getElementById("accompanying-required");
@@ -1686,17 +1920,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 accGroup.classList.add("single-devotee");
             }
             if (accError) accError.style.display = "none";
+            renderAccompanyingMemberRows(0);
         } else {
             if (accompanyingInput) {
                 accompanyingInput.required = true;
             }
             if (accReq) accReq.style.display = "inline";
             const extra = totalCount - 1;
-            if (accNote) accNote.textContent = curLang === "en" ? `(Please write name & age of remaining ${extra} accompanying members)` : `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
+            if (accNote) accNote.textContent = curLang === "en" ? `(Please enter name & age of remaining ${extra} accompanying members)` : `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
             if (accGroup) {
                 accGroup.classList.remove("single-devotee");
             }
-            if (accError) accError.style.display = "";
+            if (accError) accError.style.display = "none";
+            renderAccompanyingMemberRows(extra, prefillMembers);
         }
     }
 

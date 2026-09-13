@@ -356,18 +356,16 @@
 
                         <!-- Accompanying Members Details Area -->
                         <div class="input-group" id="accompanying-group">
-                            <label for="accompanying" class="input-label" id="accompanying-label">
-                                <span id="accompanying-title-text" data-i18n="lblAccompanying">Accompanying Devotees / साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र</span> 
+                            <label class="input-label" id="accompanying-label">
+                                <span id="accompanying-title-text" data-i18n="lblAccompanying">साथ में आने वाले सभी दर्शनार्थियों के नाम व उम्र</span> 
                                 <span class="sub-label-note" id="accompanying-note">(कृपया 10 साल से नीचे के बच्चों का नाम न लिखें क्योंकि उनका पास नहीं बनता है)</span> 
                                 <span class="required" id="accompanying-required">*</span>
                             </label>
-                            <div class="input-wrapper mic-wrapper">
-                                <textarea id="accompanying" name="accompanying" rows="3" placeholder="1. Rahul 32 Yrs&#10;2. Ashwani 35 Yrs" data-i18n-ph="phAccompanying"></textarea>
-                                <button type="button" class="voice-mic-btn textarea-mic-btn" data-target="accompanying" title="बोलकर टाइप करें (Voice Typing)">
-                                    <i class="fa-solid fa-microphone"></i>
-                                </button>
-                            </div>
-                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व उम्र (संख्या) जरूर दर्ज करें (उदा: 1. Rahul 32 Yrs)</span>
+
+                            <!-- Dynamic Accompanying Member Rows Container -->
+                            <div id="accompanying-rows-container" class="accompanying-rows-container"></div>
+                            <textarea id="accompanying" name="accompanying" style="display: none;"></textarea>
+                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व उम्र (संख्या) जरूर दर्ज करें</span>
                         </div>
                     </div>
                 </div>
@@ -519,6 +517,9 @@
                 </div>
 
                 <div class="modal-action-buttons">
+                    <button id="whatsapp-share-btn" type="button" class="modal-btn whatsapp-share-btn" title="WhatsApp पर शेयर करें">
+                        <i class="fa-brands fa-whatsapp"></i> <span id="whatsapp-share-text" data-i18n="whatsappShare">WhatsApp पर भेजें</span>
+                    </button>
                     <button id="download-slip-btn" type="button" class="modal-btn gov-modal-btn download-btn">
                         <i class="fa-solid fa-circle-down"></i> <span id="download-slip-text" data-i18n="downloadSlip">रसीद डाउनलोड करें (Save PNG)</span>
                     </button>
@@ -565,6 +566,11 @@
             <i class="toast-icon fa-solid fa-circle-info"></i>
             <span id="toast-message">सूचना</span>
         </div>
+
+        <!-- Floating Scroll to Top Button -->
+        <button type="button" id="scroll-to-top-btn" class="scroll-to-top-btn hidden" title="ऊपर जाएं (Scroll to Top)">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
 
         <!-- Official Footer -->
         <footer class="gov-footer">
