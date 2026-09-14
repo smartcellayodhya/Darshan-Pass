@@ -611,7 +611,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let assignedRow = null;
 
-        // Try direct POST first to read exact atomic row number assigned by Google Sheets
+        // Single atomic POST to Google Apps Script
         try {
             const res = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
@@ -620,31 +620,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                if (data && (data.rowNumber || data.row)) {
-                    assignedRow = parseInt(data.rowNumber || data.row, 10);
-                    localStorage.setItem("darshan_last_row", String(assignedRow));
+                if (data) {
+                    if (data.result === "duplicate" || data.isDuplicate) {
+                        return {
+                            result: "duplicate",
+                            isDuplicate: true,
+                            message: data.message || "इस आधार नंबर या मोबाइल नंबर से पिछले 24 घंटे में आवेदन पहले ही दर्ज है।",
+                            rowNumber: data.matchedRow
+                        };
+                    }
+                    if (data.rowNumber || data.row) {
+                        assignedRow = parseInt(data.rowNumber || data.row, 10);
+                        localStorage.setItem("darshan_last_row", String(assignedRow));
+                    }
                 }
             }
         } catch (postErr) {
-            // If cross-origin redirect prevents reading JSON, fall through to robust delivery
-            console.warn("Direct POST JSON response unavailable, falling back to guaranteed delivery...", postErr);
-        }
-
-        // Guaranteed delivery fallback via no-cors if direct POST did not return assignedRow
-        if (!assignedRow) {
-            try {
-                await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "text/plain" },
-                    body: payloadStr
-                });
-            } catch (fetchErr) {
-                console.warn("Direct transmission fallback via sendBeacon...", fetchErr);
-                if (navigator.sendBeacon) {
-                    navigator.sendBeacon(GOOGLE_APPS_SCRIPT_URL, payloadStr);
-                }
-            }
+            console.warn("Direct POST JSON response unavailable:", postErr);
         }
 
         // Silent background query to refresh actual Google Sheet row counter
@@ -657,10 +649,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
                 .catch(() => {});
-        }, 150);
+        }, 300);
 
         return {
             success: true,
+            result: "success",
             rowNumber: assignedRow
         };
     }
@@ -1109,6 +1102,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Direct single transmission pipeline (~1.5s)
                 const sendResult = await sendDataWithRowFeedback(formData);
 
+                // Check if server rejected duplicate submission (24-Hour Duplicate Aadhaar / Mobile Guard)
+                if (sendResult && (sendResult.result === "duplicate" || sendResult.isDuplicate)) {
+                    showToast(`⚠️ ${sendResult.message || "इस आधार या मोबाइल नंबर से पिछले 24 घंटे में आवेदन पहले ही दर्ज है!"}`, "warning");
+                    const mobErr = document.getElementById("mobile-error");
+                    if (mobErr) mobErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
+                    const idErr = document.getElementById("id-error");
+                    if (idErr) idErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
+                    return;
+                }
+
                 // If Google Apps Script returned the exact atomic row assigned to this entry, update Token ID seamlessly
                 if (sendResult && sendResult.rowNumber) {
                     currentCounter = sendResult.rowNumber;
@@ -1498,55 +1501,68 @@ Reference: ${referredBy}
 
     if (submitTrackBtn && trackQueryInput && trackResultBox) {
         async function fetchTrackData(query) {
-            const encoded = encodeURIComponent(query);
+            const cleanQuery = String(query || '').trim();
+            const encoded = encodeURIComponent(cleanQuery);
             const trackUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encoded}&_t=${Date.now()}`;
 
-            // Attempt 1: Modern fetch with follow redirect
+            // Attempt 1: Modern fetch (without cache: "no-store", which triggers CORS redirect failures in WebKit/Chromium)
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                 const res = await fetch(trackUrl, {
                     method: "GET",
-                    cache: "no-store",
-                    redirect: "follow"
+                    headers: { "Accept": "application/json" },
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+
                 if (res.ok) {
                     const json = await res.json();
                     if (json) return json;
                 }
             } catch (fetchErr) {
-                console.warn("Direct fetch error in track, trying XHR fallback...", fetchErr);
+                console.warn("Direct fetch error in track, switching to bulletproof JSONP fallback...", fetchErr);
             }
 
-            // Attempt 2: XMLHttpRequest fallback (bulletproof for cross-origin redirects)
+            // Attempt 2: Bulletproof JSONP fallback (100% immune to CORS, adblockers, and 302 cross-origin redirect blocks)
             return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open("GET", trackUrl, true);
-                xhr.timeout = 20000;
-                xhr.onload = function() {
-                    if (xhr.status >= 200 && xhr.status < 400) {
-                        try {
-                            const data = JSON.parse(xhr.responseText);
-                            resolve(data);
-                        } catch (parseErr) {
-                            reject(parseErr);
-                        }
-                    } else {
-                        reject(new Error("Server returned status " + xhr.status));
-                    }
+                const callbackName = "darshan_track_cb_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+                const script = document.createElement("script");
+                let timer = null;
+
+                window[callbackName] = function(data) {
+                    cleanup();
+                    resolve(data);
                 };
-                xhr.onerror = function() {
+
+                function cleanup() {
+                    if (timer) clearTimeout(timer);
+                    try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+                    if (script && script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                }
+
+                timer = setTimeout(() => {
+                    cleanup();
+                    reject(new Error("Track request timed out"));
+                }, 15000);
+
+                script.onerror = function() {
+                    cleanup();
                     reject(new Error("Network error during track request"));
                 };
-                xhr.ontimeout = function() {
-                    reject(new Error("Track request timed out"));
-                };
-                xhr.send();
+
+                script.src = `${trackUrl}&callback=${callbackName}`;
+                document.body.appendChild(script);
             });
         }
 
         async function executeTrackSearch() {
             const query = trackQueryInput.value.trim();
             if (!query) {
-                showToast("कृपया टोकन ID या 10-अंकों का मोबाइल नंबर दर्ज करें", "warning");
+                showToast("कृपया टोकन ID, आधार या 10-अंकों का मोबाइल नंबर दर्ज करें", "warning");
                 trackQueryInput.focus();
                 return;
             }
@@ -1773,9 +1789,9 @@ Reference: ${referredBy}
             closeModal: 'बंद करें',
             singleDevoteeNotice: 'अकेले दर्शनार्थी हैं - अतिरिक्त साथी विवरण की आवश्यकता नहीं है।',
             trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> आवेदन स्थिति जांचें',
-            trackModalDesc: 'टोकन ID या 10-अंकों का मोबाइल नंबर दर्ज करें:',
+            trackModalDesc: 'टोकन ID, आधार नंबर या 10-अंकों का मोबाइल नंबर दर्ज करें:',
             trackSearchBtn: 'खोजें',
-            trackPlaceholder: 'टोकन ID या मोबाइल नंबर...',
+            trackPlaceholder: 'टोकन ID, आधार या मोबाइल नंबर...',
             closedTitle: 'आवेदन सत्र समाप्त',
             closedDesc: 'आपका दर्शन पास आवेदन सफलतापूर्वक दर्ज कर लिया गया है। फॉर्म बंद कर दिया गया है। नया आवेदन भरने के लिए नीचे बटन पर क्लिक करें।',
             reopenBtn: '<i class="fa-solid fa-rotate-left"></i> नया फॉर्म भरें',
@@ -1846,9 +1862,9 @@ Reference: ${referredBy}
             closeModal: 'Close',
             singleDevoteeNotice: 'Single devotee - No additional accompanying member details required.',
             trackModalTitle: '<i class="fa-solid fa-magnifying-glass" style="color: var(--primary-blue);"></i> Track Application Status',
-            trackModalDesc: 'Enter your Token ID (e.g. AYO-20260913-145) or 10-digit Mobile Number:',
+            trackModalDesc: 'Enter Token ID, Aadhaar Number, or 10-digit Mobile Number:',
             trackSearchBtn: 'Search Status',
-            trackPlaceholder: 'Token ID or 10-digit Mobile Number...',
+            trackPlaceholder: 'Token ID, Aadhaar or Mobile Number...',
             closedTitle: 'Application Session Closed',
             closedDesc: 'Your Darshan Pass application has been recorded successfully. Click below to open a new form.',
             reopenBtn: '<i class="fa-solid fa-rotate-left"></i> Open New Form',

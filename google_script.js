@@ -65,6 +65,41 @@ function isAuthorizedAdmin() {
   }
 }
 
+// HELPER: RESPOND AS JSON OR JSONP
+function respondJson(e, obj) {
+  var callback = e && e.parameter ? e.parameter.callback : null;
+  var jsonStr = JSON.stringify(obj);
+  if (callback && typeof callback === 'string' && /^[a-zA-Z0-9_$]+$/.test(callback)) {
+    return ContentService.createTextOutput(callback + "(" + jsonStr + ")")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(jsonStr)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// HELPER: PARSE TIMESTAMPS ROBUSTLY (HANDLES DATE OBJECTS, ISO, AND DD/MM/YYYY HH:mm:ss)
+function parseTimestampSafe(val) {
+  if (!val) return 0;
+  if (val instanceof Date) {
+    var t = val.getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  var str = String(val).trim();
+  var match = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (match) {
+    var day = parseInt(match[1], 10);
+    var month = parseInt(match[2], 10) - 1;
+    var year = parseInt(match[3], 10);
+    var hour = parseInt(match[4] || 0, 10);
+    var min = parseInt(match[5] || 0, 10);
+    var sec = parseInt(match[6] || 0, 10);
+    var d = new Date(year, month, day, hour, min, sec);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+  var parsed = new Date(str).getTime();
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(15000);
@@ -124,17 +159,30 @@ function doPost(e) {
 
     // Safety Guard: Reject empty/ghost submissions
     if (!nameAge && !visitDate && !mobile) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "result": "ignored",
         "message": "Empty submission ignored."
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
+    }
+
+    // 3. SERVER-SIDE 24-HOUR DUPLICATE GUARD BEFORE APPENDING ROW (आधार व मोबाइल नंबर चेक)
+    var dupCheck = checkDuplicateBeforeSubmission(sheet, idNumber, mobile);
+    if (dupCheck && dupCheck.isDuplicate) {
+      return respondJson(e, {
+        "result": "duplicate",
+        "isDuplicate": true,
+        "matchedRow": dupCheck.matchedRow,
+        "matchedField": dupCheck.matchedField,
+        "status": dupCheck.status,
+        "message": "इस " + dupCheck.matchedField + " से आवेदन पहले ही दर्ज है (Row: " + dupCheck.matchedRow + ", स्थिति: " + dupCheck.status + ")।"
+      });
     }
 
     // Initial Status is always 'Pending' when form is filled
     var passStatus = "Pending";
     var passCreatedDate = ""; // Empty until pass is generated
 
-    // 3. Append row in exact 19-column order matching Google Sheet
+    // 4. Append row in exact 19-column order matching Google Sheet
     sheet.appendRow([
       new Date(),                                    // 1. Timestamp (Column A)
       passCreatedDate,                               // 2. पास बनने की तिथि (Pass Created Date - Column B)
@@ -157,7 +205,7 @@ function doPost(e) {
       fVal                                           // 19. महिला संख्या (Numeric)
     ]);
 
-    // 4. AUTOMATIC CENTER ALIGNMENT & DROPDOWN VALIDATION FOR NEW ROW
+    // 5. AUTOMATIC CENTER ALIGNMENT & DROPDOWN VALIDATION FOR NEW ROW
     var lastRow = sheet.getLastRow();
     var lastCol = Math.max(sheet.getLastColumn(), 19);
 
@@ -182,32 +230,24 @@ function doPost(e) {
         .setAllowInvalid(false)
         .build();
       statusCell.setDataValidation(rule);
-
-      // 5. 24-HOUR DUPLICATE CHECK (आधार व मोबाइल नंबर चेक)
-      var dupCheck = checkFor24HourDuplicate(sheet, lastRow, idNumber, mobile);
-      if (dupCheck && dupCheck.isDuplicate) {
-        newRowRange.setBackground("#FEF3C7"); // Soft amber alert
-        sheet.getRange(lastRow, 1).setNote("⚠️ 24 घंटे के अंदर पुनरावृत्ति / Duplicate Submission!\n" + dupCheck.reason);
-      }
     }
 
     SpreadsheetApp.flush();
 
-    return ContentService.createTextOutput(JSON.stringify({
+    return respondJson(e, {
       "result": "success",
       "rowNumber": lastRow,
       "row": lastRow,
       "name": nameAge,
-      "isDuplicate": dupCheck ? dupCheck.isDuplicate : false,
-      "duplicateWarning": dupCheck && dupCheck.isDuplicate ? dupCheck.reason : "",
+      "isDuplicate": false,
       "message": "Darshan Pass entry saved successfully with Status = Pending in Column C!"
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
+    return respondJson(e, {
       "result": "error",
       "error": error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
 
   } finally {
     lock.releaseLock();
@@ -223,16 +263,16 @@ function doGet(e) {
   if (e && e.parameter && (e.parameter.action === 'get_officers' || e.parameter.action === 'officers')) {
     try {
       var officersList = getReferenceOfficersList(ss);
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "officers": officersList
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (oErr) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": oErr.toString(),
         "officers": DEFAULT_OFFICERS_LIST
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
@@ -240,15 +280,15 @@ function doGet(e) {
   if (e && e.parameter && (e.parameter.action === 'setup_officers' || e.parameter.action === 'init_officers')) {
     try {
       getOrCreateReferenceOfficersSheet(ss);
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "message": "Reference_Officers tab successfully initialized and active!"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (sErr) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": sErr.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
@@ -256,16 +296,16 @@ function doGet(e) {
   if (e && e.parameter && (e.parameter.action === 'format' || e.parameter.action === 'fix' || e.parameter.action === 'realign')) {
     try {
       var result = fixAndRealignAllSheetColumns();
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "result": result,
         "message": "Google Sheet columns and rows successfully repaired and 100% realigned!"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (err) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": err.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
@@ -273,15 +313,15 @@ function doGet(e) {
   if (e && e.parameter && (e.parameter.action === 'recolor' || e.parameter.action === 'color')) {
     try {
       refreshAllRowColors();
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "message": "All row colors successfully refreshed according to status!"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (cErr) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": cErr.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
@@ -289,47 +329,50 @@ function doGet(e) {
   if (e && e.parameter && (e.parameter.action === 'lock' || e.parameter.action === 'protect')) {
     try {
       var lockResult = lockAndProtectHeaderRow();
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "result": lockResult,
         "message": "Row 1 headers successfully locked and protected!"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (lErr) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": lErr.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
-  // 1-CLICK UNLOCK ROW 1 HEADERS (To clear any blocking locks instantly)
+  // 1-CLICK UNLOCK ROW 1 HEADERS
   if (e && e.parameter && (e.parameter.action === 'unlock' || e.parameter.action === 'unprotect')) {
     try {
       var unlockResult = unlockRow1Headers();
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "success",
         "result": unlockResult,
         "message": "Row 1 headers successfully unlocked!"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } catch (uErr) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "status": "error",
         "message": uErr.toString()
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
-  // PASS APPLICATION TRACKING HANDLER
+  // PASS APPLICATION TRACKING HANDLER (Token, Mobile, or Aadhaar)
   if (e && e.parameter && e.parameter.action === 'track') {
     var rawQuery = String(e.parameter.query || e.parameter.token || e.parameter.mobile || '').trim();
     if (!rawQuery || !sheet) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "result": "not_found",
-        "message": "कृपया टोकन या मोबाइल नंबर दर्ज करें"
-      })).setMimeType(ContentService.MimeType.JSON);
+        "message": "कृपया टोकन, आधार या 10-अंकों का मोबाइल नंबर दर्ज करें"
+      });
     }
 
     var query = rawQuery.toLowerCase();
+    var queryDigits = rawQuery.replace(/\D/g, '');
+    var queryLast10 = queryDigits.length >= 10 ? queryDigits.slice(-10) : "";
+    var queryCleanId = String(rawQuery).trim().toUpperCase().replace(/[\s\-]/g, '');
 
     // Extract exact target row if searching by Token (e.g. AYO-20260830-1140 -> "1140")
     var targetTokenRow = "";
@@ -348,6 +391,7 @@ function doGet(e) {
     var dateCol = findPassCreatedDateColumn(sheet);
     var colSlot = findColumnByKeywords(sheet, ["स्लॉट", "slot"], 5);
     var colName = findColumnByKeywords(sheet, ["नाम", "name"], 6);
+    var colId = findColumnByKeywords(sheet, ["आधार", "पहचान", "id"], 9);
     var colMob = findColumnByKeywords(sheet, ["मो0नं0", "mobile", "phone"], 11);
     var colRef = findColumnByKeywords(sheet, ["referred", "संदर्भ"], 14);
     var colTotal = findColumnByKeywords(sheet, ["कुल दर्शनार्थी", "total"], 17);
@@ -369,6 +413,7 @@ function doGet(e) {
       var vSlot = "";
       var vDate = "";
       var name = "";
+      var rowId = "";
       var mob = "";
       var ref = "";
       var total = "";
@@ -377,6 +422,7 @@ function doGet(e) {
         vSlot = String(rowData[slotIdx] || '').trim();
         vDate = formatSheetDateToDDMMYYYY(rowData[slotIdx - 1]);
         name = String(rowData[slotIdx + 1] || '').trim();
+        rowId = String(rowData[slotIdx + 4] || '').trim();
         mob = String(rowData[slotIdx + 6] || '').trim();
         ref = String(rowData[slotIdx + 9] || '').trim();
         total = String(rowData[slotIdx + 12] || '').trim();
@@ -384,6 +430,7 @@ function doGet(e) {
         vDate = formatSheetDateToDDMMYYYY(rowData[colSlot - 2] || rowData[3]);
         vSlot = String(rowData[colSlot - 1] || rowData[4] || '').trim();
         name = String(rowData[colName - 1] || rowData[5] || '').trim();
+        rowId = String(rowData[colId - 1] || rowData[8] || '').trim();
         mob = String(rowData[colMob - 1] || rowData[10] || '').trim();
         ref = String(rowData[colRef - 1] || rowData[13] || '').trim();
         total = String(rowData[colTotal - 1] || rowData[16] || '').trim();
@@ -393,22 +440,31 @@ function doGet(e) {
       if (!name && !mob && !vDate) continue;
 
       var cleanMob = String(mob).replace(/\D/g, '');
-      var cleanQuery = query.replace(/\D/g, '');
-      var isMobileMatch = (cleanQuery.length >= 10 && (cleanMob === cleanQuery || cleanMob.includes(cleanQuery) || cleanQuery.includes(cleanMob)));
+      var mobLast10 = cleanMob.length >= 10 ? cleanMob.slice(-10) : "";
+      var cleanId = String(rowId).trim().toUpperCase().replace(/[\s\-]/g, '');
+
+      var isMobileMatch = (queryLast10 !== "" && mobLast10 !== "" && queryLast10 === mobLast10);
+      var isIdMatch = (queryCleanId.length >= 6 && cleanId !== "" && (cleanId === queryCleanId || cleanId.includes(queryCleanId) || queryCleanId.includes(cleanId)));
       var isRowMatch = (targetTokenRow !== "" && String(rowNum) === targetTokenRow);
 
-      // Also check all cells in row for 10-digit mobile match if not matched
-      if (!isMobileMatch && !isRowMatch && cleanQuery.length >= 10) {
+      // Deep search row cells if not yet matched
+      if (!isMobileMatch && !isIdMatch && !isRowMatch) {
         for (var mc = 0; mc < rowData.length; mc++) {
-          var cellDigits = String(rowData[mc] || '').replace(/\D/g, '');
-          if (cellDigits === cleanQuery || (cellDigits.length >= 10 && cellDigits.includes(cleanQuery))) {
+          var cellVal = String(rowData[mc] || '').trim();
+          var cellDigits = cellVal.replace(/\D/g, '');
+          if (queryLast10 && cellDigits.length >= 10 && cellDigits.slice(-10) === queryLast10) {
             isMobileMatch = true;
+            break;
+          }
+          var cleanCellId = cellVal.toUpperCase().replace(/[\s\-]/g, '');
+          if (queryCleanId.length >= 6 && cleanCellId.includes(queryCleanId)) {
+            isIdMatch = true;
             break;
           }
         }
       }
 
-      if (isMobileMatch || isRowMatch) {
+      if (isMobileMatch || isIdMatch || isRowMatch) {
         // DETECT STATUS WITH 100% BULLETPROOF ACCURACY:
         var status = "";
         var passDate = "";
@@ -473,23 +529,23 @@ function doGet(e) {
     }
 
     if (match) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "result": "success",
         "data": match
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     } else {
-      return ContentService.createTextOutput(JSON.stringify({
+      return respondJson(e, {
         "result": "not_found",
         "message": "कोई आवेदन नहीं मिला। कृपया विवरण जांचें।"
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
   }
 
-  return ContentService.createTextOutput(JSON.stringify({
+  return respondJson(e, {
     "status": "online",
     "lastRow": lastRow,
     "message": "Darshan Pass Apps Script API is active."
-  })).setMimeType(ContentService.MimeType.JSON);
+  });
 }
 
 function formatSheetDateToDDMMYYYY(val) {
@@ -535,59 +591,70 @@ function getMainDataSheet(ss) {
 }
 
 /**
- * 24-HOUR DUPLICATE SUBMISSION DETECTOR (आधार व मोबाइल नंबर चेक)
- * Checks previous submissions within the past 24 hours (86,400,000 ms).
- * If matching Aadhaar or Mobile is found, returns isDuplicate: true with matched row.
+ * 24-HOUR DUPLICATE SUBMISSION CHECK BEFORE INSERTION (आधार व मोबाइल नंबर चेक)
+ * Scans up to 500 recent rows in the sheet.
+ * If matching Aadhaar or Mobile was submitted in the last 24 hours OR has an active pending/approved status,
+ * returns isDuplicate: true to prevent inserting duplicate rows.
  */
-function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
+function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
   try {
-    if (!sheet || currentRowIndex <= 2) return { isDuplicate: false };
-    var cleanId = String(idNumber || "").trim().toUpperCase();
-    var cleanMob = String(mobile || "").trim();
+    if (!sheet) return { isDuplicate: false };
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return { isDuplicate: false };
+
+    var cleanId = String(idNumber || "").trim().toUpperCase().replace(/[\s\-]/g, '');
+    var cleanMob = String(mobile || "").trim().replace(/\D/g, '');
+    var mobLast10 = cleanMob.length >= 10 ? cleanMob.slice(-10) : "";
 
     // Ignore placeholder/generic values
     if (cleanId === "NA" || cleanId === "N/A" || cleanId === "NONE" || cleanId === "NULL" || cleanId.length < 6) {
       cleanId = "";
     }
-    if (cleanMob.length < 10) {
-      cleanMob = "";
-    }
 
-    if (!cleanId && !cleanMob) return { isDuplicate: false };
+    if (!cleanId && !mobLast10) return { isDuplicate: false };
 
     var nowTime = new Date().getTime();
-    var oneDayMs = 24 * 60 * 60 * 1000; // Strictly 24 Hours
+    var oneDayMs = 24 * 60 * 60 * 1000; // 24 Hours
 
-    // Look back up to past 150 rows
-    var startRow = Math.max(2, currentRowIndex - 150);
-    var numRows = currentRowIndex - startRow;
-    if (numRows <= 0) return { isDuplicate: false };
+    var checkCount = Math.min(lastRow - 1, 500);
+    var startRow = Math.max(2, lastRow - checkCount + 1);
+    var data = sheet.getRange(startRow, 1, checkCount, 12).getValues();
 
-    var timestamps = sheet.getRange(startRow, 1, numRows, 1).getValues();
-    var idValues = sheet.getRange(startRow, 9, numRows, 1).getValues();
-    var mobValues = sheet.getRange(startRow, 11, numRows, 1).getValues();
+    for (var i = data.length - 1; i >= 0; i--) {
+      var row = data[i];
+      var rNum = startRow + i;
 
-    for (var i = numRows - 1; i >= 0; i--) {
-      var prevDateVal = timestamps[i][0];
-      var prevTime = prevDateVal instanceof Date ? prevDateVal.getTime() : 0;
-      if (!prevTime && prevDateVal) {
-        prevTime = new Date(prevDateVal).getTime();
+      // Col 1: Timestamp
+      var tsVal = row[0];
+      var rowTime = parseTimestampSafe(tsVal);
+
+      // Col 3: Pass Status (Index 2)
+      var status = String(row[2] || "").trim().toLowerCase();
+      // If previous entry was explicitly rejected, allow re-application
+      if (status.includes("rejected") || status.includes("निरस्त") || status.includes("अस्वीकृत")) {
+        continue;
       }
 
-      if (prevTime && (nowTime - prevTime) <= oneDayMs) {
-        var prevId = String(idValues[i][0] || "").trim().toUpperCase();
-        var prevMob = String(mobValues[i][0] || "").trim();
+      // Col 9: Aadhaar / ID (Index 8)
+      var rowId = String(row[8] || "").trim().toUpperCase().replace(/[\s\-]/g, '');
+      // Col 11: Mobile (Index 10)
+      var rowMob = String(row[10] || "").trim().replace(/\D/g, '');
+      var rowMobLast10 = rowMob.length >= 10 ? rowMob.slice(-10) : "";
 
-        var idMatch = cleanId && prevId && (cleanId === prevId);
-        var mobMatch = cleanMob && prevMob && (cleanMob === prevMob);
+      var idMatch = (cleanId && rowId && cleanId === rowId);
+      var mobMatch = (mobLast10 && rowMobLast10 && mobLast10 === rowMobLast10);
 
-        if (idMatch || mobMatch) {
-          var matchedRow = startRow + i;
-          var reason = idMatch ? ("समान आधार/पहचान पत्र (Row " + matchedRow + ")") : ("समान मोबाइल नंबर (Row " + matchedRow + ")");
+      if (idMatch || mobMatch) {
+        var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : true;
+        var isActiveStatus = (status.includes("pending") || status.includes("pass created") || status.includes("already") || !status);
+
+        if (isWithin24h || isActiveStatus) {
           return {
             isDuplicate: true,
-            matchedRow: matchedRow,
-            reason: reason
+            matchedRow: rNum,
+            matchedField: idMatch ? "आधार / पहचान पत्र" : "मोबाइल नंबर",
+            matchedValue: idMatch ? cleanId : mobLast10,
+            status: row[2] || "Pending"
           };
         }
       }
@@ -596,6 +663,11 @@ function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
   } catch (err) {
     return { isDuplicate: false };
   }
+}
+
+// Backward compatibility alias
+function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
+  return checkDuplicateBeforeSubmission(sheet, idNumber, mobile);
 }
 
 /**
