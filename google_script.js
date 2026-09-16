@@ -659,10 +659,12 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
       var mobMatch = (mobLast10 && rowMobLast10 && mobLast10 === rowMobLast10);
 
       if (idMatch || mobMatch) {
-        var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : true;
-        var isActiveStatus = (status.includes("pending") || status.includes("pass created") || status.includes("already") || !status);
+        // Block if submitted within the last 24 hours
+        var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : false;
+        // Block if previous application is still pending review
+        var isPending = (!status || status.includes("pending") || status.includes("लंबित"));
 
-        if (isWithin24h || isActiveStatus) {
+        if (isWithin24h || isPending) {
           return {
             isDuplicate: true,
             matchedRow: rNum,

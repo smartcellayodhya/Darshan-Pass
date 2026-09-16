@@ -1059,19 +1059,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const slotVal = getVal("visitSlot");
             const formattedVisitDateTime = `${formattedDateStr} (${slotVal})`;
 
-            // DUPLICATE SUBMISSION CHECK (24-Hour Duplicate Aadhaar / Mobile Guard)
+            // DUPLICATE SUBMISSION CHECK (Server is authoritative; client provides instant warning)
             const idValForDup = getVal("idNumber");
             const dupRecord = checkDuplicateSubmission(mobVal, idValForDup, formattedDateStr, slotVal);
             if (dupRecord) {
                 const dupField = (idValForDup && dupRecord.idNumber && dupRecord.idNumber === idValForDup.toUpperCase()) ? "आधार / पहचान पत्र" : "मोबाइल नंबर";
-                showToast(`चेतावनी: इस ${dupField} से पिछले 24 घंटे में आवेदन पहले ही दर्ज हो चुका है (टोकन: ${dupRecord.token || 'उपलब्ध'})।`, "warning");
-                const mobErr = document.getElementById("mobile-error");
-                if (mobErr) mobErr.textContent = `इस ${dupField} से पिछले 24 घंटे में आवेदन पहले से दर्ज है`;
-                if (mobileInput) {
-                    markGroup(mobileInput, false);
-                    mobileInput.focus();
-                }
-                return;
+                console.warn(`Recent client submission detected for ${dupField}. Passing to server for authoritative sheet verification.`);
             }
 
             setSubmittingState(true);
