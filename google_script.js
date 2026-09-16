@@ -468,7 +468,7 @@ function doGet(e) {
       var cleanId = String(rowId).trim().toUpperCase().replace(/[\s\-]/g, '');
 
       var isMobileMatch = (queryLast10 !== "" && mobLast10 !== "" && queryLast10 === mobLast10);
-      var isIdMatch = (queryCleanId.length >= 6 && cleanId !== "" && (cleanId === queryCleanId || cleanId.includes(queryCleanId) || queryCleanId.includes(cleanId)));
+      var isIdMatch = (queryCleanId.length >= 6 && cleanId.length >= 6 && (cleanId === queryCleanId || cleanId.includes(queryCleanId) || queryCleanId.includes(cleanId)));
       var isRowMatch = (targetTokenRow !== "" && String(rowNum) === targetTokenRow);
 
       // Deep search row cells if not yet matched
@@ -481,7 +481,7 @@ function doGet(e) {
             break;
           }
           var cleanCellId = cellVal.toUpperCase().replace(/[\s\-]/g, '');
-          if (queryCleanId.length >= 6 && cleanCellId.includes(queryCleanId)) {
+          if (queryCleanId.length >= 6 && cleanCellId.length >= 6 && (cleanCellId === queryCleanId || cleanCellId.includes(queryCleanId) || queryCleanId.includes(cleanCellId))) {
             isIdMatch = true;
             break;
           }
@@ -545,7 +545,7 @@ function doGet(e) {
           tokenDateStr = Utilities.formatDate(new Date(tsMs), "Asia/Kolkata", "yyyyMMdd");
         } else if (vDate && vDate.includes("/")) {
           var p = vDate.split("/");
-          if (p.length === 3) tokenDateStr = p[2] + p[1] + p[0];
+          if (p.length === 3) tokenDateStr = p[2] + ('0' + p[1]).slice(-2) + ('0' + p[0]).slice(-2);
         } else {
           tokenDateStr = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyyMMdd");
         }
