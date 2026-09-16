@@ -1645,7 +1645,7 @@ Reference: ${referredBy}
                     }
 
                     const cleanDate = formatTrackDate(item.visitDate);
-                    const cleanToken = formatTrackToken(item.visitDate, item.rowNumber);
+                    const cleanToken = item.token || formatTrackToken(item.visitDate, item.rowNumber);
 
                     let statusIcon = "fa-clock";
                     let statusSub = "आवेदन पर विचार चल रहा है";
@@ -2709,9 +2709,8 @@ Reference: ${referredBy}
                 .catch(() => {});
         } catch(e) {}
     }
+    // Initial background sync of sheet row on page load
     silentSyncSheetRow();
-    // Keep it refreshed every 20 seconds while user fills the form to handle concurrent users
-    setInterval(silentSyncSheetRow, 20000);
 
     // -------------------------------------------------------------
     // ONLINE / OFFLINE NETWORK STATUS NOTIFICATIONS (ITEM 1.3)

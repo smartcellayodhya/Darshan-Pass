@@ -385,7 +385,17 @@ function doGet(e) {
 
     var query = rawQuery.toLowerCase();
     var queryDigits = rawQuery.replace(/\D/g, '');
-    var queryLast10 = queryDigits.length >= 10 ? queryDigits.slice(-10) : "";
+
+    // Disambiguate Mobile vs Aadhaar:
+    // Mobile: exactly 10 digits, or 11 with leading 0, or 12 starting with 91
+    var queryLast10 = "";
+    if (queryDigits.length === 10) {
+      queryLast10 = queryDigits;
+    } else if (queryDigits.length === 11 && queryDigits.startsWith("0")) {
+      queryLast10 = queryDigits.slice(1);
+    } else if (queryDigits.length === 12 && queryDigits.startsWith("91")) {
+      queryLast10 = queryDigits.slice(2);
+    }
     var queryCleanId = String(rawQuery).trim().toUpperCase().replace(/[\s\-]/g, '');
 
     // Extract exact target row if searching by Token (e.g. AYO-20260830-1140 -> "1140")
@@ -394,7 +404,7 @@ function doGet(e) {
     var lastDash = cleanTokenStr.lastIndexOf("-");
     if (lastDash !== -1) {
       targetTokenRow = cleanTokenStr.substring(lastDash + 1).trim();
-    } else if (/^\d+$/.test(query) && query.length < 10) {
+    } else if (/^\d+$/.test(query) && query.length < 7) {
       targetTokenRow = query;
     }
 
@@ -527,8 +537,23 @@ function doGet(e) {
           passDate = formatSheetDateToDDMMYYYY(rowData[0]);
         }
 
+        // Build consistent canonical token ID using submission date (Column A) and rowNumber
+        var tokenDateStr = "";
+        var tsVal = rowData[0];
+        var tsMs = parseTimestampSafe(tsVal);
+        if (tsMs > 0) {
+          tokenDateStr = Utilities.formatDate(new Date(tsMs), "Asia/Kolkata", "yyyyMMdd");
+        } else if (vDate && vDate.includes("/")) {
+          var p = vDate.split("/");
+          if (p.length === 3) tokenDateStr = p[2] + p[1] + p[0];
+        } else {
+          tokenDateStr = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyyMMdd");
+        }
+        var canonicalToken = "AYO-" + tokenDateStr + "-" + rowNum;
+
         match = {
           rowNumber: rowNum,
+          token: canonicalToken,
           status: status,
           passCreatedDate: passDate,
           visitDate: vDate,
@@ -661,8 +686,8 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
       if (idMatch || mobMatch) {
         // Block if submitted within the last 24 hours
         var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : false;
-        // Block if previous application is still pending review
-        var isPending = (!status || status.includes("pending") || status.includes("लंबित"));
+        // Block if previous application is explicitly pending review, or if empty status was submitted within 24h
+        var isPending = (status.includes("pending") || status.includes("लंबित") || (!status && isWithin24h));
 
         if (isWithin24h || isPending) {
           return {
