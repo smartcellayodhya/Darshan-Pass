@@ -610,8 +610,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let assignedRow = null;
+        let returnedToken = null;
 
-        // Single atomic POST to Google Apps Script
+        // 1. Single atomic POST to Google Apps Script
         try {
             const res = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
@@ -629,33 +630,53 @@ document.addEventListener("DOMContentLoaded", () => {
                             rowNumber: data.matchedRow
                         };
                     }
+                    if (data.result === "error" || data.status === "error") {
+                        throw new Error(data.error || data.message || "सर्वर पर त्रुटि आई।");
+                    }
                     if (data.rowNumber || data.row) {
                         assignedRow = parseInt(data.rowNumber || data.row, 10);
+                        returnedToken = data.token || generateTokenId(assignedRow);
                         localStorage.setItem("darshan_last_row", String(assignedRow));
+                        return {
+                            success: true,
+                            result: "success",
+                            rowNumber: assignedRow,
+                            token: returnedToken
+                        };
                     }
                 }
             }
         } catch (postErr) {
-            console.warn("Direct POST JSON response unavailable:", postErr);
+            console.warn("Direct POST JSON response check:", postErr);
+            if (postErr.message && (postErr.message.includes("सर्वर") || postErr.message.includes("व्यस्त"))) {
+                throw postErr;
+            }
         }
 
-        // Silent background query to refresh actual Google Sheet row counter
-        setTimeout(() => {
-            fetch(GOOGLE_APPS_SCRIPT_URL)
-                .then(r => r.json())
-                .then(d => {
-                    if (d && d.lastRow) {
-                        localStorage.setItem("darshan_last_row", String(d.lastRow));
-                    }
-                })
-                .catch(() => {});
-        }, 300);
+        // 2. Fallback Verification: If POST was redirected or response body wasn't readable directly,
+        // verify atomically via track query to get the exact row just created
+        try {
+            await new Promise(r => setTimeout(r, 750));
+            const verifyRes = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encodeURIComponent(formData.mobile)}&_t=${Date.now()}`);
+            if (verifyRes.ok) {
+                const vData = await verifyRes.json();
+                if (vData && vData.result === "success" && vData.data && vData.data.rowNumber) {
+                    const confirmedRow = parseInt(vData.data.rowNumber, 10);
+                    localStorage.setItem("darshan_last_row", String(confirmedRow));
+                    return {
+                        success: true,
+                        result: "success",
+                        rowNumber: confirmedRow,
+                        token: generateTokenId(confirmedRow)
+                    };
+                }
+            }
+        } catch (vErr) {
+            console.warn("Verification fallback error:", vErr);
+        }
 
-        return {
-            success: true,
-            result: "success",
-            rowNumber: assignedRow
-        };
+        // Never claim false success if the row wasn't confirmed
+        throw new Error("सर्वर से पुष्टि प्राप्त नहीं हो सकी। कृपया दोबारा सबमिट करें।");
     }
 
     // -------------------------------------------------------------
@@ -1093,13 +1114,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitterEmail: subEmail
             };
 
-            // Fast provisional token ID from pre-synced background row counter
-            let currentCounter = parseInt(localStorage.getItem("darshan_last_row") || "1545", 10) + 1;
-            let tokenNumber = generateTokenId(currentCounter);
-            formData.token = tokenNumber;
-
             try {
-                // Direct single transmission pipeline (~1.5s)
+                // Direct single transmission pipeline with atomic row & token feedback
                 const sendResult = await sendDataWithRowFeedback(formData);
 
                 // Check if server rejected duplicate submission (24-Hour Duplicate Aadhaar / Mobile Guard)
@@ -1112,14 +1128,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // If Google Apps Script returned the exact atomic row assigned to this entry, update Token ID seamlessly
-                if (sendResult && sendResult.rowNumber) {
-                    currentCounter = sendResult.rowNumber;
-                    localStorage.setItem("darshan_last_row", String(currentCounter));
-                    tokenNumber = generateTokenId(currentCounter);
-                } else {
-                    localStorage.setItem("darshan_last_row", String(currentCounter));
+                if (!sendResult || !sendResult.rowNumber) {
+                    throw new Error("सर्वर से रो नंबर प्राप्त नहीं हो सका।");
                 }
+
+                // Exact atomic row and token from server
+                const confirmedRow = sendResult.rowNumber;
+                const tokenNumber = sendResult.token || generateTokenId(confirmedRow);
+                localStorage.setItem("darshan_last_row", String(confirmedRow));
 
                 // Populate Acknowledgement Slip / Modal
                 const slipDevoteeName = document.getElementById("slip-devotee-name");
@@ -1150,7 +1166,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast("आवेदन सफलतापूर्वक दर्ज हो गया!", "success");
             } catch (err) {
                 console.error("Submission error:", err);
-                showToast("आवेदन सबमिट करने में समस्या आई। कृपया पुनः प्रयास करें।", "error");
+                showToast(err.message || "आवेदन सबमिट करने में समस्या आई। कृपया पुनः प्रयास करें।", "error");
             } finally {
                 setSubmittingState(false);
             }

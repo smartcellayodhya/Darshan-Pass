@@ -102,11 +102,25 @@ function parseTimestampSafe(val) {
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  lock.tryLock(15000);
+  var hasLock = false;
+  try {
+    // Wait up to 30 seconds for concurrent submissions to queue safely
+    hasLock = lock.waitLock(30000);
+  } catch (lockErr) {
+    hasLock = false;
+  }
 
   try {
     var ss = getTargetSpreadsheet();
     var sheet = getMainDataSheet(ss);
+    if (!sheet) {
+      return respondJson(e, {
+        "result": "error",
+        "status": "error",
+        "error": "Google Sheet not accessible."
+      });
+    }
+
     var data = {};
 
     // 1. Extract payload from JSON or Form Parameters
@@ -205,40 +219,35 @@ function doPost(e) {
       fVal                                           // 19. महिला संख्या (Numeric)
     ]);
 
-    // 5. AUTOMATIC CENTER ALIGNMENT & DROPDOWN VALIDATION FOR NEW ROW
-    var lastRow = sheet.getLastRow();
-    var lastCol = Math.max(sheet.getLastColumn(), 19);
-
-    if (lastRow > 1) {
-      var newRowRange = sheet.getRange(lastRow, 1, 1, lastCol);
-
-      newRowRange.setHorizontalAlignment("center");
-      newRowRange.setVerticalAlignment("middle");
-      newRowRange.setWrap(true);
-      newRowRange.setFontFamily("Roboto");
-      newRowRange.setFontSize(10);
-
-      // Column M (Col 13 - Accompanying Devotees): Left align for clean multi-line readability
-      sheet.getRange(lastRow, 13).setHorizontalAlignment("left");
-
-      sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
-
-      // Add Dropdown to Pass Status cell (Column 3 / C)
-      var statusCell = sheet.getRange(lastRow, 3);
-      var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
-        .setAllowInvalid(false)
-        .build();
-      statusCell.setDataValidation(rule);
-    }
-
+    // Flush immediately so the row is committed and exact row number is locked in
     SpreadsheetApp.flush();
+    var lastRow = sheet.getLastRow();
+
+    // Fast, non-blocking row dropdown configuration
+    try {
+      if (lastRow > 1) {
+        var statusCell = sheet.getRange(lastRow, 3);
+        var rule = SpreadsheetApp.newDataValidation()
+          .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
+          .setAllowInvalid(false)
+          .build();
+        statusCell.setDataValidation(rule);
+      }
+    } catch (fmtErr) {}
+
+    // Generate atomic Token ID: AYO-YYYYMMDD-ROW
+    var nowKolkata = new Date();
+    var ymd = Utilities.formatDate(nowKolkata, "Asia/Kolkata", "yyyyMMdd");
+    var generatedToken = "AYO-" + ymd + "-" + lastRow;
 
     return respondJson(e, {
       "result": "success",
+      "status": "success",
       "rowNumber": lastRow,
       "row": lastRow,
+      "token": generatedToken,
       "name": nameAge,
+      "mobile": mobile,
       "isDuplicate": false,
       "message": "Darshan Pass entry saved successfully with Status = Pending in Column C!"
     });
@@ -246,11 +255,16 @@ function doPost(e) {
   } catch (error) {
     return respondJson(e, {
       "result": "error",
+      "status": "error",
       "error": error.toString()
     });
 
   } finally {
-    lock.releaseLock();
+    try {
+      if (hasLock && lock.hasLock()) {
+        lock.releaseLock();
+      }
+    } catch (relErr) {}
   }
 }
 
