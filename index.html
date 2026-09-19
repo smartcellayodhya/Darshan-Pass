@@ -82,7 +82,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=4.5">
+    <link rel="stylesheet" href="style.css?v=4.6">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -325,22 +325,33 @@
                     </h2>
 
                     <div class="gov-section-body">
-                        <!-- Primary Devotee Name & Age -->
-                        <div class="input-group">
-                            <label for="nameAge" class="input-label" id="lbl-name-age" data-i18n="lblNameAge">
-                                मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper mic-wrapper">
-                                <input type="text" id="nameAge" name="nameAge" placeholder="उदा: Rahul 35 Yrs" data-i18n-ph="phNameAge" required>
-                                <button type="button" class="voice-mic-btn" data-target="nameAge" title="बोलकर टाइप करें (Voice Typing)">
-                                    <i class="fa-solid fa-microphone"></i>
-                                </button>
+                        <!-- Primary Devotee Name & Age (Separated for superior UX) -->
+                        <div class="primary-devotee-grid">
+                            <div class="input-group">
+                                <label for="primaryName" class="input-label" id="lbl-primary-name" data-i18n="lblPrimaryName">
+                                    मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>
+                                </label>
+                                <div class="input-wrapper mic-wrapper">
+                                    <input type="text" id="primaryName" name="primaryName" placeholder="पूरा नाम दर्ज करें (उदा: Rahul Kumar)" data-i18n-ph="phPrimaryName" autocomplete="name" required>
+                                    <button type="button" class="voice-mic-btn" data-target="primaryName" title="बोलकर टाइप करें (Voice Typing)">
+                                        <i class="fa-solid fa-microphone"></i>
+                                    </button>
+                                </div>
+                                <span class="error-msg" id="primaryName-error">कृपया मुख्य दर्शनार्थी का पूरा नाम दर्ज करें</span>
                             </div>
-                            <span class="field-sub-hint" id="nameAge-hint">
-                                <i class="fa-solid fa-circle-info"></i> कृपया नाम के साथ उम्र भी लिखें (उदा: <strong>राकेश 35 वर्ष</strong> या <strong>Rahul 35 Yrs</strong>)
-                            </span>
-                            <span class="error-msg" id="nameAge-error">कृपया नाम के साथ उम्र (संख्या) भी लिखें (उदा: Rahul 35 Yrs)</span>
+
+                            <div class="input-group primary-age-group">
+                                <label for="primaryAge" class="input-label" id="lbl-primary-age" data-i18n="lblPrimaryAge">
+                                    उम्र <span class="required">*</span>
+                                </label>
+                                <div class="member-age-wrapper">
+                                    <input type="number" id="primaryAge" name="primaryAge" placeholder="उम्र" min="1" max="120" inputmode="numeric" required>
+                                    <span class="age-suffix" id="primary-age-suffix" data-i18n="primaryAgeSuffix">वर्ष</span>
+                                </div>
+                                <span class="error-msg" id="primaryAge-error">सही उम्र (1 से 120 वर्ष) दर्ज करें</span>
+                            </div>
                         </div>
+                        <input type="hidden" id="nameAge" name="nameAge">
 
                         <!-- Aadhaar / Passport No & Mobile Number Grid -->
                         <div class="grid-2">
@@ -687,6 +698,6 @@
         </footer>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=4.5"></script>
+    <script src="script.js?v=4.6"></script>
 </body>
 </html>

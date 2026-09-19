@@ -167,6 +167,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const idLabelText = document.getElementById("id-label-text");
     const idNumberInput = document.getElementById("idNumber");
 
+    const primaryNameInput = document.getElementById("primaryName");
+    const primaryAgeInput = document.getElementById("primaryAge");
     const nameAgeInput = document.getElementById("nameAge");
     const maleCountInput = document.getElementById("maleCount");
     const femaleCountInput = document.getElementById("femaleCount");
@@ -521,7 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 3. Name, Accompanying & Other Ref Name: NO SYMBOLS EXCEPT DOT (.)
-    const dotOnlyInputs = [nameAgeInput, accompanyingInput, otherRefNameInput];
+    const dotOnlyInputs = [primaryNameInput, nameAgeInput, accompanyingInput, otherRefNameInput];
     dotOnlyInputs.forEach(inputEl => {
         if (!inputEl) return;
         const cleanDotOnly = () => {
@@ -530,6 +532,14 @@ document.addEventListener("DOMContentLoaded", () => {
         inputEl.addEventListener("input", cleanDotOnly);
         inputEl.addEventListener("paste", () => setTimeout(cleanDotOnly, 10));
     });
+
+    if (primaryAgeInput) {
+        primaryAgeInput.addEventListener("input", () => {
+            let ageVal = parseInt(primaryAgeInput.value, 10);
+            if (ageVal > 120) primaryAgeInput.value = 120;
+            if (ageVal < 0) primaryAgeInput.value = "";
+        });
+    }
 
     // 4. ID Number (Aadhaar / Passport): Alphanumeric Uppercase, Max 12 chars + Live Digit Counter
     if (idNumberInput) {
@@ -861,26 +871,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             
-            // Primary Devotee Name & Age validation (Must contain at least 1 number/digit for Age)
-            let isNameAgeValid = false;
-            if (nameAgeInput) {
-                const nVal = nameAgeInput.value.trim();
-                const hasAgeDigit = /\d/.test(nVal);
-                const nameErrorEl = document.getElementById("nameAge-error");
+            // Primary Devotee Name & Age validation
+            let isNameValid = false;
+            let isAgeValid = false;
 
-                if (nVal.length < 2) {
-                    isNameAgeValid = false;
-                    if (nameErrorEl) nameErrorEl.textContent = "कृपया मुख्य दर्शनार्थी का नाम एवं उम्र दर्ज करें (उदा: राकेश 35 वर्ष)";
-                } else if (!hasAgeDigit) {
-                    isNameAgeValid = false;
-                    if (nameErrorEl) nameErrorEl.textContent = "कृपया नाम के साथ उम्र भी लिखें (उदा: राकेश 35 वर्ष या Rahul 35 Yrs)";
-                } else {
-                    isNameAgeValid = true;
+            if (primaryNameInput) {
+                const nameVal = primaryNameInput.value.trim();
+                const hasLetters = /[a-zA-Z\u0900-\u097F]/.test(nameVal);
+                isNameValid = (nameVal.length >= 2 && hasLetters);
+                markGroup(primaryNameInput, isNameValid);
+                const nameErrorEl = document.getElementById("primaryName-error");
+                if (!isNameValid && nameErrorEl) {
+                    nameErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
+                        ? "Please enter primary devotee's full name (at least 2 letters)"
+                        : "कृपया मुख्य दर्शनार्थी का पूरा नाम दर्ज करें";
                 }
-                markGroup(nameAgeInput, isNameAgeValid);
             } else {
-                isNameAgeValid = true;
+                isNameValid = true;
             }
+
+            if (primaryAgeInput) {
+                const ageVal = parseInt(primaryAgeInput.value.trim(), 10);
+                isAgeValid = (!isNaN(ageVal) && ageVal >= 1 && ageVal <= 120);
+                markGroup(primaryAgeInput, isAgeValid);
+                const ageErrorEl = document.getElementById("primaryAge-error");
+                if (!isAgeValid && ageErrorEl) {
+                    ageErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
+                        ? "Please enter valid age (1 to 120 yrs)"
+                        : "कृपया सही उम्र (1 से 120 वर्ष) दर्ज करें";
+                }
+            } else {
+                isAgeValid = true;
+            }
+
+            const isNameAgeValid = isNameValid && isAgeValid;
             
             // ID Number validation (12 digits Aadhaar OR valid Passport number)
             let isIdValid = false;
@@ -1073,7 +1097,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 finalReferredBy = "Other: " + getVal("otherRefName");
             }
 
-            const devoteeNameVal = getVal("nameAge");
+            let devoteeNameVal = "";
+            if (primaryNameInput && primaryAgeInput) {
+                const pName = primaryNameInput.value.trim();
+                const pAge = primaryAgeInput.value.trim();
+                devoteeNameVal = `${pName} ${pAge} Yrs`;
+            } else {
+                devoteeNameVal = getVal("nameAge");
+            }
             const finalAccompanyingVal = totalCount <= 1 ? "लागू नहीं (अकेले दर्शनार्थी)" : (getVal("accompanying") || "कोई नहीं");
 
             // Construct Transmission Payload
@@ -1747,6 +1778,10 @@ Reference: ${referredBy}
             lblDistrict: 'जनपद चुनें <span class="required">*</span>',
             optSelectDistrict: '-- पहले राज्य चुनें --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
+            lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>',
+            phPrimaryName: 'पूरा नाम दर्ज करें (उदा: Rahul Kumar)',
+            lblPrimaryAge: 'उम्र <span class="required">*</span>',
+            primaryAgeSuffix: 'वर्ष',
             lblNameAge: 'मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>',
             phNameAge: 'उदा: Rahul 35 Yrs',
             lblMobile: 'मोबाइल नंबर <span class="required">*</span>',
@@ -1819,6 +1854,10 @@ Reference: ${referredBy}
             lblDistrict: 'Select District <span class="required">*</span>',
             optSelectDistrict: '-- Select State First --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> Primary Devotee Information',
+            lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span>',
+            phPrimaryName: 'Enter full name (E.g. Rahul Kumar)',
+            lblPrimaryAge: 'Age <span class="required">*</span>',
+            primaryAgeSuffix: 'Yrs',
             lblNameAge: 'Devotee Full Name & Age <span class="required">*</span>',
             phNameAge: 'E.g. Rahul 35 Yrs',
             lblMobile: 'Mobile Number (10 Digits) <span class="required">*</span>',
