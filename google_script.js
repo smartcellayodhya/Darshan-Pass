@@ -105,6 +105,9 @@ function parseTimestampSafe(val) {
     return isNaN(d.getTime()) ? 0 : d.getTime();
   }
   var parsed = new Date(str).getTime();
+  if (isNaN(parsed) && str.includes(' ')) {
+    parsed = new Date(str.replace(' ', 'T')).getTime();
+  }
   return isNaN(parsed) ? 0 : parsed;
 }
 
