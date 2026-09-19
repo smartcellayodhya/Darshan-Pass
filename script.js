@@ -724,10 +724,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const now = Date.now();
 
         return history.find(item => {
-            const isRecent = (now - (item.timestamp || 0)) < oneDayMs;
+            const isSameVisitDate = item.visitDate && (item.visitDate === visitDate);
             const matchMobile = cleanMob && item.mobile && (item.mobile === cleanMob);
             const matchId = cleanId && item.idNumber && (item.idNumber === cleanId);
-            return isRecent && (matchMobile || matchId);
+            return isSameVisitDate && (matchMobile || matchId);
         }) || null;
     }
 

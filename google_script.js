@@ -188,7 +188,7 @@ function doPost(e) {
         "matchedRow": dupCheck.matchedRow,
         "matchedField": dupCheck.matchedField,
         "status": dupCheck.status,
-        "message": "इस " + dupCheck.matchedField + " से आवेदन पहले ही दर्ज है (Row: " + dupCheck.matchedRow + ", स्थिति: " + dupCheck.status + ")।"
+        "message": "इस " + dupCheck.matchedField + " से " + (dupCheck.visitDate || visitDate) + " के दर्शन हेतु पास आवेदन पहले ही दर्ज है (Row: " + dupCheck.matchedRow + ", स्थिति: " + dupCheck.status + ")। अगली तारीख के लिए नया आवेदन कर सकते हैं।"
       });
     }
 
@@ -659,13 +659,11 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate) {
     var startRow = Math.max(2, lastRow - checkCount + 1);
     var data = sheet.getRange(startRow, 1, checkCount, 12).getValues();
 
+    var cleanVisitDate = String(visitDate || "").trim();
+
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];
       var rNum = startRow + i;
-
-      // Col 1: Timestamp
-      var tsVal = row[0];
-      var rowTime = parseTimestampSafe(tsVal);
 
       // Col 3: Pass Status (Index 2)
       var status = String(row[2] || "").trim().toLowerCase();
@@ -687,19 +685,18 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate) {
       var mobMatch = (mobLast10 && rowMobLast10 && mobLast10 === rowMobLast10);
 
       if (idMatch || mobMatch) {
-        // Block if submitted within the last 24 hours
-        var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : false;
-        // Block if previous application is pending review AND was submitted within 24h OR has the same visit date
-        var isSameVisitDate = (visitDate && rowVisitDate && String(visitDate).trim() === String(rowVisitDate).trim());
-        var isPending = (status.includes("pending") || status.includes("लंबित"));
+        // OPTION A RULE: Same Aadhaar or Mobile cannot have more than 1 pass for the SAME Visit Date.
+        // A pass for a different/next visit date is ALWAYS ALLOWED as a new row.
+        var isSameVisitDate = (cleanVisitDate && rowVisitDate && cleanVisitDate === rowVisitDate);
 
-        if (isWithin24h || (isPending && (isSameVisitDate || isWithin24h))) {
+        if (isSameVisitDate) {
           return {
             isDuplicate: true,
             matchedRow: rNum,
             matchedField: idMatch ? "आधार / पहचान पत्र" : "मोबाइल नंबर",
             matchedValue: idMatch ? cleanId : mobLast10,
-            status: row[2] || "Pending"
+            status: row[2] || "Pending",
+            visitDate: rowVisitDate
           };
         }
       }
