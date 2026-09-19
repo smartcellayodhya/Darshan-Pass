@@ -2222,6 +2222,12 @@ function setupVipDashboard() {
     dashSheet = ss.insertSheet("📊 VIP Dashboard");
   } else {
     dashSheet.clear();
+    var oldCharts = dashSheet.getCharts();
+    for (var oc = 0; oc < oldCharts.length; oc++) {
+      try {
+        dashSheet.removeChart(oldCharts[oc]);
+      } catch (cRemErr) {}
+    }
   }
 
   var dataSheetName = "'" + dataSheet.getName() + "'";
