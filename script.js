@@ -978,7 +978,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             firstInvalidIndex = idx + 1;
                             invalidFieldType = "name";
                         }
-                    } else if (isNaN(aVal) || aVal < 10 || aVal > 120) {
+                    } else if (isNaN(aVal) || aVal < 1 || aVal > 120) {
                         rowValid = false;
                         if (firstInvalidIndex === -1) {
                             firstInvalidIndex = idx + 1;
@@ -997,7 +997,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     isAccompanyingValid = false;
                     if (accErrorEl) {
                         if (invalidFieldType === "age") {
-                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} की सही उम्र (10 से 120 वर्ष) दर्ज करें`;
+                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} की सही उम्र (1 से 120 वर्ष) दर्ज करें`;
                         } else {
                             accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} का पूरा नाम दर्ज करें`;
                         }
@@ -1763,6 +1763,7 @@ Reference: ${referredBy}
         hi: {
             langBtn: "English",
             trackBtn: "स्थिति देखें",
+            refreshBtn: "रिफ्रेश",
             portalTitle: "श्रीरामजन्मभूमि दर्शन हेतु पास आवेदन",
             secVisit: '<i class="fa-solid fa-calendar-day"></i> दर्शन तिथि व स्लॉट',
             lblVisitDate: 'दर्शन तिथि <span class="required">*</span>',
@@ -1837,6 +1838,7 @@ Reference: ${referredBy}
         en: {
             langBtn: "हिन्दी",
             trackBtn: "Track Status",
+            refreshBtn: "Refresh",
             installAppBtn: 'Install App',
             iosInstallTitle: 'Add App to iPhone / iPad',
             portalTitle: "Shri Ram Janmabhoomi Darshan Pass Application",
@@ -2003,6 +2005,36 @@ Reference: ${referredBy}
             const nextLang = currentLang === "hi" ? "en" : "hi";
             applyLanguage(nextLang);
             showToast(nextLang === "en" ? "Switched to English" : "हिन्दी भाषा चुनी गई", "info");
+        });
+    }
+
+    // 1-Tap Force Refresh / Cache Clear Handler
+    const forceRefreshBtn = document.getElementById("force-refresh-btn");
+    if (forceRefreshBtn) {
+        forceRefreshBtn.addEventListener("click", async () => {
+            forceRefreshBtn.classList.add("spinning");
+            showToast("कैश साफ़ हो रहा है और ताज़ा पोर्टल लोड हो रहा है...", "info");
+
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let reg of registrations) {
+                        await reg.update();
+                    }
+                }
+                localStorage.removeItem("darshan_form_draft");
+                sessionStorage.removeItem("darshan_form_draft");
+            } catch (err) {
+                console.warn("Cache clean error:", err);
+            }
+
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 450);
         });
     }
 
@@ -2381,6 +2413,21 @@ Reference: ${referredBy}
     // -------------------------------------------------------------
     // DYNAMIC ACCOMPANYING MEMBER ROWS & SYNC PIPELINE
     // -------------------------------------------------------------
+    function cleanAccompanyingMemberName(rawName) {
+        if (!rawName) return "";
+        let str = String(rawName).trim();
+        // 1. Remove leading numbering e.g. "1. 1.", "1.", "1)", "1-", "1 ", "1: ", "1．", "साथी 1", etc.
+        str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-):•\u0966-\u096F])+/gi, '').trim();
+        // 2. Remove redundant inline or trailing age declarations e.g. "उम्र 38 वर्ष", "उम्र 38", "38 वर्ष", "38 Yrs", "age 38"
+        str = str.replace(/(?:उम्र|आयु|age)?\s*\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)?/gi, '').trim();
+        // 3. Remove standalone numbers
+        str = str.replace(/\b\d+\b/g, '').trim();
+        // 4. Remove leading/trailing dots, hyphens, colons, or double spaces
+        str = str.replace(/^[\s.\-:,]+|[\s.\-:,]+$/g, '').trim();
+        str = str.replace(/\s{2,}/g, ' ').trim();
+        return str;
+    }
+
     function syncAccompanyingTextarea() {
         if (!accompanyingInput) return;
         const cards = document.querySelectorAll(".member-row-card");
@@ -2394,11 +2441,26 @@ Reference: ${referredBy}
             const i = idx + 1;
             const nameInput = card.querySelector(".member-name-input");
             const ageInput = card.querySelector(".member-age-input");
-            const nameVal = nameInput ? nameInput.value.trim() : "";
-            const ageVal = ageInput ? ageInput.value.trim() : "";
+            let rawName = nameInput ? nameInput.value.trim() : "";
+            let ageVal = ageInput ? ageInput.value.trim() : "";
 
-            if (nameVal || ageVal) {
-                lines.push(`${i}. ${nameVal}${ageVal ? ' ' + ageVal + ' Yrs' : ''}`);
+            // Auto-extract age if user typed it in name box but age box was empty
+            if (!ageVal && rawName) {
+                const ageMatch = rawName.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
+                if (ageMatch && ageMatch[1]) {
+                    const parsedAge = parseInt(ageMatch[1], 10);
+                    if (parsedAge >= 1 && parsedAge <= 120) {
+                        ageVal = String(parsedAge);
+                        if (ageInput) ageInput.value = ageVal;
+                    }
+                }
+            }
+
+            const cleanName = cleanAccompanyingMemberName(rawName);
+
+            if (cleanName || ageVal) {
+                const ageSuffix = ageVal ? ` ${ageVal} Yrs` : '';
+                lines.push(`${i}. ${cleanName}${ageSuffix}`);
             }
         });
 
@@ -2475,7 +2537,7 @@ Reference: ${referredBy}
                         </button>
                     </div>
                     <div class="member-age-wrapper">
-                        <input type="number" class="member-age-input" id="member-age-${i}" placeholder="${agePlaceholder}" min="10" max="120" value="${prev.age}" autocomplete="off">
+                        <input type="number" class="member-age-input" id="member-age-${i}" placeholder="${agePlaceholder}" min="1" max="120" value="${prev.age}" autocomplete="off">
                         <span class="age-suffix">${yrsSuffix}</span>
                     </div>
                 </div>
@@ -2487,23 +2549,68 @@ Reference: ${referredBy}
         setupVoiceTyping();
 
         // Attach input listeners to dynamically sync with textarea and auto-save draft
-        container.querySelectorAll(".member-name-input").forEach(input => {
-            const cleanName = () => {
-                input.value = input.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.]/g, '');
-                syncAccompanyingTextarea();
-                queueSaveDraft();
-            };
-            input.addEventListener("input", cleanName);
-            input.addEventListener("paste", () => setTimeout(cleanName, 10));
-        });
+        container.querySelectorAll(".member-row-card").forEach(card => {
+            const nameInput = card.querySelector(".member-name-input");
+            const ageInput = card.querySelector(".member-age-input");
 
-        container.querySelectorAll(".member-age-input").forEach(input => {
-            input.addEventListener("input", () => {
-                let ageVal = parseInt(input.value, 10);
-                if (ageVal > 120) input.value = 120;
-                syncAccompanyingTextarea();
-                queueSaveDraft();
-            });
+            if (nameInput) {
+                const cleanName = () => {
+                    nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.]/g, '');
+                    syncAccompanyingTextarea();
+                    queueSaveDraft();
+                };
+                nameInput.addEventListener("input", cleanName);
+
+                // Smart multi-item / WhatsApp list paste handler
+                nameInput.addEventListener("paste", (e) => {
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    if (!pastedText) return;
+
+                    let items = [];
+                    if (pastedText.includes("\n") || pastedText.includes("\r")) {
+                        items = pastedText.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+                    } else if (/\b\d+[\.\)]\s+/.test(pastedText)) {
+                        items = pastedText.split(/(?=\b\d+[\.\)]\s+)/).map(s => s.trim()).filter(Boolean);
+                    }
+
+                    if (items.length > 1) {
+                        e.preventDefault();
+                        const currentCardIdx = parseInt(card.getAttribute("data-member-index") || "1", 10);
+                        const allCards = document.querySelectorAll(".member-row-card");
+
+                        items.forEach((item, pIdx) => {
+                            const targetIdx = currentCardIdx - 1 + pIdx;
+                            if (targetIdx < allCards.length) {
+                                const targetCard = allCards[targetIdx];
+                                const nIn = targetCard.querySelector(".member-name-input");
+                                const aIn = targetCard.querySelector(".member-age-input");
+
+                                let line = item;
+                                let age = "";
+                                const ageMatch = line.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
+                                if (ageMatch && ageMatch[1]) {
+                                    age = ageMatch[1];
+                                }
+                                const cleanName = cleanAccompanyingMemberName(line);
+                                if (nIn) nIn.value = cleanName;
+                                if (aIn && age) aIn.value = age;
+                            }
+                        });
+
+                        syncAccompanyingTextarea();
+                        showToast("सूची से सदस्यों का विवरण स्वतः भर गया!", "success");
+                    }
+                });
+            }
+
+            if (ageInput) {
+                ageInput.addEventListener("input", () => {
+                    let ageVal = parseInt(ageInput.value, 10);
+                    if (ageVal > 120) ageInput.value = 120;
+                    syncAccompanyingTextarea();
+                    queueSaveDraft();
+                });
+            }
         });
 
         syncAccompanyingTextarea();

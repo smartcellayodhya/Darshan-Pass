@@ -166,7 +166,8 @@ function doPost(e) {
 
     var mobile = data.mobile || data.phone || '';
     var vehicleNo = data.vehicleNo || data.vehicle_no || '';
-    var accompanying = data.accompanying || data.members || '';
+    var rawAccompanying = data.accompanying || data.members || '';
+    var accompanying = sanitizeAccompanyingSheetString(rawAccompanying);
     var referredBy = data.referredBy || data.referred_by || '';
     var submitterName = data.submitterName || data.submitter_name || data.user_name || '';
     var submitterEmail = data.submitterEmail || data.submitter_email || data.user_email || '';
@@ -625,6 +626,58 @@ function formatSheetDateToDDMMYYYY(val) {
     }
   }
   return str;
+}
+
+function sanitizeAccompanyingSheetString(rawStr) {
+  if (!rawStr) return "लागू नहीं (अकेले दर्शनार्थी)";
+  var str = String(rawStr).trim();
+  if (str.includes("लागू नहीं") || str.includes("अकेले") || str.toLowerCase() === "na" || str.toLowerCase() === "n/a") {
+    return "लागू नहीं (अकेले दर्शनार्थी)";
+  }
+
+  // Split by line breaks
+  var rawLines = str.split(/[\r\n]+/);
+  // If crammed into a single line with inline numbering (e.g. "1. Name 38 Yrs 2. Name 38 Yrs")
+  if (rawLines.length === 1 && /\b\d+[\.\)]\s+/.test(rawLines[0])) {
+    var parts = rawLines[0].split(/(?=\b\d+[\.\)]\s+)/);
+    if (parts.length > 1) {
+      rawLines = parts;
+    }
+  }
+
+  var cleanLines = [];
+  var counter = 1;
+
+  for (var i = 0; i < rawLines.length; i++) {
+    var line = rawLines[i].trim();
+    if (!line) continue;
+
+    // Strip any leading numbers e.g. "1. 1.", "1.", "1)", "1-", etc.
+    line = line.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-):•\u0966-\u096F])+/gi, '').trim();
+
+    // Extract age if present
+    var age = "";
+    var ageMatch = line.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
+    if (ageMatch && ageMatch[1]) {
+      var a = parseInt(ageMatch[1], 10);
+      if (a >= 1 && a <= 120) {
+        age = a + " Yrs";
+      }
+    }
+
+    // Remove redundant age from name string
+    line = line.replace(/(?:उम्र|आयु|age)?\s*\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)?/gi, '').trim();
+    line = line.replace(/\b\d+\b/g, '').trim();
+    line = line.replace(/^[\s.\-:,]+|[\s.\-:,]+$/g, '').trim();
+    line = line.replace(/\s{2,}/g, ' ').trim();
+
+    if (line || age) {
+      cleanLines.push(counter + ". " + line + (age ? " " + age : ""));
+      counter++;
+    }
+  }
+
+  return cleanLines.length > 0 ? cleanLines.join("\n") : "लागू नहीं (अकेले दर्शनार्थी)";
 }
 
 function getTargetSpreadsheet() {
