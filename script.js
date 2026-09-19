@@ -331,7 +331,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (visitDateInput) {
-        visitDateInput.setAttribute("min", todayStr);
+        const minAllowedDate = isPastAllSlotsToday ? defaultSelectedDateStr : todayStr;
+        visitDateInput.setAttribute("min", minAllowedDate);
         visitDateInput.setAttribute("max", maxDateStr);
         visitDateInput.value = defaultSelectedDateStr; // Pre-select today or tomorrow if past 9 PM
 
@@ -344,9 +345,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // Dynamically block past dates or dates beyond 6 days
         const enforceDateBounds = () => {
             if (!visitDateInput.value) return;
-            if (visitDateInput.value < todayStr) {
-                visitDateInput.value = todayStr;
-                showToast("पिछली तिथि नहीं चुनी जा सकती। केवल आज से अगले 6 दिन की तिथि चुनें।", "warning");
+            const minAllowed = isPastAllSlotsToday ? defaultSelectedDateStr : todayStr;
+            if (visitDateInput.value < minAllowed) {
+                visitDateInput.value = minAllowed;
+                if (isPastAllSlotsToday) {
+                    showToast("आज के सभी दर्शन स्लॉट समाप्त हो चुके हैं। कृपया आगामी तिथि चुनें।", "warning");
+                } else {
+                    showToast("पिछली तिथि नहीं चुनी जा सकती। केवल आज से अगले 6 दिन की तिथि चुनें।", "warning");
+                }
             } else if (visitDateInput.value > maxDateStr) {
                 visitDateInput.value = maxDateStr;
                 showToast("दर्शन पास केवल आज और अगले 6 दिन तक ही बुक किया जा सकता है।", "warning");
@@ -777,7 +783,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function resetFormState() {
         if (form) form.reset();
         if (visitDateInput) {
-            visitDateInput.setAttribute("min", todayStr);
+            const minAllowedDate = isPastAllSlotsToday ? defaultSelectedDateStr : todayStr;
+            visitDateInput.setAttribute("min", minAllowedDate);
             visitDateInput.setAttribute("max", maxDateStr);
             visitDateInput.value = defaultSelectedDateStr;
         }
@@ -836,8 +843,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const natVal = getVal("nationality") || "India";
             const isIndia = natVal === "India";
 
-            // Safe validation checks (Date strictly between today and today+6)
-            const isDateWithinAllowedRange = visitDateInput ? (visitDateInput.value !== "" && visitDateInput.value >= todayStr && visitDateInput.value <= maxDateStr) : true;
+            // Safe validation checks (Date strictly between minAllowedDate and today+6)
+            const minAllowedDate = isPastAllSlotsToday ? defaultSelectedDateStr : todayStr;
+            const isDateWithinAllowedRange = visitDateInput ? (visitDateInput.value !== "" && visitDateInput.value >= minAllowedDate && visitDateInput.value <= maxDateStr) : true;
             const isDateValid = visitDateInput ? markGroup(visitDateInput, isDateWithinAllowedRange) : true;
             let isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
             if (isSlotValid && visitSlotSelect && visitDateInput && visitDateInput.value === todayStr) {
@@ -2383,7 +2391,18 @@ Reference: ${referredBy}
         const curLang = localStorage.getItem("darshan_lang") || "hi";
         const t = translations[curLang] || translations.hi;
 
-        if (extraCount <= 0) {
+        if (extraCount < 0) {
+            container.innerHTML = `
+                <div class="single-devotee-notice" style="border-color: #f59e0b; color: #b45309; background: #fffbeb;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
+                    <span>${curLang === "en" ? "Please select at least 1 devotee (Male or Female) above." : "कृपया ऊपर कम से कम 1 दर्शनार्थी (पुरुष अथवा महिला) चुनें।"}</span>
+                </div>
+            `;
+            if (accompanyingInput) accompanyingInput.value = "";
+            return;
+        }
+
+        if (extraCount === 0) {
             container.innerHTML = `
                 <div class="single-devotee-notice">
                     <i class="fa-solid fa-circle-check"></i>
@@ -2458,7 +2477,23 @@ Reference: ${referredBy}
         const accError = document.getElementById("accompanying-error");
 
         const curLang = localStorage.getItem("darshan_lang") || "hi";
-        if (totalCount <= 1) {
+        if (totalCount === 0) {
+            if (accompanyingInput) {
+                accompanyingInput.required = false;
+                accompanyingInput.value = "";
+            }
+            if (accReq) accReq.style.display = "none";
+            if (accNote) accNote.textContent = curLang === "en" ? "(Please select at least 1 devotee above)" : "(कृपया ऊपर कम से कम 1 दर्शनार्थी चुनें)";
+            if (accGroup) {
+                accGroup.classList.remove("invalid");
+                accGroup.classList.add("single-devotee");
+            }
+            if (accError) accError.style.display = "none";
+            renderAccompanyingMemberRows(-1);
+            return;
+        }
+
+        if (totalCount === 1) {
             if (accompanyingInput) {
                 accompanyingInput.required = false;
             }
@@ -2503,8 +2538,19 @@ Reference: ${referredBy}
             }
 
             const total = mVal + fVal;
-            const isCountValid = total > 0 && total <= 8;
+            const isCountValid = total >= 1 && total <= 8;
             markGroup(maleCountInput, isCountValid);
+            const countErr = document.getElementById("count-error");
+            if (countErr) {
+                if (total === 0) {
+                    countErr.textContent = (localStorage.getItem("darshan_lang") === "en") 
+                        ? "Please enter at least 1 devotee (Male or Female)" 
+                        : "कृपया कम से कम 1 दर्शनार्थी (पुरुष अथवा महिला) दर्ज करें";
+                    countErr.style.display = "block";
+                } else {
+                    countErr.style.display = "";
+                }
+            }
             updateAccompanyingRequirement(total);
         }
 
@@ -2523,8 +2569,19 @@ Reference: ${referredBy}
             }
 
             const total = mVal + fVal;
-            const isCountValid = total > 0 && total <= 8;
+            const isCountValid = total >= 1 && total <= 8;
             markGroup(maleCountInput, isCountValid);
+            const countErr = document.getElementById("count-error");
+            if (countErr) {
+                if (total === 0) {
+                    countErr.textContent = (localStorage.getItem("darshan_lang") === "en") 
+                        ? "Please enter at least 1 devotee (Male or Female)" 
+                        : "कृपया कम से कम 1 दर्शनार्थी (पुरुष अथवा महिला) दर्ज करें";
+                    countErr.style.display = "block";
+                } else {
+                    countErr.style.display = "";
+                }
+            }
             updateAccompanyingRequirement(total);
         }
 
@@ -2542,8 +2599,23 @@ Reference: ${referredBy}
                 if (!input) return;
                 let val = parseInt(input.value) || 0;
                 if (btn.classList.contains("plus-btn")) {
+                    const otherId = (targetId === "maleCount") ? "femaleCount" : "maleCount";
+                    const otherInput = document.getElementById(otherId);
+                    const otherVal = otherInput ? (parseInt(otherInput.value) || 0) : 0;
+                    if (val + otherVal >= 8) {
+                        showToast(localStorage.getItem("darshan_lang") === "en" ? "Maximum 8 devotees allowed" : "अधिकतम 8 दर्शनार्थी ही अनुमन्य हैं", "warning");
+                        return;
+                    }
                     val += 1;
                 } else if (btn.classList.contains("minus-btn")) {
+                    const otherId = (targetId === "maleCount") ? "femaleCount" : "maleCount";
+                    const otherInput = document.getElementById(otherId);
+                    const otherVal = otherInput ? (parseInt(otherInput.value) || 0) : 0;
+                    const minAllowed = (otherVal === 0) ? 1 : 0;
+                    if (val <= minAllowed) {
+                        showToast(localStorage.getItem("darshan_lang") === "en" ? "At least 1 devotee is required" : "कम से कम 1 दर्शनार्थी होना आवश्यक है", "warning");
+                        return;
+                    }
                     val = Math.max(0, val - 1);
                 }
                 input.value = val;
