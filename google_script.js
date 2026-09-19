@@ -596,13 +596,32 @@ function formatSheetDateToDDMMYYYY(val) {
     return day + '/' + month + '/' + year;
   }
   var str = String(val).trim();
+
+  // 1. Handle ISO format YYYY-MM-DD or YYYY/MM/DD (e.g. 2026-09-20 -> 20/09/2026)
+  var isoMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (isoMatch) {
+    var y = isoMatch[1];
+    var m = ('0' + parseInt(isoMatch[2], 10)).slice(-2);
+    var d = ('0' + parseInt(isoMatch[3], 10)).slice(-2);
+    return d + '/' + m + '/' + y;
+  }
+
+  // 2. Handle DD/MM/YYYY or DD-MM-YYYY with single digits (e.g. 9/9/2026 -> 09/09/2026)
+  var dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmyMatch) {
+    var dd = ('0' + parseInt(dmyMatch[1], 10)).slice(-2);
+    var mm = ('0' + parseInt(dmyMatch[2], 10)).slice(-2);
+    var yy = dmyMatch[3];
+    return dd + '/' + mm + '/' + yy;
+  }
+
   if (str.includes('GMT') || str.includes('T00:')) {
-    var d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      var dd = ('0' + d.getDate()).slice(-2);
-      var mm = ('0' + (d.getMonth() + 1)).slice(-2);
-      var yyyy = d.getFullYear();
-      return dd + '/' + mm + '/' + yyyy;
+    var dObj = new Date(str);
+    if (!isNaN(dObj.getTime())) {
+      var ddd = ('0' + dObj.getDate()).slice(-2);
+      var mmm = ('0' + (dObj.getMonth() + 1)).slice(-2);
+      var yyyy = dObj.getFullYear();
+      return ddd + '/' + mmm + '/' + yyyy;
     }
   }
   return str;

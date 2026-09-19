@@ -899,10 +899,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (nVal.length < 2) {
                     isNameAgeValid = false;
-                    if (nameErrorEl) nameErrorEl.textContent = "कृपया अपना नाम एवं उम्र दर्ज करें (उदा: Rahul 35 Yrs)";
+                    if (nameErrorEl) nameErrorEl.textContent = "कृपया मुख्य दर्शनार्थी का नाम एवं उम्र दर्ज करें (उदा: राकेश 35 वर्ष)";
                 } else if (!hasAgeDigit) {
                     isNameAgeValid = false;
-                    if (nameErrorEl) nameErrorEl.textContent = "कृपया नाम के साथ उम्र (संख्या) भी लिखें (उदा: Rahul 35 Yrs)";
+                    if (nameErrorEl) nameErrorEl.textContent = "कृपया नाम के साथ उम्र भी लिखें (उदा: राकेश 35 वर्ष या Rahul 35 Yrs)";
                 } else {
                     isNameAgeValid = true;
                 }
@@ -1213,9 +1213,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeFormSession() {
         if (successModal) successModal.classList.add("hidden");
         syncBodyModalLock();
-        if (govFormCard) govFormCard.classList.add("hidden");
-        if (formClosedCard) formClosedCard.classList.remove("hidden");
+        if (formClosedCard) formClosedCard.classList.add("hidden");
+        if (govFormCard) govFormCard.classList.remove("hidden");
         resetFormState();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (visitDateInput) visitDateInput.focus();
     }
 
     // Modal Close Handler ("बंद करें")
@@ -2026,15 +2028,11 @@ Reference: ${referredBy}
         const micButtons = document.querySelectorAll(".voice-mic-btn");
 
         if (!SpeechRecognition) {
-            console.warn("Speech Recognition API not supported in this browser.");
             micButtons.forEach(btn => {
-                if (btn._voiceBound) return;
-                btn._voiceBound = true;
-                btn.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast("आपके ब्राउज़र में वॉयस टाइपिंग समर्थित नहीं है। कृपया कीबोर्ड से लिखें।", "warning");
-                });
+                btn.style.display = "none";
+            });
+            document.querySelectorAll(".mic-wrapper input, .mic-wrapper textarea").forEach(inp => {
+                inp.style.paddingRight = "1rem";
             });
             return;
         }
@@ -2263,7 +2261,12 @@ Reference: ${referredBy}
                     trigger.classList.add("active");
                     searchInput.value = "";
                     populateOptions("");
-                    setTimeout(() => searchInput.focus(), 60);
+                    setTimeout(() => {
+                        searchInput.focus();
+                        if (window.innerWidth <= 640) {
+                            customContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                        }
+                    }, 80);
                 }
             });
 

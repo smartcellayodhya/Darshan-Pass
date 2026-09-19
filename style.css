@@ -2811,5 +2811,55 @@ body.modal-open .scroll-to-top-btn {
     }
 }
 
+/* -------------------------------------------------------------
+ * 8. FIELD SUB-HINT (MICRO-GUIDANCE)
+ * ------------------------------------------------------------- */
+.field-sub-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #475569;
+    margin-top: 0.35rem;
+    line-height: 1.35;
+    background: #f8fafc;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.field-sub-hint i {
+    color: #2563eb;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.field-sub-hint strong {
+    color: #1e3a8a;
+    font-weight: 700;
+}
+
+/* -------------------------------------------------------------
+ * 9. MOBILE SEARCHABLE DROPDOWN KEYBOARD CLEARANCE
+ * Prevents dropdown options from being hidden behind virtual keyboard
+ * ------------------------------------------------------------- */
+@media (max-width: 640px) {
+    .custom-select-container {
+        scroll-margin-top: 15px;
+    }
+
+    .custom-select-dropdown {
+        max-height: min(280px, 42vh) !important;
+        bottom: auto;
+    }
+
+    .custom-options-list {
+        max-height: min(200px, 32vh) !important;
+        overscroll-behavior: contain;
+    }
+}
+
+
 
 
