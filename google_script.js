@@ -1035,7 +1035,7 @@ function setupDynamicConditionalFormatting(sheet, optStatusCol) {
   try {
     var statusCol = optStatusCol || findStatusColumn(sheet);
     var colLetter = getColumnLetter(statusCol);
-    var maxFormatRows = Math.max(sheet.getMaxRows(), 1000);
+    var maxFormatRows = Math.max(sheet.getMaxRows(), 2);
     var formatRange = sheet.getRange("A2:S" + maxFormatRows);
 
     // Retrieve existing rules so user-defined rules are NOT erased
@@ -1564,6 +1564,7 @@ function refreshAllRowColors(optSheet) {
   // Read status values directly from detected status column
   var statusVals = sheet.getRange(2, statusCol, numDataRows, 1).getValues();
   var dateVals = (dateCol > 0 && dateCol <= lastCol) ? sheet.getRange(2, dateCol, numDataRows, 1).getValues() : null;
+  var tsVals = sheet.getRange(2, 1, numDataRows, 1).getValues();
   var backgrounds = sheet.getRange(2, 1, numDataRows, lastCol).getBackgrounds();
   var fontColors = sheet.getRange(2, 1, numDataRows, lastCol).getFontColors();
   var dateUpdated = false;
@@ -1582,7 +1583,7 @@ function refreshAllRowColors(optSheet) {
 
       // Auto-fill Pass Created Date in Column B if empty
       if (dateVals && !dateVals[i][0]) {
-        var rowTs = sheet.getRange(i + 2, 1).getValue();
+        var rowTs = tsVals[i][0];
         dateVals[i][0] = formatSheetDateToDDMMYYYY(rowTs) || Utilities.formatDate(new Date(), scriptTz, "dd/MM/yyyy");
         dateUpdated = true;
       }
@@ -1591,7 +1592,7 @@ function refreshAllRowColors(optSheet) {
       fc = "#854d0e";
 
       if (dateVals && !dateVals[i][0]) {
-        var rowTs2 = sheet.getRange(i + 2, 1).getValue();
+        var rowTs2 = tsVals[i][0];
         dateVals[i][0] = formatSheetDateToDDMMYYYY(rowTs2) || Utilities.formatDate(new Date(), scriptTz, "dd/MM/yyyy");
         dateUpdated = true;
       }
@@ -1701,13 +1702,15 @@ function repairColumnsAndUnfreeze(optSheet) {
     sheet.setFrozenRows(1);
   } catch (fzErr) {}
 
-  var maxRows = Math.max(sheet.getLastRow(), sheet.getMaxRows(), 50);
-  var numDataRows = sheet.getLastRow() - 1;
+  var totalRows = sheet.getMaxRows();
+  var availableRows = totalRows > 1 ? totalRows - 1 : 0;
+  var numDataRows = Math.max(sheet.getLastRow() - 1, 0);
+  if (availableRows < 1) return;
 
   // 2. Clear any conflicting validation rules on Column B (Col B = Date, never Status!)
   try {
-    sheet.getRange(2, 2, maxRows - 1, 1).clearDataValidations();
-    sheet.getRange(2, 2, maxRows - 1, 1).setNumberFormat("@");
+    sheet.getRange(2, 2, availableRows, 1).clearDataValidations();
+    sheet.getRange(2, 2, availableRows, 1).setNumberFormat("@");
   } catch (bValErr) {
     console.warn("Clear Col B validation notice:", bValErr);
   }
@@ -1744,7 +1747,7 @@ function repairColumnsAndUnfreeze(optSheet) {
   }
 
   // 4. Set Dropdown Validation strictly on Column C (Pass Status)
-  var statusRange = sheet.getRange(2, 3, maxRows - 1, 1);
+  var statusRange = sheet.getRange(2, 3, availableRows, 1);
   var rule = SpreadsheetApp.newDataValidation()
     .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
     .setAllowInvalid(false)
@@ -1781,10 +1784,12 @@ function restoreStatusDropdowns(optSheet) {
   var sheet = optSheet || getMainDataSheet(ss);
   if (!sheet) return;
 
-  var maxRows = Math.max(sheet.getMaxRows(), 1000);
-  var statusCol = findStatusColumn(sheet) || 3;
+  var totalRows = sheet.getMaxRows();
+  var availableRows = totalRows > 1 ? totalRows - 1 : 0;
+  if (availableRows < 1) return;
 
-  var statusRange = sheet.getRange(2, statusCol, maxRows - 1, 1);
+  var statusCol = findStatusColumn(sheet) || 3;
+  var statusRange = sheet.getRange(2, statusCol, availableRows, 1);
   var rule = SpreadsheetApp.newDataValidation()
     .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
     .setAllowInvalid(false)
