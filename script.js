@@ -749,47 +749,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // -------------------------------------------------------------
-    // DRAFT AUTO-SAVE & RESTORE (ITEM 5)
+    // DRAFT MANAGEMENT
+    // Per requirement: Browser refresh must always load a brand-new form.
+    // Draft auto-saving is cleanly disabled.
     // -------------------------------------------------------------
-    function saveFormDraft() {
-        if (!form) return;
-        try {
-            const memberRows = [];
-            document.querySelectorAll(".member-row-card").forEach(card => {
-                const nameEl = card.querySelector(".member-name-input");
-                const ageEl = card.querySelector(".member-age-input");
-                if (nameEl || ageEl) {
-                    memberRows.push({
-                        name: nameEl ? nameEl.value : "",
-                        age: ageEl ? ageEl.value : ""
-                    });
-                }
-            });
-
-            const draft = {
-                visitDate: visitDateInput ? visitDateInput.value : "",
-                visitSlot: visitSlotSelect ? visitSlotSelect.value : "",
-                nationality: nationalitySelect ? nationalitySelect.value : "India",
-                stateSelect: stateSelect ? stateSelect.value : "",
-                districtSelect: districtSelect ? districtSelect.value : "",
-                countrySelect: countrySelect ? countrySelect.value : "",
-                idNumber: idNumberInput ? idNumberInput.value : "",
-                nameAge: nameAgeInput ? nameAgeInput.value : "",
-                maleCount: maleCountInput ? maleCountInput.value : "1",
-                femaleCount: femaleCountInput ? femaleCountInput.value : "0",
-                mobile: mobileInput ? mobileInput.value : "",
-                vehicleNo: vehicleNoInput ? vehicleNoInput.value : "",
-                noVehicle: noVehicleCheck ? noVehicleCheck.checked : false,
-                accompanying: accompanyingInput ? accompanyingInput.value : "",
-                accompanyingMembers: memberRows,
-                referredBySelect: referredBySelect ? referredBySelect.value : "",
-                otherRefName: otherRefNameInput ? otherRefNameInput.value : "",
-                timestamp: Date.now()
-            };
-            localStorage.setItem("darshan_form_draft", JSON.stringify(draft));
-        } catch (e) {}
-    }
-
     function clearFormDraft() {
         try {
             localStorage.removeItem("darshan_form_draft");
