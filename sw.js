@@ -3,14 +3,14 @@
  * Ayodhya Police - Smart Cell Ayodhya
  */
 
-const CACHE_NAME = 'darshan-pass-v4.9';
+const CACHE_NAME = 'darshan-pass-v5.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
-  './style.css?v=4.9',
+  './style.css?v=5.0',
   './script.js',
-  './script.js?v=4.9',
+  './script.js?v=5.0',
   './manifest.json',
   './assets/up_police_logo.png',
   './assets/icon-192.png',

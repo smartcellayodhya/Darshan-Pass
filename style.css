@@ -429,11 +429,11 @@ input[type="number"] {
     user-select: none;
 }
 
-/* Mobile & Tablet: Keep Name and Age firmly side-by-side */
+/* Mobile & Tablet: Keep Name and Age firmly side-by-side with maximum width for Name */
 @media (max-width: 600px) {
     .primary-devotee-grid {
-        grid-template-columns: 1fr 105px !important;
-        gap: 0.55rem !important;
+        grid-template-columns: 1fr 88px !important;
+        gap: 0.5rem !important;
     }
 
     .primary-devotee-grid .input-label {
@@ -441,23 +441,37 @@ input[type="number"] {
         font-size: 0.84rem;
     }
 
+    .primary-devotee-grid .mic-wrapper input {
+        padding-right: 36px !important;
+        padding-left: 0.75rem !important;
+    }
+
+    .primary-devotee-grid .voice-mic-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px;
+        min-height: 32px;
+        right: 3px;
+        font-size: 0.88rem;
+    }
+
     .primary-age-group .primary-age-wrapper input {
-        padding-right: 2.2rem !important;
-        padding-left: 0.65rem !important;
+        padding-right: 2rem !important;
+        padding-left: 0.55rem !important;
         font-size: 0.92rem;
     }
 
     .primary-age-group .primary-age-wrapper .age-suffix {
-        right: 0.55rem;
-        font-size: 0.8rem;
+        right: 0.45rem;
+        font-size: 0.78rem;
     }
 }
 
 /* Very Small Mobile (< 360px) */
 @media (max-width: 360px) {
     .primary-devotee-grid {
-        grid-template-columns: 1fr 92px !important;
-        gap: 0.45rem !important;
+        grid-template-columns: 1fr 80px !important;
+        gap: 0.4rem !important;
     }
 
     .primary-devotee-grid .input-label {
@@ -465,14 +479,19 @@ input[type="number"] {
         font-size: 0.8rem;
     }
 
+    .primary-devotee-grid .mic-wrapper input {
+        padding-right: 34px !important;
+        padding-left: 0.6rem !important;
+    }
+
     .primary-age-group .primary-age-wrapper input {
-        padding-right: 1.9rem !important;
-        padding-left: 0.5rem !important;
+        padding-right: 1.8rem !important;
+        padding-left: 0.45rem !important;
     }
 
     .primary-age-group .primary-age-wrapper .age-suffix {
-        right: 0.45rem;
-        font-size: 0.74rem;
+        right: 0.35rem;
+        font-size: 0.72rem;
     }
 }
 
