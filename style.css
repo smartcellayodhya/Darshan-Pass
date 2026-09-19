@@ -386,17 +386,24 @@ input[type="number"] {
     display: block;
 }
 
-/* Primary Devotee Separate Name and Age Grid */
+/* Primary Devotee Separate Name and Age Grid: Strictly side-by-side on all screens */
 .primary-devotee-grid {
-    display: grid;
+    display: grid !important;
     grid-template-columns: 1fr 140px;
-    gap: 1.2rem;
+    gap: 1rem;
     align-items: flex-start;
     margin-bottom: 0.2rem;
 }
 
 .primary-devotee-grid .input-group {
     margin-bottom: 0.4rem;
+}
+
+.primary-devotee-grid .input-label {
+    min-height: 1.4rem;
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 0.35rem;
 }
 
 .primary-age-group .primary-age-wrapper {
@@ -422,41 +429,50 @@ input[type="number"] {
     user-select: none;
 }
 
-@media (max-width: 540px) {
+/* Mobile & Tablet: Keep Name and Age firmly side-by-side */
+@media (max-width: 600px) {
     .primary-devotee-grid {
-        grid-template-columns: 1fr 115px;
-        gap: 0.65rem;
+        grid-template-columns: 1fr 105px !important;
+        gap: 0.55rem !important;
+    }
+
+    .primary-devotee-grid .input-label {
+        min-height: 2.3rem; /* Aligns input boxes horizontally when Name label wraps */
+        font-size: 0.84rem;
+    }
+
+    .primary-age-group .primary-age-wrapper input {
+        padding-right: 2.2rem !important;
+        padding-left: 0.65rem !important;
+        font-size: 0.92rem;
+    }
+
+    .primary-age-group .primary-age-wrapper .age-suffix {
+        right: 0.55rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Very Small Mobile (< 360px) */
+@media (max-width: 360px) {
+    .primary-devotee-grid {
+        grid-template-columns: 1fr 92px !important;
+        gap: 0.45rem !important;
     }
 
     .primary-devotee-grid .input-label {
         min-height: 2.3rem;
-        display: flex;
-        align-items: flex-end;
+        font-size: 0.8rem;
     }
 
     .primary-age-group .primary-age-wrapper input {
-        padding-right: 2.4rem !important;
-        padding-left: 0.75rem !important;
+        padding-right: 1.9rem !important;
+        padding-left: 0.5rem !important;
     }
 
     .primary-age-group .primary-age-wrapper .age-suffix {
-        right: 0.65rem;
-        font-size: 0.82rem;
-    }
-}
-
-@media (max-width: 380px) {
-    .primary-devotee-grid {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-
-    .primary-devotee-grid .input-label {
-        min-height: auto;
-    }
-
-    .primary-age-group .primary-age-wrapper {
-        max-width: 150px;
+        right: 0.45rem;
+        font-size: 0.74rem;
     }
 }
 
