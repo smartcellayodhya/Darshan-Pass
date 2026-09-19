@@ -1295,10 +1295,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const copyBtn = printableSlip.querySelector(".pass-copy-btn, .token-copy-btn");
+            const origDownloadHtml = downloadSlipBtn.innerHTML;
+            const isEn = (localStorage.getItem("darshan_lang") === "en");
 
             try {
                 downloadSlipBtn.disabled = true;
-                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> डाउनलोड हो रहा है...';
+                downloadSlipBtn.innerHTML = isEn 
+                    ? '<i class="fa-solid fa-spinner fa-spin"></i> Downloading...' 
+                    : '<i class="fa-solid fa-spinner fa-spin"></i> डाउनलोड हो रहा है...';
 
                 if (copyBtn) copyBtn.style.display = "none";
 
@@ -1339,15 +1343,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 link.click();
                 document.body.removeChild(link);
 
-                showToast("रसीद सफलतापूर्वक डाउनलोड हो गई!", "success");
+                showToast(isEn ? "Slip downloaded successfully!" : "रसीद सफलतापूर्वक डाउनलोड हो गई!", "success");
             } catch (err) {
                 if (copyBtn) copyBtn.style.display = "";
                 console.error("Slip image download error:", err);
-                showToast("डाउनलोड में समस्या आई, कृपया प्रिंट विकल्प का प्रयोग करें।", "error");
+                showToast(isEn ? "Error downloading slip. Please use Print." : "डाउनलोड में समस्या आई, कृपया प्रिंट विकल्प का प्रयोग करें।", "error");
             } finally {
                 if (copyBtn) copyBtn.style.display = "";
                 downloadSlipBtn.disabled = false;
-                downloadSlipBtn.innerHTML = '<i class="fa-solid fa-circle-down"></i> <span id="download-slip-text">रसीद डाउनलोड</span>';
+                downloadSlipBtn.innerHTML = origDownloadHtml;
             }
         });
     }
