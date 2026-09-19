@@ -87,8 +87,16 @@ function parseTimestampSafe(val) {
   var str = String(val).trim();
   var match = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (match) {
-    var day = parseInt(match[1], 10);
-    var month = parseInt(match[2], 10) - 1;
+    var p1 = parseInt(match[1], 10);
+    var p2 = parseInt(match[2], 10);
+    var day, month;
+    if (p2 > 12 && p1 <= 12) {
+      day = p2;
+      month = p1 - 1;
+    } else {
+      day = p1;
+      month = p2 - 1;
+    }
     var year = parseInt(match[3], 10);
     var hour = parseInt(match[4] || 0, 10);
     var min = parseInt(match[5] || 0, 10);
@@ -2264,8 +2272,14 @@ function setupVipDashboard() {
   dashSheet.getRange("C8").setValue("कुल दर्शनार्थी").setFontWeight("bold").setBackground("#9fc48a").setFontColor("#000000").setHorizontalAlignment("center");
 
   dashSheet.getRange("A9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!B2:B, " + dataSheetName + "!B2:B <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("B9:B28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!B$2:B, A9))");
-  dashSheet.getRange("C9:C28").setFormula("=IF(OR(A9=\"\", A9=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!Q$2:Q, " + dataSheetName + "!B$2:B, A9))");
+  var bFormulas = [];
+  var cFormulas = [];
+  for (var rIdx = 9; rIdx <= 28; rIdx++) {
+    bFormulas.push(["=IF(OR(A" + rIdx + "=\"\", A" + rIdx + "=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!B$2:B, A" + rIdx + "))"]);
+    cFormulas.push(["=IF(OR(A" + rIdx + "=\"\", A" + rIdx + "=\"(अभी कोई डेटा नहीं)\"), 0, SUMIFS(" + dataSheetName + "!Q$2:Q, " + dataSheetName + "!B$2:B, A" + rIdx + "))"]);
+  }
+  dashSheet.getRange("B9:B28").setFormulas(bFormulas);
+  dashSheet.getRange("C9:C28").setFormulas(cFormulas);
 
   // 4. TABLE 2: दर्शन तिथि वार रिपोर्ट (VISIT DATE REPORT - Column D)
   dashSheet.getRange("E7:H7").merge();
@@ -2278,9 +2292,17 @@ function setupVipDashboard() {
   dashSheet.getRange("H8").setValue("लंबित (Pending)").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
   dashSheet.getRange("E9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!D2:D, " + dataSheetName + "!D2:D <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("F9:F28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!D$2:D, E9))");
-  dashSheet.getRange("G9:G28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
-  dashSheet.getRange("H9:H28").setFormula("=IF(OR(E9=\"\", E9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E9, " + dataSheetName + "!C$2:C, \"Pending\"))");
+  var fFormulas = [];
+  var gFormulas = [];
+  var hFormulas = [];
+  for (var rIdx2 = 9; rIdx2 <= 28; rIdx2++) {
+    fFormulas.push(["=IF(OR(E" + rIdx2 + "=\"\", E" + rIdx2 + "=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIF(" + dataSheetName + "!D$2:D, E" + rIdx2 + "))"]);
+    gFormulas.push(["=IF(OR(E" + rIdx2 + "=\"\", E" + rIdx2 + "=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E" + rIdx2 + ", " + dataSheetName + "!C$2:C, \"Pass Created\"))"]);
+    hFormulas.push(["=IF(OR(E" + rIdx2 + "=\"\", E" + rIdx2 + "=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!D$2:D, E" + rIdx2 + ", " + dataSheetName + "!C$2:C, \"Pending\"))"]);
+  }
+  dashSheet.getRange("F9:F28").setFormulas(fFormulas);
+  dashSheet.getRange("G9:G28").setFormulas(gFormulas);
+  dashSheet.getRange("H9:H28").setFormulas(hFormulas);
 
   // 5. TABLE 3: REFERRED BY REPORT (Column N)
   dashSheet.getRange("J7:K7").merge();
@@ -2291,7 +2313,11 @@ function setupVipDashboard() {
   dashSheet.getRange("K8").setValue("बने पास").setFontWeight("bold").setBackground("#e2e8f0").setHorizontalAlignment("center");
 
   dashSheet.getRange("J9").setFormula("=IFERROR(UNIQUE(FILTER(" + dataSheetName + "!N2:N, " + dataSheetName + "!N2:N <> \"\")), \"(अभी कोई डेटा नहीं)\")");
-  dashSheet.getRange("K9:K28").setFormula("=IF(OR(J9=\"\", J9=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J9, " + dataSheetName + "!C$2:C, \"Pass Created\"))");
+  var kFormulas = [];
+  for (var rIdx3 = 9; rIdx3 <= 28; rIdx3++) {
+    kFormulas.push(["=IF(OR(J" + rIdx3 + "=\"\", J" + rIdx3 + "=\"(अभी कोई डेटा नहीं)\"), 0, COUNTIFS(" + dataSheetName + "!N$2:N, J" + rIdx3 + ", " + dataSheetName + "!C$2:C, \"Pass Created\"))"]);
+  }
+  dashSheet.getRange("K9:K28").setFormulas(kFormulas);
 
   // Format Dashboard Cells
   dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
