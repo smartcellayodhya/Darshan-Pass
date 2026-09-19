@@ -2428,6 +2428,39 @@ Reference: ${referredBy}
         return str;
     }
 
+    function extractMemberNameAndAge(rawStr) {
+        if (!rawStr) return { name: "", age: "" };
+        let str = String(rawStr).trim();
+        // 1. Strip leading numbering first so "1. Ramesh" does not make age = 1
+        str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
+
+        let age = "";
+        // 2. Priority 1: Explicit age declaration (e.g. "उम्र 35", "35 वर्ष", "35 Yrs", "age 35")
+        const explicitMatch = str.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
+        if (explicitMatch) {
+            const num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
+            if (num >= 1 && num <= 120) {
+                age = String(num);
+                str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)))/i, '').trim();
+            }
+        }
+
+        // 3. Priority 2: Standalone trailing number at the end of the line (e.g. "Rahul 35")
+        if (!age) {
+            const trailingMatch = str.match(/\b(\d{1,3})\s*$/);
+            if (trailingMatch) {
+                const num = parseInt(trailingMatch[1], 10);
+                if (num >= 1 && num <= 120) {
+                    age = String(num);
+                    str = str.replace(/\b\d{1,3}\s*$/, '').trim();
+                }
+            }
+        }
+
+        const name = cleanAccompanyingMemberName(str);
+        return { name, age };
+    }
+
     function syncAccompanyingTextarea() {
         if (!accompanyingInput) return;
         const cards = document.querySelectorAll(".member-row-card");
@@ -2444,15 +2477,12 @@ Reference: ${referredBy}
             let rawName = nameInput ? nameInput.value.trim() : "";
             let ageVal = ageInput ? ageInput.value.trim() : "";
 
-            // Auto-extract age if user typed it in name box but age box was empty
+            // Auto-extract age only if user typed it into the name box and age box was empty
             if (!ageVal && rawName) {
-                const ageMatch = rawName.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
-                if (ageMatch && ageMatch[1]) {
-                    const parsedAge = parseInt(ageMatch[1], 10);
-                    if (parsedAge >= 1 && parsedAge <= 120) {
-                        ageVal = String(parsedAge);
-                        if (ageInput) ageInput.value = ageVal;
-                    }
+                const extracted = extractMemberNameAndAge(rawName);
+                if (extracted.age) {
+                    ageVal = extracted.age;
+                    if (ageInput) ageInput.value = ageVal;
                 }
             }
 
@@ -2585,15 +2615,9 @@ Reference: ${referredBy}
                                 const nIn = targetCard.querySelector(".member-name-input");
                                 const aIn = targetCard.querySelector(".member-age-input");
 
-                                let line = item;
-                                let age = "";
-                                const ageMatch = line.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
-                                if (ageMatch && ageMatch[1]) {
-                                    age = ageMatch[1];
-                                }
-                                const cleanName = cleanAccompanyingMemberName(line);
-                                if (nIn) nIn.value = cleanName;
-                                if (aIn && age) aIn.value = age;
+                                const extracted = extractMemberNameAndAge(item);
+                                if (nIn) nIn.value = extracted.name;
+                                if (aIn && extracted.age) aIn.value = extracted.age;
                             }
                         });
 
