@@ -1487,8 +1487,18 @@ function lockAndProtectHeaderRow(optSheet) {
     try {
       var protection = headerRange.protect().setDescription("🔒 STRICT 100% LOCKED HEADERS (Do Not Edit)");
       var me = Session.getEffectiveUser();
-      protection.addEditor(me);
-      protection.removeEditors(protection.getEditors());
+      var meEmail = me ? me.getEmail().toLowerCase() : "";
+      var owner = ss.getOwner();
+      var ownerEmail = owner ? owner.getEmail().toLowerCase() : "";
+      var editors = protection.getEditors();
+      for (var ed = 0; ed < editors.length; ed++) {
+        var edEmail = editors[ed].getEmail().toLowerCase();
+        if ((!ownerEmail || edEmail !== ownerEmail) && (!meEmail || edEmail !== meEmail)) {
+          try {
+            protection.removeEditor(editors[ed]);
+          } catch (remErr) {}
+        }
+      }
       if (protection.canDomainEdit()) {
         protection.setDomainEdit(false);
       }
@@ -1853,18 +1863,7 @@ function fixAndRealignAllSheetColumns() {
 
   function formatDateVal(v) {
     if (!v) return "";
-    if (v instanceof Date) {
-      return Utilities.formatDate(v, Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
-    }
-    var s = String(v).trim();
-    if (!isDatePattern(s)) return "";
-    if (s.includes("-")) {
-      var parts = s.split("-");
-      if (parts.length === 3 && parts[0].length === 4) {
-        return parts[2] + "/" + parts[1] + "/" + parts[0];
-      }
-    }
-    return s;
+    return formatSheetDateToDDMMYYYY(v);
   }
 
   function cleanStatusVal(s) {
