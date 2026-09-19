@@ -2094,12 +2094,14 @@ function fixAndRealignAllSheetColumns() {
     sheet.setRowHeight(1, 45);
 
     // 10. Grid Formatting for Data Rows
-    var totalRows = Math.max(sheet.getLastRow(), 50);
-    var dataRange = sheet.getRange(1, 1, totalRows, 19);
-    dataRange.setHorizontalAlignment("center");
-    dataRange.setVerticalAlignment("middle");
-    dataRange.setWrap(true);
-    dataRange.setFontFamily("Roboto");
+    var totalRows = sheet.getMaxRows();
+    if (totalRows > 0) {
+      var dataRange = sheet.getRange(1, 1, totalRows, 19);
+      dataRange.setHorizontalAlignment("center");
+      dataRange.setVerticalAlignment("middle");
+      dataRange.setWrap(true);
+      dataRange.setFontFamily("Roboto");
+    }
 
     // Column M (Col 13 - Accompanying Devotees): Left-align for superior readability
     if (totalRows > 1) {
@@ -2112,13 +2114,15 @@ function fixAndRealignAllSheetColumns() {
     }
 
     // 11. Dropdown Validation on Column C (Pass Status - Column 3)
-    var statusRowsCount = Math.max(cleanedRows.length + 5, 50);
-    var statusRange = sheet.getRange(2, 3, statusRowsCount, 1);
-    var statusRule = SpreadsheetApp.newDataValidation()
-      .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
-      .setAllowInvalid(false)
-      .build();
-    statusRange.setDataValidation(statusRule);
+    var availableStatusRows = totalRows > 1 ? totalRows - 1 : 0;
+    if (availableStatusRows > 0) {
+      var statusRange = sheet.getRange(2, 3, availableStatusRows, 1);
+      var statusRule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
+        .setAllowInvalid(false)
+        .build();
+      statusRange.setDataValidation(statusRule);
+    }
 
     // 12. Apply Batch Colors to All Data Rows directly
     try {
