@@ -148,18 +148,15 @@ function doPost(e) {
     var visitDateTime = data.visitDateTime || data.visitdate || data.visit_date || '';
 
     if (!visitDate && visitDateTime) {
-      var match = visitDateTime.match(/^(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\s*\((.*)\)$/);
+      var match = visitDateTime.match(/^(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{2}[-\/]\d{2}[-\/]\d{4})\s*\((.*)\)$/);
       if (match) {
         visitDate = match[1];
         visitSlot = match[2];
       }
     }
 
-    if (visitDate && visitDate.includes("-")) {
-      var parts = visitDate.split("-");
-      if (parts.length === 3) {
-        visitDate = parts[2] + "/" + parts[1] + "/" + parts[0]; // DD/MM/YYYY
-      }
+    if (visitDate) {
+      visitDate = formatSheetDateToDDMMYYYY(visitDate);
     }
 
     var nameAge = data.nameAge || data.name_age || data.name || '';
@@ -174,8 +171,12 @@ function doPost(e) {
 
     var mVal = parseInt(data.maleCount || data.male_count || 0) || 0;
     var fVal = parseInt(data.femaleCount || data.female_count || 0) || 0;
-    var genderCountsStr = "Male: " + mVal + ", Female: " + fVal;
-    var totalDevotees = mVal + fVal;
+    var totalDevotees = parseInt(data.totalDevotees || data.totalCount || data.count || 0) || (mVal + fVal);
+    if (totalDevotees === 0 && (nameAge || data.mobile || data.phone)) {
+      totalDevotees = 1;
+      mVal = 1;
+    }
+    var genderCountsStr = data.genderCounts || data.gender || ("Male: " + mVal + ", Female: " + fVal);
 
     var mobile = data.mobile || data.phone || '';
     var vehicleNo = data.vehicleNo || data.vehicle_no || '';
@@ -472,6 +473,16 @@ function doGet(e) {
         mob = String(rowData[colMob - 1] || rowData[10] || '').trim();
         ref = String(rowData[colRef - 1] || rowData[13] || '').trim();
         total = String(rowData[colTotal - 1] || rowData[16] || '').trim();
+      }
+
+      if (!total || total === "" || total === "0") {
+        var rawGc = (slotIdx !== -1) ? String(rowData[slotIdx + 5] || '') : String(rowData[9] || '');
+        var parsedCounts = parseGenderCounts(rawGc);
+        if (parsedCounts && parsedCounts.total > 0) {
+          total = String(parsedCounts.total);
+        } else if (name || mob) {
+          total = "1";
+        }
       }
 
       // Skip ghost or blank rows
