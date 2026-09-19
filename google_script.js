@@ -180,7 +180,7 @@ function doPost(e) {
     }
 
     // 3. SERVER-SIDE 24-HOUR DUPLICATE GUARD BEFORE APPENDING ROW (आधार व मोबाइल नंबर चेक)
-    var dupCheck = checkDuplicateBeforeSubmission(sheet, idNumber, mobile);
+    var dupCheck = checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate);
     if (dupCheck && dupCheck.isDuplicate) {
       return respondJson(e, {
         "result": "duplicate",
@@ -635,7 +635,7 @@ function getMainDataSheet(ss) {
  * If matching Aadhaar or Mobile was submitted in the last 24 hours OR has an active pending/approved status,
  * returns isDuplicate: true to prevent inserting duplicate rows.
  */
-function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
+function checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate) {
   try {
     if (!sheet) return { isDuplicate: false };
     var lastRow = sheet.getLastRow();
@@ -674,6 +674,9 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
         continue;
       }
 
+      // Col 4: Visit Date (Index 3)
+      var rowVisitDate = formatSheetDateToDDMMYYYY(row[3]);
+
       // Col 9: Aadhaar / ID (Index 8)
       var rowId = String(row[8] || "").trim().toUpperCase().replace(/[\s\-]/g, '');
       // Col 11: Mobile (Index 10)
@@ -686,10 +689,11 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
       if (idMatch || mobMatch) {
         // Block if submitted within the last 24 hours
         var isWithin24h = rowTime > 0 ? ((nowTime - rowTime) <= oneDayMs) : false;
-        // Block if previous application is explicitly pending review, or if empty status was submitted within 24h
-        var isPending = (status.includes("pending") || status.includes("लंबित") || (!status && isWithin24h));
+        // Block if previous application is pending review AND was submitted within 24h OR has the same visit date
+        var isSameVisitDate = (visitDate && rowVisitDate && String(visitDate).trim() === String(rowVisitDate).trim());
+        var isPending = (status.includes("pending") || status.includes("लंबित"));
 
-        if (isWithin24h || isPending) {
+        if (isWithin24h || (isPending && (isSameVisitDate || isWithin24h))) {
           return {
             isDuplicate: true,
             matchedRow: rNum,
@@ -707,8 +711,8 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile) {
 }
 
 // Backward compatibility alias
-function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile) {
-  return checkDuplicateBeforeSubmission(sheet, idNumber, mobile);
+function checkFor24HourDuplicate(sheet, currentRowIndex, idNumber, mobile, visitDate) {
+  return checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate);
 }
 
 /**

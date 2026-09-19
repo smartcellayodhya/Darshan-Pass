@@ -654,29 +654,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 2. Fallback Verification: If POST was redirected or response body wasn't readable directly,
-        // verify atomically via track query to get the exact row just created
+        // verify atomically via track query to ensure a BRAND NEW row was indeed appended
         try {
-            await new Promise(r => setTimeout(r, 750));
+            await new Promise(r => setTimeout(r, 1500));
             const verifyRes = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=track&query=${encodeURIComponent(formData.mobile)}&_t=${Date.now()}`);
             if (verifyRes.ok) {
                 const vData = await verifyRes.json();
                 if (vData && vData.result === "success" && vData.data && vData.data.rowNumber) {
-                    const confirmedRow = parseInt(vData.data.rowNumber, 10);
-                    localStorage.setItem("darshan_last_row", String(confirmedRow));
-                    return {
-                        success: true,
-                        result: "success",
-                        rowNumber: confirmedRow,
-                        token: generateTokenId(confirmedRow)
-                    };
+                    const item = vData.data;
+                    const statusStr = String(item.status || '').toLowerCase().trim();
+                    const itemVisitDate = String(item.visitDate || '').trim();
+                    const formVisitDate = String(formData.visitDate || '').trim();
+
+                    // CRITICAL GUARD: Only accept this row as a successful submission IF:
+                    // 1. Status is strictly 'Pending' (brand-new row, NOT 'Pass Created', 'Rejected', or 'Already Created')
+                    // 2. Visit Date matches the requested visit date
+                    const isPending = (statusStr === "pending" || statusStr.includes("pending") || statusStr.includes("लंबित"));
+                    const isDateMatch = (!formVisitDate || itemVisitDate === formVisitDate);
+
+                    if (isPending && isDateMatch) {
+                        const confirmedRow = parseInt(item.rowNumber, 10);
+                        localStorage.setItem("darshan_last_row", String(confirmedRow));
+                        return {
+                            success: true,
+                            result: "success",
+                            rowNumber: confirmedRow,
+                            token: item.token || generateTokenId(confirmedRow)
+                        };
+                    } else {
+                        // The row found belongs to an OLD past submission (e.g. status was already 'Pass Created')
+                        // Never deliver an old past row's token as a new submission!
+                        console.warn("Fallback track returned an old past record, not a new submission:", item);
+                    }
                 }
             }
         } catch (vErr) {
             console.warn("Verification fallback error:", vErr);
         }
 
-        // Never claim false success if the row wasn't confirmed
-        throw new Error("सर्वर से पुष्टि प्राप्त नहीं हो सकी। कृपया दोबारा सबमिट करें।");
+        // Never claim false success if a genuine new row was not confirmed
+        throw new Error("सर्वर पर आपका नया आवेदन दर्ज नहीं हो सका। कृपया इंटरनेट जांचकर दोबारा सबमिट करें।");
     }
 
     // -------------------------------------------------------------
