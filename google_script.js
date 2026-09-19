@@ -1330,14 +1330,14 @@ function syncAllDevoteeCounts(optSheet, bypassAuth) {
       var calcTotal = curR + curS;
       if (curQ !== calcTotal) {
         qVals[i][0] = calcTotal;
-        needUpdate = true;
       }
       jVals[i][0] = "Male: " + curR + ", Female: " + curS;
-      sheet.getRange(i + 2, colJ).setValue(jVals[i][0]);
+      needUpdate = true;
     }
   }
 
   if (needUpdate) {
+    sheet.getRange(2, colJ, numDataRows, 1).setValues(jVals);
     sheet.getRange(2, colQ, numDataRows, 1).setValues(qVals);
     sheet.getRange(2, colR, numDataRows, 1).setValues(rVals);
     sheet.getRange(2, colS, numDataRows, 1).setValues(sVals);
