@@ -155,6 +155,11 @@ function doPost(e) {
     }
 
     var nameAge = data.nameAge || data.name_age || data.name || '';
+    if (!nameAge && (data.primaryName || data.primary_name)) {
+      var pName = data.primaryName || data.primary_name || '';
+      var pAge = data.primaryAge || data.primary_age || '';
+      nameAge = pName + (pAge ? " " + pAge + " Yrs" : "");
+    }
     var state = data.state || '';
     var district = data.district || '';
     var idNumber = data.idNumber || data.id_number || data.id || '';
@@ -607,12 +612,21 @@ function formatSheetDateToDDMMYYYY(val) {
     return d + '/' + m + '/' + y;
   }
 
-  // 2. Handle DD/MM/YYYY or DD-MM-YYYY with single digits (e.g. 9/9/2026 -> 09/09/2026)
+  // 2. Handle DD/MM/YYYY or MM/DD/YYYY with single/double digits
   var dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (dmyMatch) {
-    var dd = ('0' + parseInt(dmyMatch[1], 10)).slice(-2);
-    var mm = ('0' + parseInt(dmyMatch[2], 10)).slice(-2);
+    var p1 = parseInt(dmyMatch[1], 10);
+    var p2 = parseInt(dmyMatch[2], 10);
     var yy = dmyMatch[3];
+    var dd, mm;
+    // If second number is > 12, it must be day (e.g. 09/20/2026 -> 20/09/2026)
+    if (p2 > 12 && p1 <= 12) {
+      dd = ('0' + p2).slice(-2);
+      mm = ('0' + p1).slice(-2);
+    } else {
+      dd = ('0' + p1).slice(-2);
+      mm = ('0' + p2).slice(-2);
+    }
     return dd + '/' + mm + '/' + yy;
   }
 
@@ -643,6 +657,12 @@ function sanitizeAccompanyingSheetString(rawStr) {
     if (parts.length > 1) {
       rawLines = parts;
     }
+  } else if (rawLines.length === 1 && rawLines[0].includes(",") && !/\b\d+[\.\)]\s+/.test(rawLines[0])) {
+    // If comma-separated members on a single line e.g. "Ramesh 32, Suresh 40"
+    var commaParts = rawLines[0].split(/\s*,\s*/);
+    if (commaParts.length > 1) {
+      rawLines = commaParts;
+    }
   }
 
   var cleanLines = [];
@@ -652,23 +672,36 @@ function sanitizeAccompanyingSheetString(rawStr) {
     var line = rawLines[i].trim();
     if (!line) continue;
 
-    // Strip any leading numbers e.g. "1. 1.", "1.", "1)", "1-", etc.
-    line = line.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-):•\u0966-\u096F])+/gi, '').trim();
+    // Strip any leading numbering e.g. "(1) ", "1. 1.", "1.", "1)", "[1]", "#1", "साथी 1", etc.
+    line = line.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
 
-    // Extract age if present
+    // Extract age cleanly:
+    // Priority 1: Explicit age declaration e.g. "35 Yrs", "35 वर्ष", "उम्र 35", "age 35"
     var age = "";
-    var ageMatch = line.match(/(?:उम्र|आयु|age)?\s*(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)?/i);
-    if (ageMatch && ageMatch[1]) {
-      var a = parseInt(ageMatch[1], 10);
-      if (a >= 1 && a <= 120) {
-        age = a + " Yrs";
+    var explicitMatch = line.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
+    if (explicitMatch) {
+      var num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
+      if (num >= 1 && num <= 120) {
+        age = num + " Yrs";
+        // Remove only this explicit age match
+        line = line.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/i, '').trim();
       }
     }
 
-    // Remove redundant age from name string
-    line = line.replace(/(?:उम्र|आयु|age)?\s*\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)?/gi, '').trim();
-    line = line.replace(/\b\d+\b/g, '').trim();
-    line = line.replace(/^[\s.\-:,]+|[\s.\-:,]+$/g, '').trim();
+    // Priority 2: If no explicit keyword, look for trailing age at the end of the line e.g. "Rahul 35"
+    if (!age) {
+      var trailingMatch = line.match(/\b(\d{1,3})\s*$/);
+      if (trailingMatch) {
+        var num2 = parseInt(trailingMatch[1], 10);
+        if (num2 >= 1 && num2 <= 120) {
+          age = num2 + " Yrs";
+          line = line.replace(/\b\d{1,3}\s*$/, '').trim();
+        }
+      }
+    }
+
+    // Clean up residual punctuation and spaces from name
+    line = line.replace(/^[\s.\-:,()\[\]]+|[\s.\-:,()\[\]]+$/g, '').trim();
     line = line.replace(/\s{2,}/g, ' ').trim();
 
     if (line || age) {
@@ -731,7 +764,7 @@ function checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate) {
     var startRow = Math.max(2, lastRow - checkCount + 1);
     var data = sheet.getRange(startRow, 1, checkCount, 12).getValues();
 
-    var cleanVisitDate = String(visitDate || "").trim();
+    var cleanVisitDate = formatSheetDateToDDMMYYYY(visitDate);
 
     for (var i = data.length - 1; i >= 0; i--) {
       var row = data[i];

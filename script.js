@@ -2416,14 +2416,14 @@ Reference: ${referredBy}
     function cleanAccompanyingMemberName(rawName) {
         if (!rawName) return "";
         let str = String(rawName).trim();
-        // 1. Remove leading numbering e.g. "1. 1.", "1.", "1)", "1-", "1 ", "1: ", "1．", "साथी 1", etc.
-        str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-):•\u0966-\u096F])+/gi, '').trim();
-        // 2. Remove redundant inline or trailing age declarations e.g. "उम्र 38 वर्ष", "उम्र 38", "38 वर्ष", "38 Yrs", "age 38"
-        str = str.replace(/(?:उम्र|आयु|age)?\s*\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)?/gi, '').trim();
-        // 3. Remove standalone numbers
-        str = str.replace(/\b\d+\b/g, '').trim();
-        // 4. Remove leading/trailing dots, hyphens, colons, or double spaces
-        str = str.replace(/^[\s.\-:,]+|[\s.\-:,]+$/g, '').trim();
+        // 1. Remove leading numbering e.g. "(1) ", "1. 1.", "1.", "1)", "[1]", "#1", "1-", "1 ", "साथी 1", etc.
+        str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
+        // 2. Remove explicit age declarations e.g. "उम्र 38 वर्ष", "उम्र 38", "38 वर्ष", "38 Yrs", "age 38"
+        str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/gi, '').trim();
+        // 3. Remove standalone trailing numbers (when age is typed at the end of name)
+        str = str.replace(/\b\d{1,3}\s*$/g, '').trim();
+        // 4. Remove residual punctuation or double spaces
+        str = str.replace(/^[\s.\-:,()\[\]]+|[\s.\-:,()\[\]]+$/g, '').trim();
         str = str.replace(/\s{2,}/g, ' ').trim();
         return str;
     }
