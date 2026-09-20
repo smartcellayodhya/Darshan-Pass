@@ -2999,6 +2999,17 @@ body.modal-open .scroll-to-top-btn {
     to { transform: rotate(360deg); }
 }
 
+/* -------------------------------------------------------------
+ * 11. NAME INPUT WARNING SHAKE (BLOCK DIGITS)
+ * ------------------------------------------------------------- */
+@keyframes inputWarningShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
 
-
-
+.input-warning-shake {
+    animation: inputWarningShake 0.35s ease-in-out !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3.5px rgba(239, 68, 68, 0.25) !important;
+}

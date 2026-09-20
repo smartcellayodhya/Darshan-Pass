@@ -522,16 +522,114 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 3. Name, Accompanying & Other Ref Name: NO SYMBOLS EXCEPT DOT (.)
-    const dotOnlyInputs = [primaryNameInput, nameAgeInput, accompanyingInput, otherRefNameInput];
-    dotOnlyInputs.forEach(inputEl => {
+    // -------------------------------------------------------------
+    // STRICT NAME FIELD GUARD: ABSOLUTELY NO NUMBERS IN ANY NAME BOX
+    // -------------------------------------------------------------
+    let _lastNumberToastTime = 0;
+    function showNameNumberBlockedFeedback(inputEl) {
         if (!inputEl) return;
-        const cleanDotOnly = () => {
-            inputEl.value = inputEl.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.\r\n]/g, '');
-        };
-        inputEl.addEventListener("input", cleanDotOnly);
-        inputEl.addEventListener("paste", () => setTimeout(cleanDotOnly, 10));
+        inputEl.classList.remove("input-warning-shake");
+        // Force reflow for smooth re-trigger
+        void inputEl.offsetWidth;
+        inputEl.classList.add("input-warning-shake");
+        setTimeout(() => inputEl.classList.remove("input-warning-shake"), 400);
+
+        const now = Date.now();
+        if (now - _lastNumberToastTime > 2200) {
+            _lastNumberToastTime = now;
+            const curLang = localStorage.getItem("darshan_lang") || "hi";
+            const msg = (curLang === "en")
+                ? "Numbers/age are not allowed in the Name box. Please enter age in the Age box."
+                : "नाम वाले बॉक्स में नंबर/उम्र लिखना मना है। कृपया उम्र को 'उम्र' वाले बॉक्स में लिखें।";
+            showToast(msg, "warning");
+        }
+    }
+
+    function sanitizeNameField(inputEl, notify = true) {
+        if (!inputEl) return;
+        const val = inputEl.value;
+        if (/[0-9\u0966-\u096F]/.test(val)) {
+            inputEl.value = val.replace(/[0-9\u0966-\u096F]/g, '');
+            if (notify) showNameNumberBlockedFeedback(inputEl);
+        }
+        // Allow letters (English + Hindi), spaces, and dot
+        const cleanVal = inputEl.value.replace(/[^a-zA-Z\u0900-\u097F\s.]/g, '');
+        if (cleanVal !== inputEl.value) {
+            inputEl.value = cleanVal;
+        }
+    }
+
+    // Smart Paste for Primary Devotee Name (Extracts age to primaryAge if present)
+    if (primaryNameInput) {
+        primaryNameInput.addEventListener("paste", (e) => {
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            if (!pastedText) return;
+
+            if (/[0-9\u0966-\u096F]/.test(pastedText)) {
+                e.preventDefault();
+                const extracted = extractMemberNameAndAge(pastedText);
+                primaryNameInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                if (primaryAgeInput && !primaryAgeInput.value && extracted.age) {
+                    primaryAgeInput.value = extracted.age;
+                    primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    showToast("नाम व उम्र स्वतः अलग-अलग बॉक्स में भर दिए गए!", "success");
+                } else {
+                    showNameNumberBlockedFeedback(primaryNameInput);
+                }
+                primaryNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+    }
+
+    // Global Keydown & BeforeInput Delegation: strictly intercept & reject number keys in ALL name boxes
+    document.addEventListener("keydown", (e) => {
+        const target = e.target;
+        if (!target || !target.matches) return;
+        if (target.id === "primaryName" || target.classList.contains("member-name-input")) {
+            // Allow functional & shortcut keys (Ctrl/Cmd/Alt + Key, Backspace, Arrows, Tab, etc.)
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const functionalKeys = ["Backspace", "Delete", "Tab", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Escape"];
+            if (functionalKeys.includes(e.key)) return;
+
+            // Check if user is typing any number key (0-9 or Numpad 0-9)
+            const isDigitKey = (e.key >= '0' && e.key <= '9') ||
+                               (e.keyCode >= 48 && e.keyCode <= 57 && !e.shiftKey) ||
+                               (e.keyCode >= 96 && e.keyCode <= 105);
+
+            if (isDigitKey) {
+                e.preventDefault();
+                showNameNumberBlockedFeedback(target);
+            }
+        }
+    }, true);
+
+    document.addEventListener("beforeinput", (e) => {
+        const target = e.target;
+        if (!target || !target.matches) return;
+        if (target.id === "primaryName" || target.classList.contains("member-name-input")) {
+            if (e.data && /[0-9\u0966-\u096F]/.test(e.data)) {
+                e.preventDefault();
+                showNameNumberBlockedFeedback(target);
+            }
+        }
+    }, true);
+
+    document.addEventListener("input", (e) => {
+        const target = e.target;
+        if (!target || !target.matches) return;
+        if (target.id === "primaryName" || target.classList.contains("member-name-input")) {
+            sanitizeNameField(target, true);
+        }
     });
+
+    // Other Ref Name (Senior Officer Name): No forbidden symbols
+    if (otherRefNameInput) {
+        const cleanOtherRef = () => {
+            otherRefNameInput.value = otherRefNameInput.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.\r\n]/g, '');
+        };
+        otherRefNameInput.addEventListener("input", cleanOtherRef);
+        otherRefNameInput.addEventListener("paste", () => setTimeout(cleanOtherRef, 10));
+    }
 
     if (primaryAgeInput) {
         primaryAgeInput.addEventListener("input", () => {
@@ -878,13 +976,20 @@ document.addEventListener("DOMContentLoaded", () => {
             if (primaryNameInput) {
                 const nameVal = primaryNameInput.value.trim();
                 const hasLetters = /[a-zA-Z\u0900-\u097F]/.test(nameVal);
-                isNameValid = (nameVal.length >= 2 && hasLetters);
+                const hasDigits = /[0-9\u0966-\u096F]/.test(nameVal);
+                isNameValid = (nameVal.length >= 2 && hasLetters && !hasDigits);
                 markGroup(primaryNameInput, isNameValid);
                 const nameErrorEl = document.getElementById("primaryName-error");
                 if (!isNameValid && nameErrorEl) {
-                    nameErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
-                        ? "Please enter primary devotee's full name (at least 2 letters)"
-                        : "कृपया मुख्य दर्शनार्थी का पूरा नाम दर्ज करें";
+                    if (hasDigits) {
+                        nameErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
+                            ? "Numbers/age are not allowed in the Name box. Please enter age in the Age box."
+                            : "नाम में नंबर/उम्र लिखना मना है, कृपया उम्र को 'उम्र' वाले बॉक्स में लिखें";
+                    } else {
+                        nameErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
+                            ? "Please enter primary devotee's full name (at least 2 letters)"
+                            : "कृपया मुख्य दर्शनार्थी का पूरा नाम दर्ज करें";
+                    }
                 }
             } else {
                 isNameValid = true;
@@ -970,6 +1075,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const ageEl = card.querySelector(".member-age-input");
                     const nVal = nameEl ? nameEl.value.trim() : "";
                     const aVal = ageEl ? parseInt(ageEl.value.trim(), 10) : NaN;
+                    const hasDigits = /[0-9\u0966-\u096F]/.test(nVal);
 
                     let rowValid = true;
                     if (!nVal || nVal.length < 2) {
@@ -977,6 +1083,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (firstInvalidIndex === -1) {
                             firstInvalidIndex = idx + 1;
                             invalidFieldType = "name";
+                        }
+                    } else if (hasDigits) {
+                        rowValid = false;
+                        if (firstInvalidIndex === -1) {
+                            firstInvalidIndex = idx + 1;
+                            invalidFieldType = "name_digits";
                         }
                     } else if (isNaN(aVal) || aVal < 1 || aVal > 120) {
                         rowValid = false;
@@ -996,10 +1108,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (firstInvalidIndex !== -1) {
                     isAccompanyingValid = false;
                     if (accErrorEl) {
+                        const curLang = localStorage.getItem("darshan_lang") || "hi";
                         if (invalidFieldType === "age") {
-                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} की सही उम्र (1 से 120 वर्ष) दर्ज करें`;
+                            accErrorEl.textContent = curLang === "en"
+                                ? `Please enter valid age (1 to 120 yrs) for devotee ${firstInvalidIndex}`
+                                : `कृपया साथी ${firstInvalidIndex} की सही उम्र (1 से 120 वर्ष) दर्ज करें`;
+                        } else if (invalidFieldType === "name_digits") {
+                            accErrorEl.textContent = curLang === "en"
+                                ? `Devotee ${firstInvalidIndex}'s name cannot contain numbers. Enter age in the Age box.`
+                                : `साथी ${firstInvalidIndex} के नाम में नंबर लिखना मना है, उम्र अलग बॉक्स में लिखें`;
                         } else {
-                            accErrorEl.textContent = `कृपया साथी ${firstInvalidIndex} का पूरा नाम दर्ज करें`;
+                            accErrorEl.textContent = curLang === "en"
+                                ? `Please enter full name for devotee ${firstInvalidIndex}`
+                                : `कृपया साथी ${firstInvalidIndex} का पूरा नाम दर्ज करें`;
                         }
                         accErrorEl.style.display = "block";
                     }
@@ -1099,7 +1220,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let devoteeNameVal = "";
             if (primaryNameInput && primaryAgeInput) {
-                const pName = primaryNameInput.value.trim();
+                const pName = cleanAccompanyingMemberName(primaryNameInput.value.trim());
                 const pAge = primaryAgeInput.value.trim();
                 devoteeNameVal = `${pName} ${pAge} Yrs`;
             } else {
@@ -2146,6 +2267,24 @@ Reference: ${referredBy}
                         } else if (targetInput.id === "idNumber") {
                             const cleanId = speechResult.replace(/[\s-]/g, "");
                             targetInput.value = cleanId.slice(0, 12);
+                        } else if (targetInput.id === "primaryName") {
+                            const extracted = extractMemberNameAndAge(speechResult);
+                            targetInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                            if (primaryAgeInput && !primaryAgeInput.value && extracted.age) {
+                                primaryAgeInput.value = extracted.age;
+                                primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                                primaryAgeInput.dispatchEvent(new Event("change", { bubbles: true }));
+                            }
+                        } else if (targetInput.classList.contains("member-name-input")) {
+                            const card = targetInput.closest(".member-row-card");
+                            const ageIn = card ? card.querySelector(".member-age-input") : null;
+                            const extracted = extractMemberNameAndAge(speechResult);
+                            targetInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                            if (ageIn && !ageIn.value && extracted.age) {
+                                ageIn.value = extracted.age;
+                                ageIn.dispatchEvent(new Event("input", { bubbles: true }));
+                                ageIn.dispatchEvent(new Event("change", { bubbles: true }));
+                            }
                         } else {
                             targetInput.value = speechResult;
                         }
@@ -2426,7 +2565,9 @@ Reference: ${referredBy}
         str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/gi, '').trim();
         // 3. Remove standalone trailing numbers (when age is typed at the end of name)
         str = str.replace(/\b\d{1,3}\s*$/g, '').trim();
-        // 4. Remove residual punctuation or double spaces
+        // 4. Remove ALL other numbers / digits (English & Devanagari) completely!
+        str = str.replace(/[0-9\u0966-\u096F]/g, '').trim();
+        // 5. Remove residual punctuation or double spaces
         str = str.replace(/^[\s.\-:,()\[\]]+|[\s.\-:,()\[\]]+$/g, '').trim();
         str = str.replace(/\s{2,}/g, ' ').trim();
         return str;
@@ -2457,6 +2598,18 @@ Reference: ${referredBy}
                 if (num >= 1 && num <= 120) {
                     age = String(num);
                     str = str.replace(/\b\d{1,3}\s*$/, '').trim();
+                }
+            }
+        }
+
+        // 4. Priority 3: Standalone number anywhere in text
+        if (!age) {
+            const anyMatch = str.match(/\b(\d{1,3})\b/);
+            if (anyMatch) {
+                const num = parseInt(anyMatch[1], 10);
+                if (num >= 1 && num <= 120) {
+                    age = String(num);
+                    str = str.replace(/\b\d{1,3}\b/, '').trim();
                 }
             }
         }
@@ -2589,7 +2742,11 @@ Reference: ${referredBy}
 
             if (nameInput) {
                 const cleanName = () => {
-                    nameInput.value = nameInput.value.replace(/[^a-zA-Z0-9\u0900-\u097F\u0966-\u096F\s.]/g, '');
+                    if (/[0-9\u0966-\u096F]/.test(nameInput.value)) {
+                        nameInput.value = nameInput.value.replace(/[0-9\u0966-\u096F]/g, '');
+                        showNameNumberBlockedFeedback(nameInput);
+                    }
+                    nameInput.value = nameInput.value.replace(/[^a-zA-Z\u0900-\u097F\s.]/g, '');
                     syncAccompanyingTextarea();
                     queueSaveDraft();
                 };
@@ -2620,13 +2777,26 @@ Reference: ${referredBy}
                                 const aIn = targetCard.querySelector(".member-age-input");
 
                                 const extracted = extractMemberNameAndAge(item);
-                                if (nIn) nIn.value = extracted.name;
+                                if (nIn) nIn.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
                                 if (aIn && extracted.age) aIn.value = extracted.age;
                             }
                         });
 
                         syncAccompanyingTextarea();
                         showToast("सूची से सदस्यों का विवरण स्वतः भर गया!", "success");
+                    } else if (/[0-9\u0966-\u096F]/.test(pastedText)) {
+                        // Single item with embedded age/number pasted into companion name box
+                        e.preventDefault();
+                        const extracted = extractMemberNameAndAge(pastedText);
+                        nameInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                        if (ageInput && !ageInput.value && extracted.age) {
+                            ageInput.value = extracted.age;
+                            showToast("नाम व उम्र स्वतः अलग-अलग बॉक्स में भर दिए गए!", "success");
+                        } else {
+                            showNameNumberBlockedFeedback(nameInput);
+                        }
+                        syncAccompanyingTextarea();
+                        queueSaveDraft();
                     }
                 });
             }

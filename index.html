@@ -82,7 +82,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=5.2">
+    <link rel="stylesheet" href="style.css?v=5.3">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -335,7 +335,7 @@
                                     मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="text" id="primaryName" name="primaryName" placeholder="नाम (उदा: Rahul)" data-i18n-ph="phPrimaryName" autocomplete="name" required>
+                                    <input type="text" id="primaryName" name="primaryName" placeholder="नाम (उदा: Rahul)" data-i18n-ph="phPrimaryName" autocomplete="name" pattern="^[^\d\u0966-\u096F]+$" title="नाम में संख्या/उम्र न लिखें, केवल नाम दर्ज करें" required>
                                     <button type="button" class="voice-mic-btn" data-target="primaryName" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
@@ -701,6 +701,6 @@
         </footer>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=5.2"></script>
+    <script src="script.js?v=5.3"></script>
 </body>
 </html>
