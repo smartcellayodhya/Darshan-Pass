@@ -496,7 +496,7 @@ function doGet(e) {
       var cleanId = String(rowId).trim().toUpperCase().replace(/[\s\-]/g, '');
 
       var isMobileMatch = (queryLast10 !== "" && mobLast10 !== "" && queryLast10 === mobLast10);
-      var isIdMatch = (queryCleanId.length >= 6 && cleanId.length >= 6 && (cleanId === queryCleanId || cleanId.includes(queryCleanId) || queryCleanId.includes(cleanId)));
+      var isIdMatch = (queryCleanId.length >= 6 && cleanId.length >= 6 && cleanId === queryCleanId);
       var isRowMatch = (targetTokenRow !== "" && String(rowNum) === targetTokenRow);
 
       // Deep search row cells if not yet matched
@@ -509,7 +509,7 @@ function doGet(e) {
             break;
           }
           var cleanCellId = cellVal.toUpperCase().replace(/[\s\-]/g, '');
-          if (queryCleanId.length >= 6 && cleanCellId.length >= 6 && (cleanCellId === queryCleanId || cleanCellId.includes(queryCleanId) || queryCleanId.includes(cleanCellId))) {
+          if (queryCleanId.length >= 6 && cleanCellId.length >= 6 && cleanCellId === queryCleanId) {
             isIdMatch = true;
             break;
           }

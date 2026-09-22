@@ -1032,7 +1032,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const isDateValid = visitDateInput ? markGroup(visitDateInput, isDateWithinAllowedRange) : true;
             let isSlotValid = visitSlotSelect ? markGroup(visitSlotSelect, visitSlotSelect.value !== "") : true;
             if (isSlotValid && visitSlotSelect && visitDateInput && visitDateInput.value === todayStr) {
-                const checkNow = new Date();
+                const checkNow = getNowIST();
                 const curHour = checkNow.getHours() + (checkNow.getMinutes() / 60);
                 const endH = slotEndHours[visitSlotSelect.value];
                 if (endH !== undefined && curHour >= endH) {
