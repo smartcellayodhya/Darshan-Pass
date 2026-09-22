@@ -116,9 +116,33 @@ function parseJwt(token) {
     }
 }
 
+function syncBodyModalLock() {
+    const modals = document.querySelectorAll(".modal-overlay, .auth-modal-overlay");
+    let anyVisible = false;
+    modals.forEach(el => {
+        if (el.classList.contains("hidden")) return;
+        if (el.style.display === "none") return;
+        const comp = window.getComputedStyle(el);
+        if (comp.display !== "none" && comp.visibility !== "hidden") {
+            anyVisible = true;
+        }
+    });
+    if (anyVisible) {
+        document.body.classList.add("modal-open");
+    } else {
+        document.body.classList.remove("modal-open");
+        document.body.style.overflow = "";
+        document.body.style.touchAction = "";
+    }
+}
+window.syncBodyModalLock = syncBodyModalLock;
+
 function unlockFormScreen(name, email) {
     const googleAuthLock = document.getElementById("google-auth-lock");
-    if (googleAuthLock) googleAuthLock.classList.add("hidden");
+    if (googleAuthLock) {
+        googleAuthLock.style.display = "none";
+        googleAuthLock.classList.add("hidden");
+    }
 
     const displayUserName = document.getElementById("display-user-name");
     const displayUserEmail = document.getElementById("display-user-email");
@@ -129,6 +153,13 @@ function unlockFormScreen(name, email) {
     if (displayUserEmail) displayUserEmail.textContent = email || "";
     if (googleSignedIn) googleSignedIn.classList.remove("hidden");
     if (googleLoginPrompt) googleLoginPrompt.classList.add("hidden");
+
+    // Immediately restore scrolling and remove freeze
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+    document.body.style.touchAction = "";
+
+    syncBodyModalLock();
 }
 
 window.handleCredentialResponse = function(response) {
@@ -142,11 +173,17 @@ window.handleCredentialResponse = function(response) {
             localStorage.setItem("darshan_submitter_email", email);
 
             unlockFormScreen(name, email);
+            if (typeof window.updateGoogleAccountUI === "function") {
+                window.updateGoogleAccountUI();
+            }
         } else {
             console.warn("Could not parse credential payload, using default login.");
             localStorage.setItem("darshan_submitter_name", "Google User");
             localStorage.setItem("darshan_submitter_email", "user@gmail.com");
             unlockFormScreen("Google User", "user@gmail.com");
+            if (typeof window.updateGoogleAccountUI === "function") {
+                window.updateGoogleAccountUI();
+            }
         }
     }
 };
@@ -214,13 +251,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function syncBodyModalLock() {
-        const anyVisible = document.querySelector(".modal-overlay:not(.hidden), .auth-modal-overlay:not(.hidden)");
+        const modals = document.querySelectorAll(".modal-overlay, .auth-modal-overlay");
+        let anyVisible = false;
+        modals.forEach(el => {
+            if (el.classList.contains("hidden")) return;
+            if (el.style.display === "none") return;
+            const comp = window.getComputedStyle(el);
+            if (comp.display !== "none" && comp.visibility !== "hidden") {
+                anyVisible = true;
+            }
+        });
         if (anyVisible) {
             document.body.classList.add("modal-open");
         } else {
             document.body.classList.remove("modal-open");
+            document.body.style.overflow = "";
+            document.body.style.touchAction = "";
         }
     }
+    window.syncBodyModalLock = syncBodyModalLock;
 
     window.updateGoogleAccountUI = function() {
         const savedName = localStorage.getItem("darshan_submitter_name");
