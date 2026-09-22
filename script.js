@@ -871,7 +871,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function checkDuplicateSubmission(mobile, idNumber, visitDate, visitSlot) {
-        let cleanMob = String(mobile || "").trim();
+        let cleanMob = String(mobile || "").replace(/\D/g, '').slice(-10);
         let cleanId = String(idNumber || "").trim().toUpperCase();
 
         if (cleanId === "NA" || cleanId === "N/A" || cleanId === "NONE" || cleanId === "NULL" || cleanId.length < 6) {
@@ -1305,7 +1305,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     showToast(`⚠️ ${sendResult.message || "इस आधार या मोबाइल नंबर से पिछले 24 घंटे में आवेदन पहले ही दर्ज है!"}`, "warning");
                     const mobErr = document.getElementById("mobile-error");
                     if (mobErr) mobErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
-                    const idErr = document.getElementById("id-error");
+                    const idErr = document.getElementById("idNumber-error");
                     if (idErr) idErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
                     return;
                 }
@@ -1330,7 +1330,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (slipDevoteeName) slipDevoteeName.textContent = devoteeNameVal;
                 if (slipTokenId) slipTokenId.textContent = tokenNumber;
                 if (slipVisitDatetime) slipVisitDatetime.textContent = formattedVisitDateTime;
-                if (slipTotalDevotees) slipTotalDevotees.textContent = `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
+                const isLangEn = (localStorage.getItem("darshan_lang") === "en");
+                if (slipTotalDevotees) {
+                    slipTotalDevotees.textContent = isLangEn 
+                        ? `${totalCount} (Male: ${mVal}, Female: ${fVal})`
+                        : `${totalCount} (पुरुष: ${mVal}, महिला: ${fVal})`;
+                }
                 if (slipMobile) slipMobile.textContent = formData.mobile;
                 if (slipReferredBy) slipReferredBy.textContent = finalReferredBy;
 
@@ -2423,6 +2428,9 @@ Reference: ${referredBy}
                 </div>
             `;
 
+            if (selectEl.disabled) {
+                customContainer.classList.add("disabled");
+            }
             parentWrapper.appendChild(customContainer);
 
             const trigger = customContainer.querySelector(".custom-select-trigger");
