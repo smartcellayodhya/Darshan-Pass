@@ -310,14 +310,25 @@ document.addEventListener("DOMContentLoaded", () => {
     checkAuthLock();
     updateGoogleAccountUI();
 
-    // Calculate local today and max 6-day date string (Total 7-day rolling window)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    // Precise Indian Standard Time (IST - Asia/Kolkata, UTC+5:30) Helper
+    function getNowIST() {
+        try {
+            return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+        } catch (e) {
+            const d = new Date();
+            const utcMs = d.getTime() + (d.getTimezoneOffset() * 60000);
+            return new Date(utcMs + (5.5 * 3600000));
+        }
+    }
+
+    // Calculate Indian Standard Time today and max 6-day date string (Total 7-day rolling window)
+    const nowIST = getNowIST();
+    const year = nowIST.getFullYear();
+    const month = String(nowIST.getMonth() + 1).padStart(2, '0');
+    const day = String(nowIST.getDate()).padStart(2, '0');
     const todayStr = `${year}-${month}-${day}`;
 
-    const maxDateObj = new Date();
+    const maxDateObj = new Date(nowIST.getTime());
     maxDateObj.setDate(maxDateObj.getDate() + 6); // Today + 6 days
     const maxYear = maxDateObj.getFullYear();
     const maxMonth = String(maxDateObj.getMonth() + 1).padStart(2, '0');
@@ -335,14 +346,14 @@ document.addEventListener("DOMContentLoaded", () => {
         "07:00 PM - 09:00 PM": 21
     };
 
-    // Check if all slots for today have ended (after 21:00 / 9:00 PM)
-    const initCheckTime = new Date();
+    // Check if all slots for today have ended (after 21:00 / 9:00 PM IST)
+    const initCheckTime = getNowIST();
     const currentDecimalHourInit = initCheckTime.getHours() + (initCheckTime.getMinutes() / 60);
     const isPastAllSlotsToday = currentDecimalHourInit >= 21;
 
     let defaultSelectedDateStr = todayStr;
     if (isPastAllSlotsToday) {
-        const tomorrowObj = new Date();
+        const tomorrowObj = new Date(nowIST.getTime());
         tomorrowObj.setDate(tomorrowObj.getDate() + 1);
         const tomYear = tomorrowObj.getFullYear();
         const tomMonth = String(tomorrowObj.getMonth() + 1).padStart(2, '0');
@@ -354,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!visitSlotSelect || !visitDateInput) return;
         const selectedDate = visitDateInput.value;
         const isToday = (selectedDate === todayStr);
-        const checkNow = new Date();
+        const checkNow = getNowIST();
         const currentDecimalHour = checkNow.getHours() + (checkNow.getMinutes() / 60);
 
         let currentSelectedExpired = false;
@@ -493,6 +504,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const curLang = localStorage.getItem("darshan_lang") || "hi";
                 if (idLabelText) idLabelText.textContent = curLang === "en" ? "Passport Number (Mandatory for International)" : "पासपोर्ट नंबर (अंतर्राष्ट्रीय श्रद्धालु हेतु अनिवार्य)";
                 if (idNumberInput) idNumberInput.placeholder = curLang === "en" ? "Enter Passport Number (E.g. Z1234567)" : "पासपोर्ट नंबर दर्ज करें (उदा: Z1234567)";
+            }
+            if (idNumberInput) {
+                idNumberInput.dispatchEvent(new Event("input"));
             }
         });
     }
@@ -698,9 +712,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (idCounter) {
                 const len = idNumberInput.value.length;
                 const curLang = localStorage.getItem("darshan_lang") || "hi";
+                const isPassport = (nationalitySelect && nationalitySelect.value === "Other");
+
                 if (len === 0) {
                     idCounter.style.display = "none";
                     idCounter.className = "id-counter";
+                } else if (isPassport) {
+                    if (len >= 6 && len <= 12) {
+                        idCounter.style.display = "inline-block";
+                        idCounter.className = "id-counter valid";
+                        idCounter.textContent = curLang === "en" ? "✔ Valid Passport No." : "✔ मान्य पासपोर्ट नंबर";
+                    } else {
+                        idCounter.style.display = "inline-block";
+                        idCounter.className = "id-counter";
+                        idCounter.textContent = curLang === "en" ? `${len} chars (Min 6)` : `${len} अक्षर (न्यूनतम 6)`;
+                    }
                 } else if (len === 12) {
                     idCounter.style.display = "inline-block";
                     idCounter.className = "id-counter valid";
@@ -740,9 +766,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 4500);
     }
 
-    // UNIQUE APPLICATION TOKEN GENERATOR (AYO-YYYYMMDD-ROW)
+    // UNIQUE APPLICATION TOKEN GENERATOR (AYO-YYYYMMDD-ROW - Strictly IST Date)
     function generateTokenId(rowNumber) {
-        const now = new Date();
+        const now = getNowIST();
         const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         let rowSuffix = "";
         if (rowNumber && typeof rowNumber === "number") {
