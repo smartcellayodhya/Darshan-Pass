@@ -839,7 +839,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         };
                     }
                     if (data.result === "error" || data.status === "error") {
-                        throw new Error(data.error || data.message || "सर्वर पर त्रुटि आई।");
+                        return {
+                            result: "error",
+                            success: false,
+                            message: data.error || data.message || "सर्वर पर त्रुटि आई।"
+                        };
                     }
                     if (data.rowNumber || data.row) {
                         assignedRow = parseInt(data.rowNumber || data.row, 10);
@@ -2774,7 +2778,7 @@ Reference: ${referredBy}
 
             if (cleanName || ageVal) {
                 const ageSuffix = ageVal ? ` ${ageVal} Yrs` : '';
-                lines.push(`${i}. ${cleanName}${ageSuffix}`);
+                lines.push(`• ${cleanName}${ageSuffix}`);
             }
         });
 

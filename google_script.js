@@ -220,9 +220,11 @@ function doPost(e) {
       for (var a = 0; a < accLines.length; a++) {
         var aLine = accLines[a].trim();
         if (!aLine || aLine.indexOf("लागू नहीं") !== -1) continue;
-        var aMatch = aLine.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?|\b))/i);
+        // Strip any leading serial numbers e.g. "1. ", "2) ", "(1) ", "साथी 1", bullet points "• "
+        var lineWithoutNum = aLine.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
+        var aMatch = lineWithoutNum.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)|(?:\s*-\s*|\s+)(\d{1,3})\s*(?:Yrs)?$)/i);
         if (aMatch) {
-          var aNum = parseInt(aMatch[1] || aMatch[2], 10);
+          var aNum = parseInt(aMatch[1] || aMatch[2] || aMatch[3], 10);
           if (aNum > 0 && aNum < 11) {
             return respondJson(e, {
               "result": "error",
