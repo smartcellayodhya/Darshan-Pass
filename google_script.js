@@ -197,6 +197,42 @@ function doPost(e) {
       });
     }
 
+    // Safety Guard: Age Validation Check (Minimum age is 11 years - passes not issued for age 10 or below)
+    var pAgeCheck = 0;
+    if (data.primaryAge || data.primary_age) {
+      pAgeCheck = parseInt(data.primaryAge || data.primary_age, 10);
+    } else {
+      var ageMatch = String(nameAge).match(/\b(\d{1,3})\s*(?:Yrs|वर्ष|साल)?/i);
+      if (ageMatch) {
+        pAgeCheck = parseInt(ageMatch[1], 10);
+      }
+    }
+    if (pAgeCheck > 0 && pAgeCheck < 11) {
+      return respondJson(e, {
+        "result": "error",
+        "message": "10 वर्ष तक के बच्चों का पास नहीं बनता है। मुख्य दर्शनार्थी की उम्र कम से कम 11 वर्ष होनी चाहिए।"
+      });
+    }
+
+    // Accompanying members age verification
+    if (rawAccompanying && rawAccompanying.indexOf("लागू नहीं") === -1) {
+      var accLines = String(rawAccompanying).split(/[\r\n]+/);
+      for (var a = 0; a < accLines.length; a++) {
+        var aLine = accLines[a].trim();
+        if (!aLine || aLine.indexOf("लागू नहीं") !== -1) continue;
+        var aMatch = aLine.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?|\b))/i);
+        if (aMatch) {
+          var aNum = parseInt(aMatch[1] || aMatch[2], 10);
+          if (aNum > 0 && aNum < 11) {
+            return respondJson(e, {
+              "result": "error",
+              "message": "साथी सदस्य (" + (a + 1) + ") की उम्र " + aNum + " वर्ष दर्ज है। 10 वर्ष तक के बच्चों का पास नहीं बनता है (केवल 11 वर्ष या अधिक मान्य)।"
+            });
+          }
+        }
+      }
+    }
+
     // 3. SERVER-SIDE 24-HOUR DUPLICATE GUARD BEFORE APPENDING ROW (आधार व मोबाइल नंबर चेक)
     var dupCheck = checkDuplicateBeforeSubmission(sheet, idNumber, mobile, visitDate);
     if (dupCheck && dupCheck.isDuplicate) {

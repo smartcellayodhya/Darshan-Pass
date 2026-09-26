@@ -700,6 +700,25 @@ document.addEventListener("DOMContentLoaded", () => {
             if (ageVal > 120) primaryAgeInput.value = 120;
             if (ageVal < 0) primaryAgeInput.value = "";
         });
+
+        primaryAgeInput.addEventListener("change", () => {
+            let ageVal = parseInt(primaryAgeInput.value, 10);
+            const ageErrorEl = document.getElementById("primaryAge-error");
+            const curLang = localStorage.getItem("darshan_lang") || "hi";
+            if (!isNaN(ageVal) && ageVal > 0 && ageVal < 11) {
+                markGroup(primaryAgeInput, false);
+                const msg = curLang === "en"
+                    ? "Passes are not issued for children aged 10 or below. Minimum age is 11 years."
+                    : "10 वर्ष तक के बच्चों का पास नहीं बनता है। केवल 11 वर्ष या उससे अधिक आयु मान्य है।";
+                if (ageErrorEl) {
+                    ageErrorEl.textContent = msg;
+                }
+                showToast(msg, "warning");
+            } else if (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120) {
+                markGroup(primaryAgeInput, true);
+                if (ageErrorEl) ageErrorEl.textContent = "";
+            }
+        });
     }
 
     // 4. ID Number (Aadhaar / Passport): Alphanumeric Uppercase, Max 12 chars + Live Digit Counter
@@ -1072,13 +1091,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (primaryAgeInput) {
                 const ageVal = parseInt(primaryAgeInput.value.trim(), 10);
-                isAgeValid = (!isNaN(ageVal) && ageVal >= 1 && ageVal <= 120);
+                isAgeValid = (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120);
                 markGroup(primaryAgeInput, isAgeValid);
                 const ageErrorEl = document.getElementById("primaryAge-error");
                 if (!isAgeValid && ageErrorEl) {
-                    ageErrorEl.textContent = (localStorage.getItem("darshan_lang") === "en")
-                        ? "Please enter valid age (1 to 120 yrs)"
-                        : "कृपया सही उम्र (1 से 120 वर्ष) दर्ज करें";
+                    const curLang = localStorage.getItem("darshan_lang") || "hi";
+                    if (!isNaN(ageVal) && ageVal > 0 && ageVal < 11) {
+                        ageErrorEl.textContent = (curLang === "en")
+                            ? "Passes are not issued for children aged 10 or below. Minimum age is 11 years."
+                            : "10 वर्ष तक के बच्चों का पास नहीं बनता है। उम्र कम से कम 11 वर्ष होनी चाहिए।";
+                    } else {
+                        ageErrorEl.textContent = (curLang === "en")
+                            ? "Please enter valid age (11 to 120 yrs)"
+                            : "कृपया सही उम्र (11 से 120 वर्ष) दर्ज करें";
+                    }
                 }
             } else {
                 isAgeValid = true;
@@ -1144,6 +1170,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const memberCards = document.querySelectorAll(".member-row-card");
                 let firstInvalidIndex = -1;
                 let invalidFieldType = "";
+                let invalidAgeVal = NaN;
 
                 memberCards.forEach((card, idx) => {
                     const nameEl = card.querySelector(".member-name-input");
@@ -1165,11 +1192,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             firstInvalidIndex = idx + 1;
                             invalidFieldType = "name_digits";
                         }
-                    } else if (isNaN(aVal) || aVal < 1 || aVal > 120) {
+                    } else if (isNaN(aVal) || aVal < 11 || aVal > 120) {
                         rowValid = false;
                         if (firstInvalidIndex === -1) {
                             firstInvalidIndex = idx + 1;
                             invalidFieldType = "age";
+                            invalidAgeVal = aVal;
                         }
                     }
 
@@ -1185,9 +1213,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (accErrorEl) {
                         const curLang = localStorage.getItem("darshan_lang") || "hi";
                         if (invalidFieldType === "age") {
-                            accErrorEl.textContent = curLang === "en"
-                                ? `Please enter valid age (1 to 120 yrs) for devotee ${firstInvalidIndex}`
-                                : `कृपया साथी ${firstInvalidIndex} की सही उम्र (1 से 120 वर्ष) दर्ज करें`;
+                            if (!isNaN(invalidAgeVal) && invalidAgeVal > 0 && invalidAgeVal < 11) {
+                                accErrorEl.textContent = curLang === "en"
+                                    ? `Devotee ${firstInvalidIndex}: Passes are not issued for children aged 10 or below. Minimum age is 11 years.`
+                                    : `साथी ${firstInvalidIndex}: 10 वर्ष तक के बच्चों का पास नहीं बनता है। न्यूनतम उम्र 11 वर्ष होनी चाहिए।`;
+                            } else {
+                                accErrorEl.textContent = curLang === "en"
+                                    ? `Please enter valid age (11 to 120 yrs) for devotee ${firstInvalidIndex}`
+                                    : `कृपया साथी ${firstInvalidIndex} की सही उम्र (11 से 120 वर्ष) दर्ज करें`;
+                            }
                         } else if (invalidFieldType === "name_digits") {
                             accErrorEl.textContent = curLang === "en"
                                 ? `Devotee ${firstInvalidIndex}'s name cannot contain numbers. Enter age in the Age box.`
@@ -1304,10 +1338,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const finalAccompanyingVal = totalCount <= 1 ? "लागू नहीं (अकेले दर्शनार्थी)" : (getVal("accompanying") || "कोई नहीं");
 
             // Construct Transmission Payload
+            const pNameVal = primaryNameInput ? cleanAccompanyingMemberName(primaryNameInput.value.trim()) : "";
+            const pAgeVal = primaryAgeInput ? primaryAgeInput.value.trim() : "";
             const formData = {
                 visitDateTime: formattedVisitDateTime,
                 visitDate: formattedDateStr,
                 visitSlot: slotVal,
+                primaryName: pNameVal,
+                primaryAge: pAgeVal,
                 nameAge: devoteeNameVal,
                 state: finalState,
                 district: finalDistrict,
@@ -1333,6 +1371,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (mobErr) mobErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
                     const idErr = document.getElementById("idNumber-error");
                     if (idErr) idErr.textContent = sendResult.message || "इस विवरण से आवेदन पहले से दर्ज है";
+                    return;
+                }
+
+                // Check if server rejected submission due to age policy or validation error
+                if (sendResult && (sendResult.result === "error" || sendResult.success === false)) {
+                    showToast(`⚠️ ${sendResult.message || "आवेदन अस्वीकृत कर दिया गया"}`, "error");
                     return;
                 }
 
@@ -1986,7 +2030,7 @@ Reference: ${referredBy}
             secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
             lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>',
             phPrimaryName: 'नाम (उदा: Rahul)',
-            lblPrimaryAge: 'उम्र <span class="required">*</span>',
+            lblPrimaryAge: 'उम्र (11+) <span class="required">*</span>',
             primaryAgeSuffix: 'वर्ष',
             lblNameAge: 'मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>',
             phNameAge: 'उदा: Rahul 35 Yrs',
@@ -2063,7 +2107,7 @@ Reference: ${referredBy}
             secPrimary: '<i class="fa-solid fa-id-card"></i> Primary Devotee Information',
             lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span>',
             phPrimaryName: 'Name (E.g. Rahul)',
-            lblPrimaryAge: 'Age <span class="required">*</span>',
+            lblPrimaryAge: 'Age (11+) <span class="required">*</span>',
             primaryAgeSuffix: 'Yrs',
             lblNameAge: 'Devotee Full Name & Age <span class="required">*</span>',
             phNameAge: 'E.g. Rahul 35 Yrs',
@@ -2792,7 +2836,7 @@ Reference: ${referredBy}
 
             const memberBadgeText = (curLang === "en" ? `Member ${i}` : `साथी ${i}`);
             const namePlaceholder = (curLang === "en" ? `Devotee ${i} Full Name` : `सदस्य ${i} का पूरा नाम`);
-            const agePlaceholder = (curLang === "en" ? "Age" : "उम्र");
+            const agePlaceholder = "11+";
             const yrsSuffix = (curLang === "en" ? "Yrs" : "वर्ष");
 
             card.innerHTML = `
@@ -2807,7 +2851,7 @@ Reference: ${referredBy}
                         </button>
                     </div>
                     <div class="member-age-wrapper">
-                        <input type="number" class="member-age-input" id="member-age-${i}" placeholder="${agePlaceholder}" min="1" max="120" value="${prev.age}" autocomplete="off">
+                        <input type="number" class="member-age-input" id="member-age-${i}" placeholder="${agePlaceholder}" min="11" max="120" value="${prev.age}" autocomplete="off">
                         <span class="age-suffix">${yrsSuffix}</span>
                     </div>
                 </div>
@@ -2891,6 +2935,21 @@ Reference: ${referredBy}
                     syncAccompanyingTextarea();
                     queueSaveDraft();
                 });
+
+                ageInput.addEventListener("change", () => {
+                    let ageVal = parseInt(ageInput.value, 10);
+                    const curLang = localStorage.getItem("darshan_lang") || "hi";
+                    const mIdx = card.getAttribute("data-member-index") || "";
+                    if (!isNaN(ageVal) && ageVal > 0 && ageVal < 11) {
+                        card.style.borderColor = "#dc2626";
+                        const msg = curLang === "en"
+                            ? `Member ${mIdx}: Passes are not issued for children aged 10 or below. Minimum age is 11 years.`
+                            : `साथी ${mIdx}: 10 वर्ष तक के बच्चों का पास नहीं बनता है। केवल 11 वर्ष या उससे अधिक आयु मान्य है।`;
+                        showToast(msg, "warning");
+                    } else if (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120) {
+                        card.style.borderColor = "";
+                    }
+                });
             }
         });
 
@@ -2925,7 +2984,7 @@ Reference: ${referredBy}
                 accompanyingInput.required = false;
             }
             if (accReq) accReq.style.display = "none";
-            if (accNote) accNote.textContent = curLang === "en" ? "(Not Applicable for Single Devotee)" : "(अकेले दर्शनार्थी हेतु लागू नहीं)";
+            if (accNote) accNote.textContent = curLang === "en" ? "(Not Applicable for Single Devotee • Age 11+ only)" : "(अकेले दर्शनार्थी हेतु लागू नहीं • केवल 11 वर्ष या अधिक)";
             if (accGroup) {
                 accGroup.classList.remove("invalid");
                 accGroup.classList.add("single-devotee");
@@ -2938,7 +2997,9 @@ Reference: ${referredBy}
             }
             if (accReq) accReq.style.display = "inline";
             const extra = totalCount - 1;
-            if (accNote) accNote.textContent = curLang === "en" ? `(Please enter name & age of remaining ${extra} accompanying members)` : `(मुख्य दर्शनार्थी के अतिरिक्त अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें)`;
+            if (accNote) accNote.textContent = curLang === "en" 
+                ? `(Enter name & age of remaining ${extra} members • Age 11+ only - passes not issued for children ≤ 10)` 
+                : `(अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें • 10 वर्ष तक के बच्चों का पास नहीं बनता, केवल 11 वर्ष या अधिक)`;
             if (accGroup) {
                 accGroup.classList.remove("single-devotee");
             }

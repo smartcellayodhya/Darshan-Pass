@@ -88,7 +88,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=5.6">
+    <link rel="stylesheet" href="style.css?v=5.7">
 </head>
 <body class="gov-minimal-theme">
     <!-- App Splash Screen (स्वच्छ एवं पारदर्शी पॉप-इन लोगो) -->
@@ -351,13 +351,13 @@
 
                             <div class="input-group primary-age-group">
                                 <label for="primaryAge" class="input-label" id="lbl-primary-age" data-i18n="lblPrimaryAge">
-                                    उम्र <span class="required">*</span>
+                                    उम्र (11+) <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper primary-age-wrapper">
-                                    <input type="number" id="primaryAge" name="primaryAge" placeholder="उम्र" min="1" max="120" inputmode="numeric" required>
+                                    <input type="number" id="primaryAge" name="primaryAge" placeholder="11+" min="11" max="120" inputmode="numeric" required>
                                     <span class="age-suffix" id="primary-age-suffix" data-i18n="primaryAgeSuffix">वर्ष</span>
                                 </div>
-                                <span class="error-msg" id="primaryAge-error">सही उम्र (1 से 120 वर्ष) दर्ज करें</span>
+                                <span class="error-msg" id="primaryAge-error">सही उम्र (11 से 120 वर्ष) दर्ज करें (10 वर्ष तक के बच्चों का पास नहीं बनता)</span>
                             </div>
                         </div>
                         <input type="hidden" id="nameAge" name="nameAge">
@@ -451,14 +451,14 @@
                         <div class="input-group" id="accompanying-group">
                             <label class="input-label" id="accompanying-label">
                                 <span id="accompanying-title-text" data-i18n="lblAccompanying">साथ आने वाले सदस्यों के नाम व उम्र</span> 
-                                <span class="sub-label-note" id="accompanying-note">(10 वर्ष से कम उम्र के बच्चों का पास आवश्यक नहीं है)</span> 
+                                <span class="sub-label-note" id="accompanying-note">(10 वर्ष तक के बच्चों का पास नहीं बनता - केवल 11 वर्ष या अधिक)</span> 
                                 <span class="required" id="accompanying-required">*</span>
                             </label>
 
                             <!-- Dynamic Accompanying Member Rows Container -->
                             <div id="accompanying-rows-container" class="accompanying-rows-container"></div>
                             <textarea id="accompanying" name="accompanying" style="display: none;"></textarea>
-                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व उम्र (संख्या) जरूर दर्ज करें</span>
+                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व सही उम्र (11 वर्ष या अधिक) जरूर दर्ज करें</span>
                         </div>
                     </div>
                 </div>
@@ -707,6 +707,6 @@
         </footer>
 
     <!-- Custom JavaScript -->
-    <script src="script.js?v=5.6"></script>
+    <script src="script.js?v=5.7"></script>
 </body>
 </html>
