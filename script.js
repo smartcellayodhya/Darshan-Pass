@@ -2077,7 +2077,7 @@ Reference: ${referredBy}
             lblMale: 'पुरुष',
             lblFemale: 'महिला',
             lblAccompanying: 'साथ में आने वाले सदस्यों के नाम व उम्र',
-            phAccompanying: '1. Rahul 32 Yrs\n2. Ashwani 35 Yrs',
+            phAccompanying: 'Rahul 32 Yrs\nAshwani 35 Yrs',
             secRef: '<i class="fa-solid fa-user-check"></i> संदर्भ (रेफरेंस)',
             lblReferredBy: 'रेफरेंस अधिकारी <span class="required">*</span>',
             optSelectRef: '-- रेफरेंस अधिकारी चुनें --',
@@ -2154,7 +2154,7 @@ Reference: ${referredBy}
             lblMale: 'Male',
             lblFemale: 'Female',
             lblAccompanying: 'Accompanying Members (Name & Age)',
-            phAccompanying: '1. Rahul 32 Yrs\n2. Ashwani 35 Yrs',
+            phAccompanying: 'Rahul 32 Yrs\nAshwani 35 Yrs',
             secRef: '<i class="fa-solid fa-user-check"></i> Reference & Recommendation',
             lblReferredBy: 'Referred By / Recommendation Officer <span class="required">*</span>',
             optSelectRef: '-- Select Reference Officer --',
@@ -2798,7 +2798,7 @@ Reference: ${referredBy}
 
             if (cleanName || ageVal) {
                 const ageSuffix = ageVal ? ` ${ageVal} Yrs` : '';
-                lines.push(`• ${cleanName}${ageSuffix}`);
+                lines.push(`${cleanName}${ageSuffix}`);
             }
         });
 

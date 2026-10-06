@@ -745,7 +745,6 @@ function sanitizeAccompanyingSheetString(rawStr) {
   }
 
   var cleanLines = [];
-  var counter = 1;
 
   for (var i = 0; i < rawLines.length; i++) {
     var line = rawLines[i].trim();
@@ -784,8 +783,7 @@ function sanitizeAccompanyingSheetString(rawStr) {
     line = line.replace(/\s{2,}/g, ' ').trim();
 
     if (line || age) {
-      cleanLines.push(counter + ". " + line + (age ? " " + age : ""));
-      counter++;
+      cleanLines.push(line + (age ? " " + age : ""));
     }
   }
 
