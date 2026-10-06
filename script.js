@@ -2712,13 +2712,17 @@ Reference: ${referredBy}
         let str = String(rawName).trim();
         // 1. Remove leading numbering e.g. "(1) ", "1. 1.", "1.", "1)", "[1]", "#1", "1-", "1 ", "साथी 1", etc.
         str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
-        // 2. Remove explicit age declarations e.g. "उम्र 38 वर्ष", "उम्र 38", "38 वर्ष", "38 Yrs", "age 38"
-        str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/gi, '').trim();
-        // 3. Remove standalone trailing numbers (when age is typed at the end of name)
+        // 2. Remove bracketed age e.g. "(25)", "[25]", "(25 Yrs)", "(उम्र 25 वर्ष)"
+        str = str.replace(/[\(\[]\s*(?:(?:उम्र|आयु|age)\s*[:\-]?\s*)?\d{1,3}(?:\s*(?:वर्ष|साल|yrs?|years?))?\s*[\)\]]/gi, '').trim();
+        // 3. Remove explicit age declarations e.g. "उम्र 38 वर्ष", "उम्र 38", "38 वर्ष", "38 Yrs", "age 38"
+        str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}(?:\s*(?:वर्ष|साल|yrs?|years?))?|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/gi, '').trim();
+        // 4. Remove standalone trailing numbers (when age is typed at the end of name)
         str = str.replace(/\b\d{1,3}\s*$/g, '').trim();
-        // 4. Remove ALL other numbers / digits (English & Devanagari) completely!
+        // 5. Remove ALL other numbers / digits (English & Devanagari) completely!
         str = str.replace(/[0-9\u0966-\u096F]/g, '').trim();
-        // 5. Remove residual punctuation or double spaces
+        // 6. Remove residual empty parentheses or brackets
+        str = str.replace(/\(\s*\)|\[\s*\]/g, '').trim();
+        // 7. Remove residual punctuation or double spaces
         str = str.replace(/^[\s.\-:,()\[\]]+|[\s.\-:,()\[\]]+$/g, '').trim();
         str = str.replace(/\s{2,}/g, ' ').trim();
         return str;
@@ -2731,17 +2735,29 @@ Reference: ${referredBy}
         str = str.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
 
         let age = "";
-        // 2. Priority 1: Explicit age declaration (e.g. "उम्र 35", "35 वर्ष", "35 Yrs", "age 35")
-        const explicitMatch = str.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
-        if (explicitMatch) {
-            const num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
+        // 2. Priority 1: Age in brackets e.g. "(25)", "[25]", "(25 Yrs)", "(उम्र 25 वर्ष)"
+        const bracketMatch = str.match(/[\(\[]\s*(?:(?:उम्र|आयु|age)\s*[:\-]?\s*)?(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?\s*[\)\]]/i);
+        if (bracketMatch) {
+            const num = parseInt(bracketMatch[1], 10);
             if (num >= 1 && num <= 120) {
                 age = String(num);
-                str = str.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?)))/i, '').trim();
+                str = str.replace(bracketMatch[0], '').trim();
             }
         }
 
-        // 3. Priority 2: Standalone trailing number at the end of the line (e.g. "Rahul 35")
+        // 3. Priority 2: Explicit age declaration (e.g. "उम्र 35 वर्ष", "उम्र 35", "35 वर्ष", "35 Yrs", "age 35")
+        if (!age) {
+            const explicitMatch = str.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
+            if (explicitMatch) {
+                const num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
+                if (num >= 1 && num <= 120) {
+                    age = String(num);
+                    str = str.replace(explicitMatch[0], '').trim();
+                }
+            }
+        }
+
+        // 4. Priority 3: Standalone trailing number at the end of the line (e.g. "Rahul 35")
         if (!age) {
             const trailingMatch = str.match(/\b(\d{1,3})\s*$/);
             if (trailingMatch) {
@@ -2753,7 +2769,7 @@ Reference: ${referredBy}
             }
         }
 
-        // 4. Priority 3: Standalone number anywhere in text
+        // 5. Priority 4: Standalone number anywhere in text
         if (!age) {
             const anyMatch = str.match(/\b(\d{1,3})\b/);
             if (anyMatch) {

@@ -222,9 +222,9 @@ function doPost(e) {
         if (!aLine || aLine.indexOf("लागू नहीं") !== -1) continue;
         // Strip any leading serial numbers e.g. "1. ", "2) ", "(1) ", "साथी 1", bullet points "• "
         var lineWithoutNum = aLine.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
-        var aMatch = lineWithoutNum.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?)|(?:\s*-\s*|\s+)(\d{1,3})\s*(?:Yrs)?$)/i);
+        var aMatch = lineWithoutNum.match(/[\(\[]\s*(?:(?:उम्र|आयु|age)\s*[:\-]?\s*)?(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?\s*[\)\]]|(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))|(?:\s*-\s*|\s+)(\d{1,3})\s*(?:Yrs)?(?:\s*[\)\]])?$/i);
         if (aMatch) {
-          var aNum = parseInt(aMatch[1] || aMatch[2] || aMatch[3], 10);
+          var aNum = parseInt(aMatch[1] || aMatch[2] || aMatch[3] || aMatch[4], 10);
           if (aNum > 0 && aNum < 11) {
             return respondJson(e, {
               "result": "error",
@@ -754,19 +754,30 @@ function sanitizeAccompanyingSheetString(rawStr) {
     line = line.replace(/^(?:साथी\s*\d+|member\s*\d+|[\d\s.\-():\[\]#•\u0966-\u096F])+/gi, '').trim();
 
     // Extract age cleanly:
-    // Priority 1: Explicit age declaration e.g. "35 Yrs", "35 वर्ष", "उम्र 35", "age 35"
+    // Priority 1: Age in brackets e.g. "(25)", "[25]", "(25 Yrs)", "(उम्र 25 वर्ष)"
     var age = "";
-    var explicitMatch = line.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
-    if (explicitMatch) {
-      var num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
-      if (num >= 1 && num <= 120) {
-        age = num + " Yrs";
-        // Remove only this explicit age match
-        line = line.replace(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*\d{1,3}|\d{1,3}\s*(?:वर्ष|साल|yrs?|years?))/i, '').trim();
+    var bracketMatch = line.match(/[\(\[]\s*(?:(?:उम्र|आयु|age)\s*[:\-]?\s*)?(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?\s*[\)\]]/i);
+    if (bracketMatch) {
+      var bNum = parseInt(bracketMatch[1], 10);
+      if (bNum >= 1 && bNum <= 120) {
+        age = bNum + " Yrs";
+        line = line.replace(bracketMatch[0], '').trim();
       }
     }
 
-    // Priority 2: If no explicit keyword, look for trailing age at the end of the line e.g. "Rahul 35"
+    // Priority 2: Explicit age declaration e.g. "35 Yrs", "35 वर्ष", "उम्र 35", "उम्र 35 वर्ष", "age 35"
+    if (!age) {
+      var explicitMatch = line.match(/(?:(?:उम्र|आयु|age)\s*[:\-]?\s*(\d{1,3})(?:\s*(?:वर्ष|साल|yrs?|years?))?|(\d{1,3})\s*(?:वर्ष|साल|yrs?|years?))/i);
+      if (explicitMatch) {
+        var num = parseInt(explicitMatch[1] || explicitMatch[2], 10);
+        if (num >= 1 && num <= 120) {
+          age = num + " Yrs";
+          line = line.replace(explicitMatch[0], '').trim();
+        }
+      }
+    }
+
+    // Priority 3: Trailing age at the end of the line e.g. "Rahul 35"
     if (!age) {
       var trailingMatch = line.match(/\b(\d{1,3})\s*$/);
       if (trailingMatch) {
@@ -778,12 +789,14 @@ function sanitizeAccompanyingSheetString(rawStr) {
       }
     }
 
-    // Clean up residual punctuation and spaces from name
+    // Clean up residual parentheses, punctuation and double spaces from name
+    line = line.replace(/\(\s*\)|\[\s*\]/g, '').trim();
     line = line.replace(/^[\s.\-:,()\[\]]+|[\s.\-:,()\[\]]+$/g, '').trim();
     line = line.replace(/\s{2,}/g, ' ').trim();
 
     if (line || age) {
-      cleanLines.push(line + (age ? " " + age : ""));
+      var fullLine = (line ? (line + (age ? " " + age : "")) : age).trim();
+      cleanLines.push(fullLine);
     }
   }
 
@@ -2100,6 +2113,9 @@ function fixAndRealignAllSheetColumns() {
         createdDate = formatDateVal(timestamp) || Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+5:30", "dd/MM/yyyy");
       }
 
+      // Sanitize accompanying members in Column M to strip old numbering (1., 2.) and normalize format
+      var cleanAccompanying = sanitizeAccompanyingSheetString(accompanying);
+
       cleanedRows.push([
         timestamp,
         createdDate,
@@ -2113,7 +2129,7 @@ function fixAndRealignAllSheetColumns() {
         genderCounts,
         mobile,
         vehicleNo,
-        accompanying,
+        cleanAccompanying,
         referredBy,
         submitterName,
         submitterEmail,
