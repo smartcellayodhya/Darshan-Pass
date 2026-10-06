@@ -279,9 +279,23 @@ function doPost(e) {
     SpreadsheetApp.flush();
     var lastRow = sheet.getLastRow();
 
-    // Fast, non-blocking row dropdown configuration
+    // Fast, non-blocking row dropdown & uniform Times New Roman (size 11) formatting
     try {
       if (lastRow > 1) {
+        var numCols = Math.max(sheet.getLastColumn() || 19, 19);
+        var newRowRange = sheet.getRange(lastRow, 1, 1, numCols);
+        newRowRange.setFontFamily("Times New Roman")
+          .setFontSize(11)
+          .setVerticalAlignment("middle")
+          .setHorizontalAlignment("center")
+          .setWrap(true);
+
+        // Column M (Col 13 - Accompanying): Left-align for superior readability
+        sheet.getRange(lastRow, 13).setHorizontalAlignment("left");
+
+        // Format Timestamp Column A
+        sheet.getRange(lastRow, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
+
         var statusCell = sheet.getRange(lastRow, 3);
         var rule = SpreadsheetApp.newDataValidation()
           .requireValueInList(["Pending", "Pass Created", "Already Created (अन्य काउंटर से)", "Rejected"], true)
@@ -289,7 +303,9 @@ function doPost(e) {
           .build();
         statusCell.setDataValidation(rule);
       }
-    } catch (fmtErr) {}
+    } catch (fmtErr) {
+      console.warn("New row formatting notice:", fmtErr);
+    }
 
     // Generate atomic Token ID: AYO-YYYYMMDD-ROW
     var nowKolkata = new Date();
@@ -362,14 +378,16 @@ function doGet(e) {
     }
   }
 
-  // 1-CLICK AUTO REPAIR & FORMAT SHEET HANDLER
-  if (e && e.parameter && (e.parameter.action === 'format' || e.parameter.action === 'fix' || e.parameter.action === 'realign')) {
+  // 1-CLICK AUTO REPAIR & FORMAT SHEET HANDLER (Includes Times New Roman & Size 11)
+  if (e && e.parameter && (e.parameter.action === 'format' || e.parameter.action === 'fix' || e.parameter.action === 'realign' || e.parameter.action === 'format_font' || e.parameter.action === 'font' || e.parameter.action === 'times_new_roman')) {
     try {
       var result = fixAndRealignAllSheetColumns();
+      var fontResult = formatSheetTimesNewRoman();
       return respondJson(e, {
         "status": "success",
         "result": result,
-        "message": "Google Sheet columns and rows successfully repaired and 100% realigned!"
+        "fontResult": fontResult,
+        "message": "Google Sheet columns repaired and entire sheet formatted to Times New Roman, Size 11!"
       });
     } catch (err) {
       return respondJson(e, {
@@ -915,7 +933,13 @@ function getOrCreateReferenceOfficersSheet(ss) {
     sheet = ss.insertSheet(OFFICERS_SHEET_NAME);
     // Header
     sheet.getRange(1, 1, 1, 2).setValues([["Officer Name / Designation", "Status"]]);
-    sheet.getRange(1, 1, 1, 2).setBackground("#0F172A").setFontColor("#FFFFFF").setFontWeight("bold").setHorizontalAlignment("center");
+    sheet.getRange(1, 1, 1, 2)
+      .setBackground("#0F172A")
+      .setFontColor("#FFFFFF")
+      .setFontWeight("bold")
+      .setFontFamily("Times New Roman")
+      .setFontSize(11)
+      .setHorizontalAlignment("center");
     sheet.setRowHeight(1, 40);
 
     // Initial Officer List
@@ -923,7 +947,11 @@ function getOrCreateReferenceOfficersSheet(ss) {
       return [name, "Active"];
     });
     sheet.getRange(2, 1, rows.length, 2).setValues(rows);
-    sheet.getRange(2, 1, rows.length, 2).setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
+    sheet.getRange(2, 1, rows.length, 2)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle")
+      .setFontFamily("Times New Roman")
+      .setFontSize(11);
     sheet.setColumnWidth(1, 280);
     sheet.setColumnWidth(2, 110);
 
@@ -1225,7 +1253,12 @@ function onEdit(e) {
       var currentRow = startRow + r;
       if (currentRow <= 1) continue;
 
-      // 1. Column M (साथी विवरण): Always ensure Left-alignment for easy reading
+      // 1. Maintain font Times New Roman and size 11 on edited range
+      try {
+        e.range.setFontFamily("Times New Roman").setFontSize(11);
+      } catch (fErr) {}
+
+      // 2. Column M (साथी विवरण): Always ensure Left-alignment for easy reading
       try {
         sheet.getRange(currentRow, colM).setHorizontalAlignment("left");
       } catch (mErr) {}
@@ -1714,6 +1747,7 @@ function onOpen() {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('⚙️ VIP Tools')
       .addItem('🛠️ 1-Click All-in-One Sheet Repair (मास्टर रिपेयर - कॉलम व क्रम ठीक करें)', 'fixAndRealignAllSheetColumns')
+      .addItem('🔤 Apply Times New Roman & Size 11 (पूरी शीट फॉन्ट व 11pt साइज़ एक समान करें)', 'formatSheetTimesNewRoman')
       .addItem('🎨 Re-apply Status Colors (स्टेटस अनुसार सभी पंक्तियों में रंग भरें)', 'refreshAllRowColors')
       .addItem('🔄 Sync Devotee Counts & Left-Align M (संख्या सिंक व कॉलम M लेफ्ट करें)', 'syncAllDevoteeCounts')
       .addItem('🛡️ Restore Pass Status Dropdowns (कॉलम C ड्रॉपडाउन रीस्टोर करें)', 'restoreStatusDropdowns')
@@ -2143,17 +2177,20 @@ function fixAndRealignAllSheetColumns() {
     headerRange.setBackground("#1e3a8a"); // Navy Blue
     headerRange.setFontColor("#ffffff"); // White
     headerRange.setFontWeight("bold");
+    headerRange.setFontFamily("Times New Roman");
     headerRange.setFontSize(11);
     sheet.setRowHeight(1, 45);
 
-    // 10. Grid Formatting for Data Rows
+    // 10. Grid Formatting for Data Rows (Strictly Times New Roman, Size 11 across all rows)
     var totalRows = sheet.getMaxRows();
+    var totalCols = Math.max(sheet.getMaxColumns(), 19);
     if (totalRows > 0) {
-      var dataRange = sheet.getRange(1, 1, totalRows, 19);
+      var dataRange = sheet.getRange(1, 1, totalRows, totalCols);
       dataRange.setHorizontalAlignment("center");
       dataRange.setVerticalAlignment("middle");
       dataRange.setWrap(true);
-      dataRange.setFontFamily("Roboto");
+      dataRange.setFontFamily("Times New Roman");
+      dataRange.setFontSize(11);
     }
 
     // Column M (Col 13 - Accompanying Devotees): Left-align for superior readability
@@ -2241,8 +2278,64 @@ function fixAndRealignAllSheetColumns() {
 }
 
 /**
- * UTILITY 1: SAFELY SETUP HEADERS, DROPDOWNS & CONDITIONAL GREEN HIGHLIGHTING
- * (Now safely calls fixAndRealignAllSheetColumns so it NEVER duplicates or shifts columns!)
+ * UTILITY: UNIFORM TIMES NEW ROMAN & SIZE 11 FORMATTING ACROSS ENTIRE SHEET
+ * Sets all cells in the sheet (headers + data rows + new rows) to Times New Roman, Size 11.
+ */
+function formatSheetTimesNewRoman(optSheet) {
+  var ss = getTargetSpreadsheet();
+  var sheets = optSheet ? [optSheet] : ss.getSheets().filter(function(s) {
+    return !s.getName().includes("Dashboard");
+  });
+
+  var formattedCount = 0;
+  sheets.forEach(function(sheet) {
+    var maxR = sheet.getMaxRows();
+    var maxC = sheet.getMaxColumns();
+    if (maxR === 0 || maxC === 0) return;
+
+    // 1. Set entire grid font to Times New Roman and size 11
+    var entireGrid = sheet.getRange(1, 1, maxR, maxC);
+    entireGrid.setFontFamily("Times New Roman")
+      .setFontSize(11)
+      .setVerticalAlignment("middle")
+      .setHorizontalAlignment("center")
+      .setWrap(true);
+
+    // 2. Row 1 Header Banner (Navy Blue, White Text, Bold, Times New Roman, Size 11)
+    var headerCols = Math.min(maxC, 19);
+    var headerRange = sheet.getRange(1, 1, 1, headerCols);
+    headerRange.setBackground("#1e3a8a")
+      .setFontColor("#ffffff")
+      .setFontWeight("bold")
+      .setFontFamily("Times New Roman")
+      .setFontSize(11)
+      .setHorizontalAlignment("center");
+    sheet.setRowHeight(1, 45);
+
+    // 3. Column M (Col 13 - Accompanying Devotees): Left-align
+    if (maxR > 1 && maxC >= 13) {
+      sheet.getRange(2, 13, maxR - 1, 1).setHorizontalAlignment("left");
+    }
+
+    // 4. Timestamp Column A: dd/mm/yyyy hh:mm:ss format
+    if (maxR > 1 && maxC >= 1) {
+      sheet.getRange(2, 1, maxR - 1, 1).setNumberFormat("dd/mm/yyyy hh:mm:ss");
+    }
+
+    formattedCount++;
+  });
+
+  SpreadsheetApp.flush();
+  return {
+    success: true,
+    sheetsFormatted: formattedCount,
+    message: "Entire sheet formatted to Times New Roman, Size 11 successfully!"
+  };
+}
+
+/**
+ * UTILITY 1: SAFELY SETUP HEADERS, DROPDOWNS, TIMES NEW ROMAN & CONDITIONAL GREEN HIGHLIGHTING
+ * (Safely calls fixAndRealignAllSheetColumns and applies Times New Roman across all cells)
  */
 function formatEntireSheet() {
   if (!isAuthorizedAdmin()) {
@@ -2251,7 +2344,9 @@ function formatEntireSheet() {
     } catch (e) {}
     return { success: false, message: "Unauthorized" };
   }
-  return fixAndRealignAllSheetColumns();
+  var res = fixAndRealignAllSheetColumns();
+  formatSheetTimesNewRoman();
+  return res;
 }
 
 /**
@@ -2387,7 +2482,7 @@ function setupVipDashboard() {
   dashSheet.getRange("K9:K28").setFormulas(kFormulas);
 
   // Format Dashboard Cells
-  dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Roboto");
+  dashSheet.getRange("A1:K35").setHorizontalAlignment("center").setVerticalAlignment("middle").setFontFamily("Times New Roman");
   dashSheet.setColumnWidth(1, 150);
   dashSheet.setColumnWidth(2, 120);
   dashSheet.setColumnWidth(3, 130);
