@@ -480,9 +480,9 @@ function doGet(e) {
       var rowData = data[r];
       var rowNum = r + 1;
 
-      // Detect slot cell index dynamically in this row
+      // Detect slot cell index dynamically in this row (strictly in visit columns index 3 to 5)
       var slotIdx = -1;
-      for (var c = 0; c < rowData.length; c++) {
+      for (var c = 3; c <= 5 && c < rowData.length; c++) {
         var strCell = String(rowData[c] || '').trim();
         if (/^\d{1,2}:\d{2}\s*(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)$/i.test(strCell)) {
           slotIdx = c;
@@ -501,15 +501,16 @@ function doGet(e) {
       if (slotIdx !== -1) {
         vSlot = String(rowData[slotIdx] || '').trim();
         vDate = formatSheetDateToDDMMYYYY(rowData[slotIdx - 1]);
-        name = String(rowData[slotIdx + 1] || '').trim();
-        rowId = String(rowData[slotIdx + 4] || '').trim();
-        mob = String(rowData[slotIdx + 6] || '').trim();
-        ref = String(rowData[slotIdx + 9] || '').trim();
-        total = String(rowData[slotIdx + 12] || '').trim();
+        // Col 6 (Index 5) is strictly Primary Devotee Name & Age
+        name = String(rowData[5] || rowData[slotIdx + 1] || '').trim();
+        rowId = String(rowData[slotIdx + 4] || rowData[8] || '').trim();
+        mob = String(rowData[slotIdx + 6] || rowData[10] || '').trim();
+        ref = String(rowData[slotIdx + 9] || rowData[13] || '').trim();
+        total = String(rowData[slotIdx + 12] || rowData[16] || '').trim();
       } else {
         vDate = formatSheetDateToDDMMYYYY(rowData[colSlot - 2] || rowData[3]);
         vSlot = String(rowData[colSlot - 1] || rowData[4] || '').trim();
-        name = String(rowData[colName - 1] || rowData[5] || '').trim();
+        name = String(rowData[5] || rowData[colName - 1] || '').trim();
         rowId = String(rowData[colId - 1] || rowData[8] || '').trim();
         mob = String(rowData[colMob - 1] || rowData[10] || '').trim();
         ref = String(rowData[colRef - 1] || rowData[13] || '').trim();

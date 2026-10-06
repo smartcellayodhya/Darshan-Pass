@@ -622,13 +622,66 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Smart Paste for Primary Devotee Name (Extracts age to primaryAge if present)
+    // Smart Paste for Primary Devotee Name (Extracts age & auto-distributes WhatsApp/multi-line lists)
     if (primaryNameInput) {
         primaryNameInput.addEventListener("paste", (e) => {
             const pastedText = (e.clipboardData || window.clipboardData).getData('text');
             if (!pastedText) return;
 
-            if (/[0-9\u0966-\u096F]/.test(pastedText)) {
+            let items = [];
+            if (pastedText.includes("\n") || pastedText.includes("\r")) {
+                items = pastedText.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+            } else if (/\b\d+[\.\)]\s+/.test(pastedText)) {
+                items = pastedText.split(/(?=\b\d+[\.\)]\s+)/).map(s => s.trim()).filter(Boolean);
+            }
+
+            if (items.length > 1) {
+                e.preventDefault();
+                // 1. First item belongs strictly to Primary Devotee
+                const primaryExtracted = extractMemberNameAndAge(items[0]);
+                primaryNameInput.value = primaryExtracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                if (primaryAgeInput && primaryExtracted.age) {
+                    primaryAgeInput.value = primaryExtracted.age;
+                    primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+
+                // 2. Adjust total devotee count if needed so enough companion cards exist
+                const neededTotal = Math.min(8, items.length);
+                let currentMale = parseInt(maleCountInput ? maleCountInput.value : 1) || 0;
+                let currentFemale = parseInt(femaleCountInput ? femaleCountInput.value : 0) || 0;
+                let currentTotal = currentMale + currentFemale;
+
+                if (currentTotal < neededTotal) {
+                    if (maleCountInput) {
+                        maleCountInput.value = neededTotal - currentFemale;
+                        maleCountInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    }
+                }
+
+                // 3. Populate companion cards
+                setTimeout(() => {
+                    const allCards = document.querySelectorAll(".member-row-card");
+                    for (let p = 1; p < items.length && p <= 8; p++) {
+                        const targetCard = allCards[p - 1];
+                        if (targetCard) {
+                            const nIn = targetCard.querySelector(".member-name-input");
+                            const aIn = targetCard.querySelector(".member-age-input");
+                            const extracted = extractMemberNameAndAge(items[p]);
+                            if (nIn) nIn.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
+                            if (aIn && extracted.age) aIn.value = extracted.age;
+                        }
+                    }
+                    syncAccompanyingTextarea();
+                    queueSaveDraft();
+                    const curLang = localStorage.getItem("darshan_lang") || "hi";
+                    const msg = (curLang === "en")
+                        ? "First member set as Primary Devotee, remaining distributed to companions!"
+                        : "पहला नाम मुख्य दर्शनार्थी में एवं अन्य नाम साथी सदस्यों में स्वतः भर दिए गए!";
+                    showToast(msg, "success");
+                }, 50);
+
+                primaryNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+            } else if (/[0-9\u0966-\u096F]/.test(pastedText)) {
                 e.preventDefault();
                 const extracted = extractMemberNameAndAge(pastedText);
                 primaryNameInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
@@ -2032,7 +2085,7 @@ Reference: ${referredBy}
             lblDistrict: 'जनपद चुनें <span class="required">*</span>',
             optSelectDistrict: '-- पहले राज्य चुनें --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
-            lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>',
+            lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span> <span class="primary-lead-badge"><i class="fa-solid fa-ticket"></i> टोकन व पास इसी नाम से बनेगा</span>',
             phPrimaryName: 'नाम (उदा: Rahul)',
             lblPrimaryAge: 'उम्र (11+) <span class="required">*</span>',
             primaryAgeSuffix: 'वर्ष',
@@ -2109,7 +2162,7 @@ Reference: ${referredBy}
             lblDistrict: 'Select District <span class="required">*</span>',
             optSelectDistrict: '-- Select State First --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> Primary Devotee Information',
-            lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span>',
+            lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span> <span class="primary-lead-badge"><i class="fa-solid fa-ticket"></i> Token & Pass issued in this name</span>',
             phPrimaryName: 'Name (E.g. Rahul)',
             lblPrimaryAge: 'Age (11+) <span class="required">*</span>',
             primaryAgeSuffix: 'Yrs',
@@ -2843,9 +2896,19 @@ Reference: ${referredBy}
             const agePlaceholder = "11+";
             const yrsSuffix = (curLang === "en" ? "Yrs" : "वर्ष");
 
+            const isFirst = (i === 1);
+            const swapBtnHtml = isFirst ? `
+                <button type="button" class="swap-lead-btn" id="swap-lead-btn-1" title="${curLang === 'en' ? 'Swap Name & Age with Primary Devotee' : 'मुख्य दर्शनार्थी के साथ नाम व उम्र बदलें'}">
+                    <i class="fa-solid fa-right-left"></i> <span>${curLang === 'en' ? 'Swap with Primary' : 'मुख्य नाम से बदलें (Swap)'}</span>
+                </button>
+            ` : '';
+
             card.innerHTML = `
-                <div class="member-index-badge">
-                    <i class="fa-solid fa-user-tag"></i> <span>${memberBadgeText}</span>
+                <div class="member-row-header">
+                    <div class="member-index-badge">
+                        <i class="fa-solid fa-user-tag"></i> <span>${memberBadgeText}</span>
+                    </div>
+                    ${swapBtnHtml}
                 </div>
                 <div class="member-inputs-grid">
                     <div class="input-wrapper mic-wrapper">
@@ -2870,6 +2933,42 @@ Reference: ${referredBy}
         container.querySelectorAll(".member-row-card").forEach(card => {
             const nameInput = card.querySelector(".member-name-input");
             const ageInput = card.querySelector(".member-age-input");
+
+            const swapBtn = card.querySelector("#swap-lead-btn-1");
+            if (swapBtn) {
+                swapBtn.addEventListener("click", () => {
+                    if (!primaryNameInput) return;
+                    const pName = primaryNameInput.value.trim();
+                    const pAge = primaryAgeInput ? primaryAgeInput.value.trim() : "";
+                    const mName = nameInput ? nameInput.value.trim() : "";
+                    const mAge = ageInput ? ageInput.value.trim() : "";
+
+                    if (!pName && !mName) {
+                        showToast(curLang === "en" ? "Both names are empty to swap!" : "बदलने के लिए कोई नाम दर्ज नहीं है!", "info");
+                        return;
+                    }
+
+                    primaryNameInput.value = mName;
+                    if (primaryAgeInput) primaryAgeInput.value = mAge;
+                    if (nameInput) nameInput.value = pName;
+                    if (ageInput) ageInput.value = pAge;
+
+                    primaryNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    if (primaryAgeInput) primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    if (nameInput) nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    if (ageInput) ageInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+                    syncAccompanyingTextarea();
+                    queueSaveDraft();
+
+                    showToast(
+                        curLang === "en" 
+                            ? "Primary Devotee and Companion 1 swapped successfully!" 
+                            : "मुख्य दर्शनार्थी और साथी सदस्य 1 के नाम आपस में बदल दिए गए!",
+                        "success"
+                    );
+                });
+            }
 
             if (nameInput) {
                 const cleanName = () => {
