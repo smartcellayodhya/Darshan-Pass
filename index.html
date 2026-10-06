@@ -217,18 +217,13 @@
     <!-- Main Content Container -->
     <main class="gov-main-container">
         <!-- Configuration Alert Notice -->
-        <div id="config-alert" class="config-banner hidden">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span><strong>Setup Required:</strong> Please replace <code>GOOGLE_APPS_SCRIPT_URL</code> in <code>script.js</code> with your deployed Apps Script URL.</span>
-        </div>
-
         <!-- Clean Crisp White Form Card -->
         <section class="gov-form-card">
             <form id="darshan-form" novalidate>
                 <!-- SUB-SECTION 1: VISIT DETAILS -->
                 <div class="gov-section">
                     <h2 class="gov-section-title" id="sec-visit-title" data-i18n="secVisit">
-                        <i class="fa-solid fa-calendar-day"></i> Visit Date & Time (दर्शन तिथि व स्थान विवरण)
+                        <i class="fa-solid fa-calendar-day"></i> दर्शन तिथि व समय विवरण
                     </h2>
 
                     <div class="gov-section-body">
@@ -241,10 +236,7 @@
                                 <div class="input-wrapper">
                                     <input type="date" id="visitDate" name="visitDate" required>
                                 </div>
-                                <small class="field-hint" style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: block;">
-                                    <i class="fa-regular fa-calendar-check" style="color: var(--primary-blue);"></i> <span id="visit-hint-text" data-i18n="hintVisitDate">केवल आज से अगले 6 दिन तक मान्य</span>
-                                </small>
-                                <span class="error-msg" id="visitDate-error">कृपया दर्शन की दिनांक चुनें (आज से अगले 6 दिन)</span>
+                                <span class="error-msg" id="visitDate-error">कृपया दर्शन की तिथि चुनें</span>
                             </div>
 
                             <div class="input-group">
@@ -339,10 +331,9 @@
                             <div class="input-group">
                                 <label for="primaryName" class="input-label" id="lbl-primary-name" data-i18n="lblPrimaryName">
                                     मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>
-                                    <span class="primary-lead-badge"><i class="fa-solid fa-ticket"></i> टोकन व पास इसी नाम से बनेगा</span>
                                 </label>
                                 <div class="input-wrapper mic-wrapper">
-                                    <input type="text" id="primaryName" name="primaryName" placeholder="नाम (उदा: Rahul)" data-i18n-ph="phPrimaryName" autocomplete="name" pattern="^[^\d\u0966-\u096F]+$" title="नाम में संख्या/उम्र न लिखें, केवल नाम दर्ज करें" required>
+                                    <input type="text" id="primaryName" name="primaryName" placeholder="नाम (उदा: Rahul)" data-i18n-ph="phPrimaryName" autocomplete="name" required>
                                     <button type="button" class="voice-mic-btn" data-target="primaryName" title="बोलकर टाइप करें (Voice Typing)">
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
@@ -352,13 +343,13 @@
 
                             <div class="input-group primary-age-group">
                                 <label for="primaryAge" class="input-label" id="lbl-primary-age" data-i18n="lblPrimaryAge">
-                                    उम्र (11+) <span class="required">*</span>
+                                    उम्र <span class="required">*</span>
                                 </label>
                                 <div class="input-wrapper primary-age-wrapper">
                                     <input type="number" id="primaryAge" name="primaryAge" placeholder="11+" min="11" max="120" inputmode="numeric" required>
                                     <span class="age-suffix" id="primary-age-suffix" data-i18n="primaryAgeSuffix">वर्ष</span>
                                 </div>
-                                <span class="error-msg" id="primaryAge-error">सही उम्र (11 से 120 वर्ष) दर्ज करें (10 वर्ष तक के बच्चों का पास नहीं बनता)</span>
+                                <span class="error-msg" id="primaryAge-error">कृपया सही उम्र (11 वर्ष या अधिक) दर्ज करें</span>
                             </div>
                         </div>
                         <input type="hidden" id="nameAge" name="nameAge">
@@ -375,8 +366,7 @@
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
                                 </div>
-                                <div id="idNumber-counter" class="id-counter" style="display:none;">0/12 अंक</div>
-                                <span class="error-msg" id="idNumber-error">आधार नंबर strictly 12 अंकों का या मान्य पासपोर्ट नंबर होना आवश्यक है</span>
+                                <span class="error-msg" id="idNumber-error">कृपया 12 अंकों का आधार या मान्य पासपोर्ट नंबर दर्ज करें</span>
                             </div>
 
                             <div class="input-group">
@@ -389,7 +379,7 @@
                                         <i class="fa-solid fa-microphone"></i>
                                     </button>
                                 </div>
-                                <span class="error-msg" id="mobile-error">मोबाइल नंबर strictly 10 अंकों का ही होना आवश्यक है</span>
+                                <span class="error-msg" id="mobile-error">कृपया 10 अंकों का मोबाइल नंबर दर्ज करें</span>
                             </div>
                         </div>
 
@@ -445,21 +435,20 @@
                                     </div>
                                 </div>
                             </div>
-                            <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें (अधिकतम 8 दर्शनार्थी)</span>
+                            <span class="error-msg" id="count-error">कृपया पुरुषों एवं महिलाओं की संख्या भरें</span>
                         </div>
 
                         <!-- Accompanying Members Details Area -->
                         <div class="input-group" id="accompanying-group">
                             <label class="input-label" id="accompanying-label">
                                 <span id="accompanying-title-text" data-i18n="lblAccompanying">साथ आने वाले सदस्यों के नाम व उम्र</span> 
-                                <span class="sub-label-note" id="accompanying-note">(10 वर्ष तक के बच्चों का पास नहीं बनता - केवल 11 वर्ष या अधिक)</span> 
                                 <span class="required" id="accompanying-required">*</span>
                             </label>
 
                             <!-- Dynamic Accompanying Member Rows Container -->
                             <div id="accompanying-rows-container" class="accompanying-rows-container"></div>
                             <textarea id="accompanying" name="accompanying" style="display: none;"></textarea>
-                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व सही उम्र (11 वर्ष या अधिक) जरूर दर्ज करें</span>
+                            <span class="error-msg" id="accompanying-error">कृपया सभी साथी सदस्यों के नाम व उम्र दर्ज करें</span>
                         </div>
                     </div>
                 </div>

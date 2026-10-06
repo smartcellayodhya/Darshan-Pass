@@ -2085,9 +2085,9 @@ Reference: ${referredBy}
             lblDistrict: 'जनपद चुनें <span class="required">*</span>',
             optSelectDistrict: '-- पहले राज्य चुनें --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> मुख्य दर्शनार्थी विवरण',
-            lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span> <span class="primary-lead-badge"><i class="fa-solid fa-ticket"></i> टोकन व पास इसी नाम से बनेगा</span>',
+            lblPrimaryName: 'मुख्य दर्शनार्थी का पूरा नाम <span class="required">*</span>',
             phPrimaryName: 'नाम (उदा: Rahul)',
-            lblPrimaryAge: 'उम्र (11+) <span class="required">*</span>',
+            lblPrimaryAge: 'उम्र <span class="required">*</span>',
             primaryAgeSuffix: 'वर्ष',
             lblNameAge: 'मुख्य दर्शनार्थी का नाम व उम्र <span class="required">*</span>',
             phNameAge: 'उदा: Rahul 35 Yrs',
@@ -2162,9 +2162,9 @@ Reference: ${referredBy}
             lblDistrict: 'Select District <span class="required">*</span>',
             optSelectDistrict: '-- Select State First --',
             secPrimary: '<i class="fa-solid fa-id-card"></i> Primary Devotee Information',
-            lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span> <span class="primary-lead-badge"><i class="fa-solid fa-ticket"></i> Token & Pass issued in this name</span>',
+            lblPrimaryName: 'Primary Devotee Full Name <span class="required">*</span>',
             phPrimaryName: 'Name (E.g. Rahul)',
-            lblPrimaryAge: 'Age (11+) <span class="required">*</span>',
+            lblPrimaryAge: 'Age <span class="required">*</span>',
             primaryAgeSuffix: 'Yrs',
             lblNameAge: 'Devotee Full Name & Age <span class="required">*</span>',
             phNameAge: 'E.g. Rahul 35 Yrs',
@@ -2896,19 +2896,11 @@ Reference: ${referredBy}
             const agePlaceholder = "11+";
             const yrsSuffix = (curLang === "en" ? "Yrs" : "वर्ष");
 
-            const isFirst = (i === 1);
-            const swapBtnHtml = isFirst ? `
-                <button type="button" class="swap-lead-btn" id="swap-lead-btn-1" title="${curLang === 'en' ? 'Swap Name & Age with Primary Devotee' : 'मुख्य दर्शनार्थी के साथ नाम व उम्र बदलें'}">
-                    <i class="fa-solid fa-right-left"></i> <span>${curLang === 'en' ? 'Swap with Primary' : 'मुख्य नाम से बदलें (Swap)'}</span>
-                </button>
-            ` : '';
-
             card.innerHTML = `
                 <div class="member-row-header">
                     <div class="member-index-badge">
                         <i class="fa-solid fa-user-tag"></i> <span>${memberBadgeText}</span>
                     </div>
-                    ${swapBtnHtml}
                 </div>
                 <div class="member-inputs-grid">
                     <div class="input-wrapper mic-wrapper">
@@ -2933,42 +2925,6 @@ Reference: ${referredBy}
         container.querySelectorAll(".member-row-card").forEach(card => {
             const nameInput = card.querySelector(".member-name-input");
             const ageInput = card.querySelector(".member-age-input");
-
-            const swapBtn = card.querySelector("#swap-lead-btn-1");
-            if (swapBtn) {
-                swapBtn.addEventListener("click", () => {
-                    if (!primaryNameInput) return;
-                    const pName = primaryNameInput.value.trim();
-                    const pAge = primaryAgeInput ? primaryAgeInput.value.trim() : "";
-                    const mName = nameInput ? nameInput.value.trim() : "";
-                    const mAge = ageInput ? ageInput.value.trim() : "";
-
-                    if (!pName && !mName) {
-                        showToast(curLang === "en" ? "Both names are empty to swap!" : "बदलने के लिए कोई नाम दर्ज नहीं है!", "info");
-                        return;
-                    }
-
-                    primaryNameInput.value = mName;
-                    if (primaryAgeInput) primaryAgeInput.value = mAge;
-                    if (nameInput) nameInput.value = pName;
-                    if (ageInput) ageInput.value = pAge;
-
-                    primaryNameInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    if (primaryAgeInput) primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    if (nameInput) nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    if (ageInput) ageInput.dispatchEvent(new Event("input", { bubbles: true }));
-
-                    syncAccompanyingTextarea();
-                    queueSaveDraft();
-
-                    showToast(
-                        curLang === "en" 
-                            ? "Primary Devotee and Companion 1 swapped successfully!" 
-                            : "मुख्य दर्शनार्थी और साथी सदस्य 1 के नाम आपस में बदल दिए गए!",
-                        "success"
-                    );
-                });
-            }
 
             if (nameInput) {
                 const cleanName = () => {
@@ -3046,8 +3002,8 @@ Reference: ${referredBy}
                     if (!isNaN(ageVal) && ageVal > 0 && ageVal < 11) {
                         card.style.borderColor = "#dc2626";
                         const msg = curLang === "en"
-                            ? `Member ${mIdx}: Passes are not issued for children aged 10 or below. Minimum age is 11 years.`
-                            : `साथी ${mIdx}: 10 वर्ष तक के बच्चों का पास नहीं बनता है। केवल 11 वर्ष या उससे अधिक आयु मान्य है।`;
+                            ? `Member ${mIdx}: Minimum age is 11 years.`
+                            : `साथी ${mIdx}: कृपया सही उम्र (कम से कम 11 वर्ष) दर्ज करें।`;
                         showToast(msg, "warning");
                     } else if (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120) {
                         card.style.borderColor = "";
@@ -3065,14 +3021,13 @@ Reference: ${referredBy}
         const accReq = document.getElementById("accompanying-required");
         const accError = document.getElementById("accompanying-error");
 
-        const curLang = localStorage.getItem("darshan_lang") || "hi";
         if (totalCount === 0) {
             if (accompanyingInput) {
                 accompanyingInput.required = false;
                 accompanyingInput.value = "";
             }
             if (accReq) accReq.style.display = "none";
-            if (accNote) accNote.textContent = curLang === "en" ? "(Please select at least 1 devotee above)" : "(कृपया ऊपर कम से कम 1 दर्शनार्थी चुनें)";
+            if (accNote) accNote.textContent = "";
             if (accGroup) {
                 accGroup.classList.remove("invalid");
                 accGroup.classList.add("single-devotee");
@@ -3087,7 +3042,7 @@ Reference: ${referredBy}
                 accompanyingInput.required = false;
             }
             if (accReq) accReq.style.display = "none";
-            if (accNote) accNote.textContent = curLang === "en" ? "(Not Applicable for Single Devotee • Age 11+ only)" : "(अकेले दर्शनार्थी हेतु लागू नहीं • केवल 11 वर्ष या अधिक)";
+            if (accNote) accNote.textContent = "";
             if (accGroup) {
                 accGroup.classList.remove("invalid");
                 accGroup.classList.add("single-devotee");
@@ -3100,9 +3055,7 @@ Reference: ${referredBy}
             }
             if (accReq) accReq.style.display = "inline";
             const extra = totalCount - 1;
-            if (accNote) accNote.textContent = curLang === "en" 
-                ? `(Enter name & age of remaining ${extra} members • Age 11+ only - passes not issued for children ≤ 10)` 
-                : `(अन्य ${extra} साथी सदस्यों के नाम व उम्र लिखें • 10 वर्ष तक के बच्चों का पास नहीं बनता, केवल 11 वर्ष या अधिक)`;
+            if (accNote) accNote.textContent = "";
             if (accGroup) {
                 accGroup.classList.remove("single-devotee");
             }
