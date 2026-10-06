@@ -398,12 +398,6 @@ document.addEventListener("DOMContentLoaded", () => {
         visitDateInput.setAttribute("max", maxDateStr);
         visitDateInput.value = defaultSelectedDateStr; // Pre-select today or tomorrow if past 9 PM
 
-        if (isPastAllSlotsToday) {
-            setTimeout(() => {
-                showToast("आज के सभी दर्शन स्लॉट समाप्त हो चुके हैं। कल की तिथि स्वतः चुन ली गई है।", "info");
-            }, 800);
-        }
-
         // Dynamically block past dates or dates beyond 6 days
         const enforceDateBounds = () => {
             if (!visitDateInput.value) return;
@@ -588,7 +582,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // -------------------------------------------------------------
     // STRICT NAME FIELD GUARD: ABSOLUTELY NO NUMBERS IN ANY NAME BOX
     // -------------------------------------------------------------
-    let _lastNumberToastTime = 0;
     function showNameNumberBlockedFeedback(inputEl) {
         if (!inputEl) return;
         inputEl.classList.remove("input-warning-shake");
@@ -596,16 +589,6 @@ document.addEventListener("DOMContentLoaded", () => {
         void inputEl.offsetWidth;
         inputEl.classList.add("input-warning-shake");
         setTimeout(() => inputEl.classList.remove("input-warning-shake"), 400);
-
-        const now = Date.now();
-        if (now - _lastNumberToastTime > 2200) {
-            _lastNumberToastTime = now;
-            const curLang = localStorage.getItem("darshan_lang") || "hi";
-            const msg = (curLang === "en")
-                ? "Numbers/age are not allowed in the Name box. Please enter age in the Age box."
-                : "नाम वाले बॉक्स में नंबर/उम्र लिखना मना है। कृपया उम्र को 'उम्र' वाले बॉक्स में लिखें।";
-            showToast(msg, "warning");
-        }
     }
 
     function sanitizeNameField(inputEl, notify = true) {
@@ -673,11 +656,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     syncAccompanyingTextarea();
                     queueSaveDraft();
-                    const curLang = localStorage.getItem("darshan_lang") || "hi";
-                    const msg = (curLang === "en")
-                        ? "First member set as Primary Devotee, remaining distributed to companions!"
-                        : "पहला नाम मुख्य दर्शनार्थी में एवं अन्य नाम साथी सदस्यों में स्वतः भर दिए गए!";
-                    showToast(msg, "success");
                 }, 50);
 
                 primaryNameInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -688,7 +666,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (primaryAgeInput && !primaryAgeInput.value && extracted.age) {
                     primaryAgeInput.value = extracted.age;
                     primaryAgeInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    showToast("नाम व उम्र स्वतः अलग-अलग बॉक्स में भर दिए गए!", "success");
                 } else {
                     showNameNumberBlockedFeedback(primaryNameInput);
                 }
@@ -766,7 +743,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (ageErrorEl) {
                     ageErrorEl.textContent = msg;
                 }
-                showToast(msg, "warning");
             } else if (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120) {
                 markGroup(primaryAgeInput, true);
                 if (ageErrorEl) ageErrorEl.textContent = "";
@@ -1476,8 +1452,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     syncBodyModalLock();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                 }
-
-                showToast("आवेदन सफलतापूर्वक दर्ज हो गया!", "success");
             } catch (err) {
                 console.error("Submission error:", err);
                 showToast(err.message || "आवेदन सबमिट करने में समस्या आई। कृपया पुनः प्रयास करें।", "error");
@@ -1756,7 +1730,6 @@ Reference: ${referredBy}
                         link.click();
                         document.body.removeChild(link);
 
-                        showToast("रसीद डाउनलोड हो गई, WhatsApp चैट खुल रहा है...", "info");
                         const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`;
                         window.open(whatsappUrl, "_blank");
                     }
@@ -2396,7 +2369,6 @@ Reference: ${referredBy}
                 // If THIS button is already active, touching it again turns it OFF!
                 if (currentVoiceBtn === btn) {
                     stopCurrentVoiceTyping();
-                    showToast("माइक बंद कर दिया गया (Voice typing stopped)", "info");
                     return;
                 }
 
@@ -2428,10 +2400,6 @@ Reference: ${referredBy}
 
                 btn.classList.add("listening");
                 btn.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat" style="color: #ef4444;"></i>';
-
-                recognition.onstart = () => {
-                    showToast("🎙️ सुन रहा हूँ... बोलिए (Listening... speak now)", "info");
-                };
 
                 recognition.onresult = (event) => {
                     if (!event.results || !event.results[0]) return;
@@ -2473,7 +2441,6 @@ Reference: ${referredBy}
 
                     targetInput.dispatchEvent(new Event("input", { bubbles: true }));
                     targetInput.dispatchEvent(new Event("change", { bubbles: true }));
-                    showToast("✅ आवाज़ दर्ज हो गई (Voice recorded)", "success");
                     stopCurrentVoiceTyping();
                 };
 
@@ -2969,7 +2936,6 @@ Reference: ${referredBy}
                         });
 
                         syncAccompanyingTextarea();
-                        showToast("सूची से सदस्यों का विवरण स्वतः भर गया!", "success");
                     } else if (/[0-9\u0966-\u096F]/.test(pastedText)) {
                         // Single item with embedded age/number pasted into companion name box
                         e.preventDefault();
@@ -2977,7 +2943,6 @@ Reference: ${referredBy}
                         nameInput.value = extracted.name.replace(/[0-9\u0966-\u096F]/g, '');
                         if (ageInput && !ageInput.value && extracted.age) {
                             ageInput.value = extracted.age;
-                            showToast("नाम व उम्र स्वतः अलग-अलग बॉक्स में भर दिए गए!", "success");
                         } else {
                             showNameNumberBlockedFeedback(nameInput);
                         }
@@ -3001,10 +2966,6 @@ Reference: ${referredBy}
                     const mIdx = card.getAttribute("data-member-index") || "";
                     if (!isNaN(ageVal) && ageVal > 0 && ageVal < 11) {
                         card.style.borderColor = "#dc2626";
-                        const msg = curLang === "en"
-                            ? `Member ${mIdx}: Minimum age is 11 years.`
-                            : `साथी ${mIdx}: कृपया सही उम्र (कम से कम 11 वर्ष) दर्ज करें।`;
-                        showToast(msg, "warning");
                     } else if (!isNaN(ageVal) && ageVal >= 11 && ageVal <= 120) {
                         card.style.borderColor = "";
                     }
@@ -3207,9 +3168,6 @@ Reference: ${referredBy}
 
     let deferredPrompt = null;
     const pwaInstallBtn = document.getElementById("pwa-install-btn");
-    const iosInstallModal = document.getElementById("ios-install-modal");
-    const closeIosModalBtn = document.getElementById("close-ios-modal-btn");
-    const iosGotItBtn = document.getElementById("ios-got-it-btn");
 
     // Detect if already installed / running in standalone PWA mode
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -3229,21 +3187,10 @@ Reference: ${referredBy}
     window.addEventListener('appinstalled', () => {
         deferredPrompt = null;
         if (pwaInstallBtn) pwaInstallBtn.style.display = "none";
-        showToast("श्रीरामजन्मभूमि दर्शन पास ऐप सफलतापूर्वक आपके डिवाइस पर इंस्टॉल हो गया!", "success");
     });
 
     if (pwaInstallBtn) {
         pwaInstallBtn.addEventListener('click', async () => {
-            // Check if iOS
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            if (isIOS) {
-                if (iosInstallModal) {
-                    iosInstallModal.classList.remove("hidden");
-                    syncBodyModalLock();
-                }
-                return;
-            }
-
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
@@ -3251,30 +3198,6 @@ Reference: ${referredBy}
                     pwaInstallBtn.style.display = "none";
                 }
                 deferredPrompt = null;
-            } else {
-                // If browser has not fired beforeinstallprompt or desktop Safari/Firefox
-                showToast("ब्राउज़र के ऊपर दाईं ओर मेनू (⋮) पर क्लिक करके 'Install app' या 'Add to Home screen' चुनें।", "info");
-            }
-        });
-    }
-
-    if (closeIosModalBtn && iosInstallModal) {
-        closeIosModalBtn.addEventListener('click', () => {
-            iosInstallModal.classList.add("hidden");
-            syncBodyModalLock();
-        });
-    }
-    if (iosGotItBtn && iosInstallModal) {
-        iosGotItBtn.addEventListener('click', () => {
-            iosInstallModal.classList.add("hidden");
-            syncBodyModalLock();
-        });
-    }
-    if (iosInstallModal) {
-        iosInstallModal.addEventListener('click', (e) => {
-            if (e.target === iosInstallModal) {
-                iosInstallModal.classList.add("hidden");
-                syncBodyModalLock();
             }
         });
     }
@@ -3284,9 +3207,6 @@ Reference: ${referredBy}
         if (e.key === "Escape") {
             if (trackPassModal && !trackPassModal.classList.contains("hidden")) {
                 trackPassModal.classList.add("hidden");
-            }
-            if (iosInstallModal && !iosInstallModal.classList.contains("hidden")) {
-                iosInstallModal.classList.add("hidden");
             }
             if (successModal && !successModal.classList.contains("hidden")) {
                 closeFormSession();
